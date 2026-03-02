@@ -18,6 +18,11 @@ export const MAIN_MENU = [
   { path: '/unit', label: 'Unit', table: 'units' },
 ];
 
+export const ALLOTMENT_MENU = [
+  { path: '/designation', label: 'Designation', table: 'designations', addButtonLabel: 'Add Designation' },
+  { path: '/position-allotment', label: 'Position Allotment', table: 'position-allotments' },
+];
+
 export const BUSINESS_MENU = [
   { path: '/business-category', label: 'Business Category', table: 'business-categories', addButtonLabel: 'Add Category' },
   { path: '/business-sub-category', label: 'Business Sub Category', table: 'business-sub-categories', addButtonLabel: 'Add Type' },

@@ -1,12 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { MAIN_MENU, BUSINESS_MENU, REGISTRATION_MENU } from '../config/menuConfig';
+import { MAIN_MENU, BUSINESS_MENU, REGISTRATION_MENU, ALLOTMENT_MENU } from '../config/menuConfig';
 
 const LOGO_URL = 'https://www.greatwebsoft.in/gaonmaza/public/images/white-logo.jpeg';
 
 export default function Layout({ children }) {
   const [userOpen, setUserOpen] = useState(false);
   const [mainMenuOpen, setMainMenuOpen] = useState(true);
+  const [allotmentOpen, setAllotmentOpen] = useState(false);
   const [businessOpen, setBusinessOpen] = useState(false);
   const [registrationOpen, setRegistrationOpen] = useState(false);
   const userWrapRef = useRef(null);
@@ -81,6 +82,18 @@ export default function Layout({ children }) {
             {mainMenuOpen && (
               <div style={styles.sectionLinks}>
                 {MAIN_MENU.map(({ path, label }) => (
+                  <NavLink key={path} to={path} style={linkStyle} className="gov-sidebar-link">
+                    {label}
+                  </NavLink>
+                ))}
+              </div>
+            )}
+
+            {/* Allotment */}
+            {sectionHeader('Allotment', allotmentOpen, () => setAllotmentOpen(!allotmentOpen))}
+            {allotmentOpen && (
+              <div style={styles.sectionLinks}>
+                {ALLOTMENT_MENU.map(({ path, label }) => (
                   <NavLink key={path} to={path} style={linkStyle} className="gov-sidebar-link">
                     {label}
                   </NavLink>

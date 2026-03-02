@@ -38,6 +38,8 @@ const ALLOWED_TABLES = [
   'unit_types',
   'business_categories',
   'business_sub_categories',
+  'designations',
+  'position_allotments',
 ];
 
 // Columns allowed for create/update per table (excludes id, created_at). client_id = serial client id (not DB id).
@@ -61,6 +63,8 @@ const TABLE_COLUMNS = {
   unit_types: ['client_id', 'unit_id', 'name', 'code', 'type_category'],
   business_categories: ['client_id', 'name', 'code', 'vidhan_sabha_id'],
   business_sub_categories: ['client_id', 'business_category_id', 'name', 'code'],
+  designations: ['client_id', 'name', 'code', 'parent_id'],
+  position_allotments: ['client_id', 'name', 'code', 'designation_id'],
 };
 
 function isAllowed(table) {

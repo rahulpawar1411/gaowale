@@ -169,6 +169,22 @@ const CREATE_TABLE_STATEMENTS = [
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (business_category_id) REFERENCES business_categories(id) ON DELETE CASCADE
   )`,
+  `CREATE TABLE IF NOT EXISTS designations (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    code VARCHAR(50),
+    parent_id INT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (parent_id) REFERENCES designations(id) ON DELETE SET NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS position_allotments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    code VARCHAR(50),
+    designation_id INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (designation_id) REFERENCES designations(id) ON DELETE SET NULL
+  )`,
   `CREATE TABLE IF NOT EXISTS management_registrations (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -260,11 +276,14 @@ async function initDatabase() {
       `ALTER TABLE regions ADD CONSTRAINT fk_regions_state_sub_division FOREIGN KEY (state_sub_division_id) REFERENCES state_sub_divisions(id) ON DELETE SET NULL`,
       `ALTER TABLE talukas ADD COLUMN vidhan_sabha_id INT NULL`,
       `ALTER TABLE talukas ADD CONSTRAINT fk_talukas_vidhan_sabha FOREIGN KEY (vidhan_sabha_id) REFERENCES vidhan_sabhas(id) ON DELETE SET NULL`,
+      `ALTER TABLE designations ADD COLUMN parent_id INT NULL`,
+      `ALTER TABLE designations ADD CONSTRAINT fk_designations_parent FOREIGN KEY (parent_id) REFERENCES designations(id) ON DELETE SET NULL`,
     ];
     const masterTables = [
       'continents', 'countries', 'country_divisions', 'states', 'state_divisions', 'state_sub_divisions',
       'regions', 'zones', 'vidhan_sabhas', 'talukas', 'circles', 'panchayat_samitis', 'villages',
       'products', 'business_types', 'units', 'unit_types', 'business_categories', 'business_sub_categories',
+      'designations', 'position_allotments',
     ];
     for (const t of masterTables) {
       alterStatements.push(`ALTER TABLE \`${t}\` ADD COLUMN client_id VARCHAR(36) UNIQUE NULL`);

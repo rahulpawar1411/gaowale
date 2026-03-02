@@ -78,4 +78,13 @@ export const entityFields = {
     { name: 'name', label: 'Business Sub Category Name', type: 'text', tableHeader: 'Name' },
     { name: 'business_category_id', label: 'Select Business Category', type: 'select', optionsTable: 'business-categories', tableHeader: 'Business Category' },
   ],
+  designations: [
+    { name: 'name', label: 'Designation Name', type: 'text', tableHeader: 'Name' },
+    { name: 'parent_id', label: 'No Parent (Top Level)', type: 'select', optionsTable: 'designations', tableHeader: 'Parent', required: false, optionPlaceholder: 'No Parent (Top Level)', optionValue: 'id', optionLabel: 'name' },
+  ],
+  'position-allotments': [
+    { name: 'name', label: 'Name', type: 'text', tableHeader: 'Name' },
+    { name: 'code', label: 'Code', type: 'text', tableHeader: 'Code' },
+    { name: 'designation_id', label: 'Select Designation', type: 'select', optionsTable: 'designations', tableHeader: 'Designation' },
+  ],
 };

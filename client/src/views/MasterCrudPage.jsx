@@ -12,10 +12,10 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
   const [submitLoading, setSubmitLoading] = useState(false);
 
   const loadData = useCallback(() => {
-    if (!table) return;
+    if (!table) return Promise.resolve();
     setLoading(true);
     setError(null);
-    masterApi
+    return masterApi
       .getTable(table)
       .then((res) => {
         if (res.success) setData(res.data || []);
@@ -36,7 +36,7 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
   }, [table]);
 
   // Load options for select and combobox fields
-  useEffect(() => {
+  const loadOptions = useCallback(() => {
     const tables = new Set();
     fields.forEach((f) => {
       if ((f.type === 'select' || f.type === 'combobox') && f.optionsTable) tables.add(f.optionsTable);
@@ -50,7 +50,11 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
         })
         .catch(() => setOptions((prev) => ({ ...prev, [t]: [] })));
     });
-  }, [table, fields]);
+  }, [fields]);
+
+  useEffect(() => {
+    loadOptions();
+  }, [table, loadOptions]);
 
   const getDisplayValue = (row, field) => {
     const val = row[field.name];
@@ -63,7 +67,14 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
     if (field.type === 'combobox') return String(val);
     if (field.type === 'select' && field.optionsTable && options[field.optionsTable]) {
       const list = options[field.optionsTable];
-      const opt = list.find((o) => o.id === val || o.id === Number(val) || (field.optionValue && o[field.optionValue] === val));
+      // Use loose equality so parent_id (number or string from API) matches opt.id (number or string)
+      const opt = list.find((o) => {
+        const oId = o.id != null ? Number(o.id) : null;
+        const v = val != null ? Number(val) : null;
+        if (oId !== null && v !== null && oId === v) return true;
+        if (field.optionValue && o[field.optionValue] == val) return true;
+        return o.id == val;
+      });
       if (!opt) return String(val);
       if (field.optionsTable === 'unit-types') return opt.type_category || opt.name || String(val);
       return field.optionLabel ? (opt[field.optionLabel] ?? opt.name) : opt.name;
@@ -115,8 +126,14 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
     // Build payload from fields so every field is always sent (avoids undefined being omitted by JSON.stringify)
     const payload = {};
     fields.forEach((f) => {
-      const val = form[f.name];
-      payload[f.name] = val !== undefined ? val : (f.type === 'select' ? null : '');
+      let val = form[f.name];
+      if (val === undefined) val = f.type === 'select' ? null : '';
+      // Send _id select values as numbers so backend stores FK correctly (e.g. parent_id)
+      if (f.type === 'select' && f.name.endsWith('_id') && val != null && val !== '') {
+        const n = Number(val);
+        val = Number.isNaN(n) ? val : n;
+      }
+      payload[f.name] = val;
     });
     // Validate dropdowns: if any required select field is empty, show custom alert and stop
     for (const f of fields) {
@@ -166,9 +183,11 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
       ? masterApi.update(table, editingId, payload)
       : masterApi.create(table, payload);
     promise
-      .then((res) => {
+      .then(async (res) => {
         if (res.success) {
-          loadData();
+          // Refetch table from DB so UI shows the new/updated row (and Parent column is correct)
+          await loadData();
+          loadOptions();
           setForm({});
           setEditingId(null);
         } else setError(res.message || 'Failed to save');
@@ -248,21 +267,28 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
               ) : f.type === 'select' ? (
                 (() => {
                   const dbOpts = options[f.optionsTable] || [];
+                  // When editing a self-referential field (e.g. designations parent_id), exclude current row from options
+                  let filteredDbOpts = dbOpts;
+                  if (editingId && f.optionsTable === table && f.name === 'parent_id') {
+                    filteredDbOpts = dbOpts.filter(
+                      (o) => String(o.client_id != null ? o.client_id : o.id) !== String(editingId)
+                    );
+                  }
                   const staticList = f.optionStatic || [];
-                  const staticOpts = staticList.filter((s) => !dbOpts.some((o) => (f.optionValue ? o[f.optionValue] : o.id) === s)).map((s) => (f.optionValue ? { [f.optionValue]: s, id: s } : { id: s, name: s }));
-                  const selectOptions = [...dbOpts, ...staticOpts];
+                  const staticOpts = staticList.filter((s) => !filteredDbOpts.some((o) => (f.optionValue ? o[f.optionValue] : o.id) === s)).map((s) => (f.optionValue ? { [f.optionValue]: s, id: s } : { id: s, name: s }));
+                  const selectOptions = [...filteredDbOpts, ...staticOpts];
                   return (
                 <select
                   name={f.name}
                   value={form[f.name] != null ? form[f.name] : ''}
                   onChange={(e) => {
                     const raw = e.target.value;
-                    const useNumber = !f.optionValue && raw !== '';
+                    const useNumber = raw !== '' && (!f.optionValue && f.name.endsWith('_id') || f.optionValue === 'id');
                     setForm((prev) => ({ ...prev, [f.name]: raw === '' ? null : (useNumber ? Number(raw) : raw) }));
                   }}
                   style={styles.input}
                 >
-                  <option value="">Select...</option>
+                  <option value="">{f.optionPlaceholder || 'Select...'}</option>
                   {selectOptions.map((opt) => {
                     const optValue = f.optionValue != null ? (opt[f.optionValue] ?? '') : opt.id;
                     const optLabel = f.optionLabel != null ? (opt[f.optionLabel] ?? opt.name) : opt.name;
@@ -358,9 +384,10 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
             ) : (
               data.map((row) => {
                 const rowId = row.client_id != null ? String(row.client_id) : row.id;
+                const displayId = row.client_id != null ? String(row.client_id) : row.id;
                 return (
                 <tr key={rowId}>
-                  <td style={styles.td}>{row.client_id != null ? row.client_id : row.id}</td>
+                  <td style={styles.td}>{displayId}</td>
                   {fields.map((f) => (
                     <td key={f.name} style={styles.td}>
                       {getDisplayValue(row, f)}
