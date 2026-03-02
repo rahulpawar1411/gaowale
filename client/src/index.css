@@ -1,0 +1,60 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  background: #f0f0f2;
+  color: #333;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
+button {
+  cursor: pointer;
+  font: inherit;
+}
+
+input,
+textarea {
+  font: inherit;
+}
+
+/* Government-style typography for main content */
+main h1, main h2 {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+/* User dropdown item hover */
+.gov-dropdown-item:hover {
+  background: #f0f0f2 !important;
+}
+
+/* Hide sidebar menu scrollbar (scroll still works) */
+.sidebar-nav-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.sidebar-nav-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Sidebar item hover */
+.gov-sidebar-item:hover,
+.gov-sidebar-link:hover {
+  background: rgba(255,255,255,0.08) !important;
+}
+.gov-sidebar-item-active:hover,
+.gov-sidebar-link.active:hover {
+  background: rgba(255,255,255,0.22) !important;
+}
