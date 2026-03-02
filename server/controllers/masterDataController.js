@@ -11,7 +11,7 @@ const getTableName = (param) => {
     'state-divisions': 'state_divisions',
     'state-sub-divisions': 'state_sub_divisions',
     'vidhan-sabhas': 'vidhan_sabhas',
-    'panchayat-samitis': 'panchayat_samitis',
+    'gram-panchayats': 'gram_panchayats',
     'business-types': 'business_types',
     'unit-types': 'unit_types',
     'business-categories': 'business_categories',
@@ -82,6 +82,7 @@ const create = async (req, res) => {
     }
     res.status(201).json({ success: true, data: row });
   } catch (err) {
+    console.error('Master create error:', err.message);
     res.status(500).json({ success: false, message: err.message });
   }
 };

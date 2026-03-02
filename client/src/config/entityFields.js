@@ -41,17 +41,21 @@ export const entityFields = {
     { name: 'name', label: 'Name', type: 'text', tableHeader: 'Name' },
     { name: 'vidhan_sabha_id', label: 'Select Vidhan Sabha', type: 'select', optionsTable: 'vidhan-sabhas', tableHeader: 'Vidhan Sabha' },
   ],
-  circles: [
+  blocks: [
     { name: 'name', label: 'Name', type: 'text', tableHeader: 'Name' },
     { name: 'taluka_id', label: 'Select Taluka', type: 'select', optionsTable: 'talukas', tableHeader: 'Taluka' },
   ],
-  'panchayat-samitis': [
-    { name: 'name', label: 'Name', type: 'text', tableHeader: 'Name' },
-    { name: 'circle_id', label: 'Select Circle', type: 'select', optionsTable: 'circles', tableHeader: 'Circle' },
+  circles: [
+    { name: 'name', label: 'Panchayat Samiti Circle Name', type: 'text', tableHeader: 'Name' },
+    { name: 'block_id', label: 'Select Block', type: 'select', optionsTable: 'blocks', tableHeader: 'Block' },
+  ],
+  'gram-panchayats': [
+    { name: 'name', label: 'Gram Panchayat Name', type: 'text', tableHeader: 'Name' },
+    { name: 'circle_id', label: 'Select Panchayat Samiti Circle', type: 'select', optionsTable: 'circles', tableHeader: 'Panchayat Samiti Circle' },
   ],
   villages: [
     { name: 'name', label: 'Name', type: 'text', tableHeader: 'Name' },
-    { name: 'panchayat_samiti_id', label: 'Select Panchayat Samiti', type: 'select', optionsTable: 'panchayat-samitis', tableHeader: 'Panchayat Samiti' },
+    { name: 'gram_panchayat_id', label: 'Select Gram Panchayat', type: 'select', optionsTable: 'gram-panchayats', tableHeader: 'Gram Panchayat' },
   ],
   products: [
     { name: 'name', label: 'Product Name', type: 'text', tableHeader: 'Name' },
@@ -68,7 +72,7 @@ export const entityFields = {
     { name: 'status', label: 'Status', type: 'radio', options: ['Active', 'Inactive', 'In progress'], tableHeader: 'Status' },
   ],
   'unit-types': [
-    { name: 'type_category', label: 'Type', type: 'combobox', optionsTable: 'unit-types', optionValue: 'type_category', optionLabel: 'type_category', tableHeader: 'Type', optionStatic: ['PNG', 'GLG', 'LLP', 'Pvt', 'SPV', 'LTP'] },
+    { name: 'type_category', label: 'Type', type: 'selectWithOther', optionsTable: 'unit-types', optionValue: 'type_category', optionLabel: 'type_category', tableHeader: 'Type', optionStatic: ['PNG', 'GLG', 'LLP', 'Pvt', 'SPV', 'LTP'] },
   ],
   'business-categories': [
     { name: 'name', label: 'Business Category Name', type: 'text', tableHeader: 'Name' },

@@ -103,17 +103,23 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
         payload.region_id = zone.region_id;
       }
     }
-    if (table === 'circles' && payload.taluka_id && opts['talukas']) {
-      const taluka = opts['talukas'].find((t) => t.id === Number(payload.taluka_id) || t.id === payload.taluka_id);
-      if (taluka) payload.state_id = taluka.state_id;
+    if (table === 'circles' && payload.block_id && opts['blocks']) {
+      const block = opts['blocks'].find((b) => b.id === Number(payload.block_id) || b.id === payload.block_id);
+      if (block) {
+        payload.taluka_id = block.taluka_id;
+        if (block.taluka_id && opts['talukas']) {
+          const taluka = opts['talukas'].find((t) => t.id === Number(block.taluka_id) || t.id === block.taluka_id);
+          if (taluka) payload.state_id = taluka.state_id;
+        }
+      }
     }
-    if (table === 'panchayat-samitis' && payload.circle_id && opts['circles']) {
+    if (table === 'gram-panchayats' && payload.circle_id && opts['circles']) {
       const circle = opts['circles'].find((c) => c.id === Number(payload.circle_id) || c.id === payload.circle_id);
       if (circle) payload.taluka_id = circle.taluka_id;
     }
-    if (table === 'villages' && payload.panchayat_samiti_id && opts['panchayat-samitis']) {
-      const ps = opts['panchayat-samitis'].find((p) => p.id === Number(payload.panchayat_samiti_id) || p.id === payload.panchayat_samiti_id);
-      if (ps) payload.taluka_id = ps.taluka_id;
+    if (table === 'villages' && payload.gram_panchayat_id && opts['gram-panchayats']) {
+      const gp = opts['gram-panchayats'].find((p) => p.id === Number(payload.gram_panchayat_id) || p.id === payload.gram_panchayat_id);
+      if (gp) payload.taluka_id = gp.taluka_id;
     }
     if (table === 'states' && payload.country_division_id && opts['country-divisions']) {
       const cd = opts['country-divisions'].find((c) => c.id === Number(payload.country_division_id) || c.id === payload.country_division_id);
@@ -158,8 +164,17 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
       }
     }
 
-    // Unit of Type: type select from DB; use type_category as name for DB
+    // Unit of Type: type select from DB or "Other"; use type_category as name for DB
     if (table === 'unit-types') {
+      let typeVal = payload.type_category;
+      if (typeVal === '__OTHER__') {
+        typeVal = form.type_category_other != null ? String(form.type_category_other).trim() : '';
+        if (!typeVal) {
+          setDropdownAlert('Please enter a type when "Other" is selected');
+          return;
+        }
+        payload.type_category = typeVal;
+      }
       if (!payload.type_category || !String(payload.type_category).trim()) {
         setDropdownAlert('Please select a type');
         return;
@@ -200,6 +215,17 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
     const values = {};
     fields.forEach((f) => {
       values[f.name] = row[f.name] != null ? row[f.name] : '';
+      // For selectWithOther (e.g. unit-types), if value is not in static list, show "Other" and store in _other
+      if (f.type === 'selectWithOther' && f.optionStatic && row[f.name]) {
+        const val = row[f.name];
+        const inStatic = f.optionStatic.includes(val);
+        const dbOpts = options[f.optionsTable] || [];
+        const inDb = dbOpts.some((o) => (f.optionValue ? o[f.optionValue] : o.id) === val);
+        if (!inStatic && !inDb) {
+          values[f.name] = '__OTHER__';
+          values[f.name + '_other'] = val;
+        }
+      }
     });
     setForm(values);
     setEditingId(row.client_id != null ? String(row.client_id) : row.id);
@@ -261,6 +287,46 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
                           <option key={val || i} value={val} />
                         ))}
                       </datalist>
+                    </>
+                  );
+                })()
+              ) : f.type === 'selectWithOther' ? (
+                (() => {
+                  const dbOpts = options[f.optionsTable] || [];
+                  const staticList = f.optionStatic || [];
+                  const dbValues = (dbOpts || [])
+                    .map((o) => (f.optionLabel ? (o[f.optionLabel] ?? o[f.optionValue]) : (o[f.optionValue] ?? o.name)))
+                    .filter((v) => v != null && v !== '');
+                  const fromDbNotStatic = [...new Set(dbValues)].filter((v) => !staticList.includes(v));
+                  const otherKey = f.name + '_other';
+                  const isOther = form[f.name] === '__OTHER__';
+                  return (
+                    <>
+                      <select
+                        name={f.name}
+                        value={form[f.name] != null ? form[f.name] : ''}
+                        onChange={(e) => setForm((prev) => ({ ...prev, [f.name]: e.target.value }))}
+                        style={styles.input}
+                      >
+                        <option value="">Select...</option>
+                        {staticList.map((s) => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                        {fromDbNotStatic.map((v) => (
+                          <option key={v} value={v}>{v}</option>
+                        ))}
+                        <option value="__OTHER__">Other...</option>
+                      </select>
+                      {isOther && (
+                        <input
+                          type="text"
+                          name={otherKey}
+                          value={form[otherKey] != null ? form[otherKey] : ''}
+                          onChange={(e) => setForm((prev) => ({ ...prev, [otherKey]: e.target.value }))}
+                          placeholder={`Enter ${f.label.toLowerCase()}`}
+                          style={{ ...styles.input, marginTop: 6 }}
+                        />
+                      )}
                     </>
                   );
                 })()

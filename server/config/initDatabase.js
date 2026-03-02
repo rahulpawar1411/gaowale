@@ -91,17 +91,27 @@ const CREATE_TABLE_STATEMENTS = [
     FOREIGN KEY (state_id) REFERENCES states(id) ON DELETE CASCADE,
     FOREIGN KEY (vidhan_sabha_id) REFERENCES vidhan_sabhas(id) ON DELETE SET NULL
   )`,
+  `CREATE TABLE IF NOT EXISTS blocks (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    taluka_id INT,
+    name VARCHAR(255) NOT NULL,
+    code VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (taluka_id) REFERENCES talukas(id) ON DELETE SET NULL
+  )`,
   `CREATE TABLE IF NOT EXISTS circles (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    block_id INT,
     taluka_id INT,
     state_id INT,
     name VARCHAR(255) NOT NULL,
     code VARCHAR(50),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (block_id) REFERENCES blocks(id) ON DELETE SET NULL,
     FOREIGN KEY (taluka_id) REFERENCES talukas(id) ON DELETE SET NULL,
     FOREIGN KEY (state_id) REFERENCES states(id) ON DELETE SET NULL
   )`,
-  `CREATE TABLE IF NOT EXISTS panchayat_samitis (
+  `CREATE TABLE IF NOT EXISTS gram_panchayats (
     id INT AUTO_INCREMENT PRIMARY KEY,
     circle_id INT,
     taluka_id INT,
@@ -113,12 +123,12 @@ const CREATE_TABLE_STATEMENTS = [
   )`,
   `CREATE TABLE IF NOT EXISTS villages (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    panchayat_samiti_id INT,
+    gram_panchayat_id INT,
     taluka_id INT,
     name VARCHAR(255) NOT NULL,
     code VARCHAR(50),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (panchayat_samiti_id) REFERENCES panchayat_samitis(id) ON DELETE SET NULL,
+    FOREIGN KEY (gram_panchayat_id) REFERENCES gram_panchayats(id) ON DELETE SET NULL,
     FOREIGN KEY (taluka_id) REFERENCES talukas(id) ON DELETE SET NULL
   )`,
   `CREATE TABLE IF NOT EXISTS products (
@@ -278,10 +288,12 @@ async function initDatabase() {
       `ALTER TABLE talukas ADD CONSTRAINT fk_talukas_vidhan_sabha FOREIGN KEY (vidhan_sabha_id) REFERENCES vidhan_sabhas(id) ON DELETE SET NULL`,
       `ALTER TABLE designations ADD COLUMN parent_id INT NULL`,
       `ALTER TABLE designations ADD CONSTRAINT fk_designations_parent FOREIGN KEY (parent_id) REFERENCES designations(id) ON DELETE SET NULL`,
+      `ALTER TABLE circles ADD COLUMN block_id INT NULL`,
+      `ALTER TABLE circles ADD CONSTRAINT fk_circles_block FOREIGN KEY (block_id) REFERENCES blocks(id) ON DELETE SET NULL`,
     ];
     const masterTables = [
       'continents', 'countries', 'country_divisions', 'states', 'state_divisions', 'state_sub_divisions',
-      'regions', 'zones', 'vidhan_sabhas', 'talukas', 'circles', 'panchayat_samitis', 'villages',
+      'regions', 'zones', 'vidhan_sabhas', 'talukas', 'blocks', 'circles', 'gram_panchayats', 'villages',
       'products', 'business_types', 'units', 'unit_types', 'business_categories', 'business_sub_categories',
       'designations', 'position_allotments',
     ];
@@ -301,6 +313,58 @@ async function initDatabase() {
         if (!ignore) {
           console.warn('Migration warning:', e.message);
         }
+      }
+    }
+    // Migrate panchayat_samitis -> gram_panchayats (existing DBs)
+    try {
+      const [tables] = await connection.query("SHOW TABLES LIKE 'panchayat_samitis'");
+      if (tables.length > 0) {
+        await connection.query('RENAME TABLE panchayat_samitis TO gram_panchayats');
+        const [fkRows] = await connection.query(
+          "SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'villages' AND COLUMN_NAME = 'panchayat_samiti_id' AND REFERENCED_TABLE_NAME IS NOT NULL",
+          [dbName]
+        );
+        if (fkRows.length > 0) {
+          await connection.query(`ALTER TABLE villages DROP FOREIGN KEY \`${fkRows[0].CONSTRAINT_NAME}\``);
+        }
+        await connection.query('ALTER TABLE villages CHANGE COLUMN panchayat_samiti_id gram_panchayat_id INT NULL');
+        await connection.query('ALTER TABLE villages ADD CONSTRAINT fk_villages_gram_panchayat FOREIGN KEY (gram_panchayat_id) REFERENCES gram_panchayats(id) ON DELETE SET NULL');
+        console.log('Migrated panchayat_samitis to gram_panchayats.');
+      }
+    } catch (e) {
+      if (e.code !== 'ER_NO_SUCH_TABLE' && e.code !== 'ER_CANT_DROP_FIELD_OR_KEY') {
+        console.warn('Migration panchayat_samitis -> gram_panchayats:', e.message);
+      }
+    }
+    // Ensure villages has gram_panchayat_id (for DBs where villages still has panchayat_samiti_id)
+    try {
+      const [cols] = await connection.query(
+        "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'villages' AND COLUMN_NAME IN ('gram_panchayat_id', 'panchayat_samiti_id')",
+        [dbName]
+      );
+      const hasGram = cols.some((c) => c.COLUMN_NAME === 'gram_panchayat_id');
+      const hasOld = cols.some((c) => c.COLUMN_NAME === 'panchayat_samiti_id');
+      if (!hasGram && hasOld) {
+        const [fkRows] = await connection.query(
+          "SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'villages' AND COLUMN_NAME = 'panchayat_samiti_id' AND REFERENCED_TABLE_NAME IS NOT NULL",
+          [dbName]
+        );
+        if (fkRows.length > 0) {
+          await connection.query(`ALTER TABLE villages DROP FOREIGN KEY \`${fkRows[0].CONSTRAINT_NAME}\``);
+        }
+        await connection.query('ALTER TABLE villages ADD COLUMN gram_panchayat_id INT NULL');
+        await connection.query('UPDATE villages SET gram_panchayat_id = panchayat_samiti_id');
+        await connection.query('ALTER TABLE villages DROP COLUMN panchayat_samiti_id');
+        await connection.query('ALTER TABLE villages ADD CONSTRAINT fk_villages_gram_panchayat FOREIGN KEY (gram_panchayat_id) REFERENCES gram_panchayats(id) ON DELETE SET NULL');
+        console.log('Migrated villages.panchayat_samiti_id to gram_panchayat_id.');
+      } else if (!hasGram) {
+        await connection.query('ALTER TABLE villages ADD COLUMN gram_panchayat_id INT NULL');
+        await connection.query('ALTER TABLE villages ADD CONSTRAINT fk_villages_gram_panchayat FOREIGN KEY (gram_panchayat_id) REFERENCES gram_panchayats(id) ON DELETE SET NULL');
+        console.log('Added villages.gram_panchayat_id.');
+      }
+    } catch (e) {
+      if (e.code !== 'ER_DUP_FIELDNAME' && e.code !== 'ER_DUP_KEYNAME' && e.code !== 'ER_FK_DUP_NAME') {
+        console.warn('Migration villages gram_panchayat_id:', e.message);
       }
     }
     // Backfill client_id for existing rows (so every row has a value; new rows get short id from app)
