@@ -16,6 +16,8 @@ const getTableName = (param) => {
     'unit-types': 'unit_types',
     'business-categories': 'business_categories',
     'business-sub-categories': 'business_sub_categories',
+    'business-positions': 'business_positions',
+    'business-sectors': 'business_sectors',
     'position-allotments': 'position_allotments',
   };
   return map[trimmed] || trimmed.replace(/-/g, '_');

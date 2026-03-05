@@ -35,11 +35,14 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
     setEditingId(null);
   }, [table]);
 
-  // Load options for select and combobox fields
+  // Load options for select and combobox fields (and tables needed for selectFromLevel)
   const loadOptions = useCallback(() => {
     const tables = new Set();
     fields.forEach((f) => {
       if ((f.type === 'select' || f.type === 'combobox') && f.optionsTable) tables.add(f.optionsTable);
+      if (f.type === 'selectFromLevel' && f.optionsTableMap) {
+        Object.values(f.optionsTableMap).forEach((t) => tables.add(t));
+      }
     });
     tables.forEach((t) => {
       masterApi
@@ -78,6 +81,14 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
       if (!opt) return String(val);
       if (field.optionsTable === 'unit-types') return opt.type_category || opt.name || String(val);
       return field.optionLabel ? (opt[field.optionLabel] ?? opt.name) : opt.name;
+    }
+    if (field.type === 'selectFromLevel' && field.optionsTableMap && field.levelField) {
+      const levelVal = row[field.levelField];
+      const optionsTable = levelVal ? field.optionsTableMap[levelVal] : null;
+      if (!optionsTable || !options[optionsTable]) return val != null ? String(val) : '—';
+      const list = options[optionsTable];
+      const opt = list.find((o) => o.id == val || (o.client_id != null && String(o.client_id) === String(val)));
+      return opt ? (opt.name || String(val)) : (val != null ? String(val) : '—');
     }
     return String(val);
   };
@@ -341,7 +352,11 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
                     );
                   }
                   const staticList = f.optionStatic || [];
-                  const staticOpts = staticList.filter((s) => !filteredDbOpts.some((o) => (f.optionValue ? o[f.optionValue] : o.id) === s)).map((s) => (f.optionValue ? { [f.optionValue]: s, id: s } : { id: s, name: s }));
+                  const staticOpts = staticList.map((s) =>
+                    (typeof s === 'object' && s !== null && ('id' in s || 'name' in s))
+                      ? s
+                      : { id: s, name: s }
+                  ).filter((s) => !filteredDbOpts.some((o) => (o.id != null && o.id === s.id) || (o.id === s.id)));
                   const selectOptions = [...filteredDbOpts, ...staticOpts];
                   return (
                 <select
@@ -350,7 +365,12 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
                   onChange={(e) => {
                     const raw = e.target.value;
                     const useNumber = raw !== '' && (!f.optionValue && f.name.endsWith('_id') || f.optionValue === 'id');
-                    setForm((prev) => ({ ...prev, [f.name]: raw === '' ? null : (useNumber ? Number(raw) : raw) }));
+                    setForm((prev) => {
+                      const next = { ...prev, [f.name]: raw === '' ? null : (useNumber ? Number(raw) : raw) };
+                      const dependent = fields.find((x) => x.type === 'selectFromLevel' && x.levelField === f.name);
+                      if (dependent) next[dependent.name] = null;
+                      return next;
+                    });
                   }}
                   style={styles.input}
                 >
@@ -365,6 +385,32 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
                     );
                   })}
                 </select>
+                  );
+                })()
+              ) : f.type === 'selectFromLevel' ? (
+                (() => {
+                  const levelVal = form[f.levelField] || '';
+                  const optionsTable = levelVal ? f.optionsTableMap[levelVal] : null;
+                  const areaOpts = optionsTable ? (options[optionsTable] || []) : [];
+                  return (
+                    <select
+                      name={f.name}
+                      value={form[f.name] != null ? form[f.name] : ''}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        const num = raw !== '' ? Number(raw) : null;
+                        setForm((prev) => ({ ...prev, [f.name]: num }));
+                      }}
+                      style={styles.input}
+                      disabled={!levelVal}
+                    >
+                      <option value="">{f.optionPlaceholder || 'Select...'}</option>
+                      {areaOpts.map((opt) => (
+                        <option key={opt.id} value={opt.id}>
+                          {opt.name}
+                        </option>
+                      ))}
+                    </select>
                   );
                 })()
               ) : f.type === 'radio' && Array.isArray(f.options) ? (
@@ -482,7 +528,48 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
           </tbody>
         </table>
       </div>
+      {table === 'designations' && data.length > 0 && (
+        <div style={styles.hierarchyWrap}>
+          <h2 style={styles.hierarchyTitle}>Designation Hierarchy</h2>
+          <ul style={styles.hierarchyList}>
+            {buildDesignationTree(data).map((node) => (
+              <HierarchyItem key={node.id} node={node} />
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
+  );
+}
+
+function buildDesignationTree(rows) {
+  const byId = new Map();
+  rows.forEach((r) => {
+    byId.set(r.id, { ...r, children: [] });
+  });
+  const roots = [];
+  byId.forEach((node) => {
+    if (node.parent_id && byId.has(node.parent_id)) {
+      byId.get(node.parent_id).children.push(node);
+    } else {
+      roots.push(node);
+    }
+  });
+  return roots;
+}
+
+function HierarchyItem({ node }) {
+  return (
+    <li style={styles.hierarchyItem}>
+      <div style={styles.hierarchyLabel}>{node.name}</div>
+      {node.children && node.children.length > 0 && (
+        <ul style={styles.hierarchySubList}>
+          {node.children.map((child) => (
+            <HierarchyItem key={child.id} node={child} />
+          ))}
+        </ul>
+      )}
+    </li>
   );
 }
 
@@ -595,5 +682,40 @@ const styles = {
     background: '#fde8e8',
     color: '#8B1538',
     border: '1px solid #e0a0a0',
+  },
+  hierarchyWrap: {
+    marginTop: '1.5rem',
+    padding: '1rem',
+    background: '#fff',
+    borderRadius: 4,
+    border: '1px solid #ddd',
+  },
+  hierarchyTitle: {
+    margin: '0 0 0.75rem',
+    fontSize: '1.1rem',
+    fontWeight: 600,
+    color: '#333',
+  },
+  hierarchyList: {
+    listStyle: 'none',
+    margin: 0,
+    padding: 0,
+    fontSize: '0.9rem',
+    lineHeight: 1.5,
+  },
+  hierarchyItem: {
+    position: 'relative',
+    paddingLeft: 12,
+  },
+  hierarchyLabel: {
+    fontWeight: 500,
+  },
+  hierarchySubList: {
+    listStyle: 'none',
+    margin: 0,
+    marginTop: 4,
+    marginLeft: 12,
+    paddingLeft: 12,
+    borderLeft: '1px solid #ccc',
   },
 };

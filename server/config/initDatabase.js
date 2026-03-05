@@ -187,13 +187,34 @@ const CREATE_TABLE_STATEMENTS = [
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (parent_id) REFERENCES designations(id) ON DELETE SET NULL
   )`,
-  `CREATE TABLE IF NOT EXISTS position_allotments (
+  `CREATE TABLE IF NOT EXISTS business_positions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     code VARCHAR(50),
-    designation_id INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE TABLE IF NOT EXISTS business_sectors (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    code VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE TABLE IF NOT EXISTS position_allotments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    level_type VARCHAR(50),
+    area_id INT NULL,
+    name VARCHAR(255) NULL,
+    code VARCHAR(50) NULL,
+    designation_id INT NULL,
+    business_position_id INT NULL,
+    business_sector_id INT NULL,
+    business_category_id INT NULL,
+    user_name VARCHAR(255) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (designation_id) REFERENCES designations(id) ON DELETE SET NULL
+    FOREIGN KEY (designation_id) REFERENCES designations(id) ON DELETE SET NULL,
+    FOREIGN KEY (business_position_id) REFERENCES designations(id) ON DELETE SET NULL,
+    FOREIGN KEY (business_sector_id) REFERENCES business_sectors(id) ON DELETE SET NULL,
+    FOREIGN KEY (business_category_id) REFERENCES business_categories(id) ON DELETE SET NULL
   )`,
   `CREATE TABLE IF NOT EXISTS management_registrations (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -290,12 +311,22 @@ async function initDatabase() {
       `ALTER TABLE designations ADD CONSTRAINT fk_designations_parent FOREIGN KEY (parent_id) REFERENCES designations(id) ON DELETE SET NULL`,
       `ALTER TABLE circles ADD COLUMN block_id INT NULL`,
       `ALTER TABLE circles ADD CONSTRAINT fk_circles_block FOREIGN KEY (block_id) REFERENCES blocks(id) ON DELETE SET NULL`,
+      `ALTER TABLE position_allotments ADD COLUMN business_category_id INT NULL`,
+      `ALTER TABLE position_allotments ADD CONSTRAINT fk_pa_business_category FOREIGN KEY (business_category_id) REFERENCES business_categories(id) ON DELETE SET NULL`,
+      `ALTER TABLE position_allotments MODIFY COLUMN name VARCHAR(255) NULL`,
+      `ALTER TABLE position_allotments ADD COLUMN level_type VARCHAR(50) NULL`,
+      `ALTER TABLE position_allotments ADD COLUMN area_id INT NULL`,
+      `ALTER TABLE position_allotments ADD COLUMN business_position_id INT NULL`,
+      `ALTER TABLE position_allotments ADD CONSTRAINT fk_pa_business_position FOREIGN KEY (business_position_id) REFERENCES designations(id) ON DELETE SET NULL`,
+      `ALTER TABLE position_allotments ADD COLUMN business_sector_id INT NULL`,
+      `ALTER TABLE position_allotments ADD CONSTRAINT fk_pa_business_sector FOREIGN KEY (business_sector_id) REFERENCES business_sectors(id) ON DELETE SET NULL`,
+      `ALTER TABLE position_allotments ADD COLUMN user_name VARCHAR(255) NULL`,
     ];
     const masterTables = [
       'continents', 'countries', 'country_divisions', 'states', 'state_divisions', 'state_sub_divisions',
       'regions', 'zones', 'vidhan_sabhas', 'talukas', 'blocks', 'circles', 'gram_panchayats', 'villages',
       'products', 'business_types', 'units', 'unit_types', 'business_categories', 'business_sub_categories',
-      'designations', 'position_allotments',
+      'designations', 'business_positions', 'business_sectors', 'position_allotments',
     ];
     for (const t of masterTables) {
       alterStatements.push(`ALTER TABLE \`${t}\` ADD COLUMN client_id VARCHAR(36) UNIQUE NULL`);

@@ -21,6 +21,10 @@ const MASTER_LABELS = {
   'unit-types': 'Unit Type',
   'business-categories': 'Business Category',
   'business-sub-categories': 'Business Sub Category',
+  designations: 'Designation',
+  'business-positions': 'Business Position',
+  'business-sectors': 'Business Sector',
+  'position-allotments': 'Position Allotment',
 };
 
 const REGISTRATION_KEYS = [

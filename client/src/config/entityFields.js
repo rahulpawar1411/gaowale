@@ -86,9 +86,19 @@ export const entityFields = {
     { name: 'name', label: 'Designation Name', type: 'text', tableHeader: 'Name' },
     { name: 'parent_id', label: 'No Parent (Top Level)', type: 'select', optionsTable: 'designations', tableHeader: 'Parent', required: false, optionPlaceholder: 'No Parent (Top Level)', optionValue: 'id', optionLabel: 'name' },
   ],
-  'position-allotments': [
-    { name: 'name', label: 'Name', type: 'text', tableHeader: 'Name' },
+  'business-positions': [
+    { name: 'name', label: 'Business Position Name', type: 'text', tableHeader: 'Name' },
     { name: 'code', label: 'Code', type: 'text', tableHeader: 'Code' },
-    { name: 'designation_id', label: 'Select Designation', type: 'select', optionsTable: 'designations', tableHeader: 'Designation' },
+  ],
+  'business-sectors': [
+    { name: 'name', label: 'Business Sector Name', type: 'text', tableHeader: 'Name' },
+    { name: 'code', label: 'Code', type: 'text', tableHeader: 'Code' },
+  ],
+  'position-allotments': [
+    { name: 'level_type', label: 'Select Level', type: 'select', tableHeader: 'Level', optionStatic: [{ id: 'zone', name: 'Zone' }, { id: 'village', name: 'Village' }, { id: 'taluka', name: 'Taluka' }, { id: 'vidhan_sabha', name: 'Vidhan Sabha' }, { id: 'gram_panchayat', name: 'Gram Panchayat' }], optionPlaceholder: 'Select Level' },
+    { name: 'area_id', label: 'Select Value', type: 'selectFromLevel', levelField: 'level_type', optionsTableMap: { zone: 'zones', village: 'villages', taluka: 'talukas', vidhan_sabha: 'vidhan-sabhas', gram_panchayat: 'gram-panchayats' }, tableHeader: 'Area', optionPlaceholder: 'Select Value' },
+    { name: 'business_position_id', label: 'Business Position', type: 'select', optionsTable: 'designations', tableHeader: 'Business Position', optionPlaceholder: 'Select Position' },
+    { name: 'business_category_id', label: 'Business Sector', type: 'select', optionsTable: 'business-categories', tableHeader: 'Business Sector', optionPlaceholder: 'Select Business Sector' },
+    { name: 'user_name', label: 'User Name', type: 'text', tableHeader: 'User Name' },
   ],
 };

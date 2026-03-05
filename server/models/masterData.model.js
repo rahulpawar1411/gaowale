@@ -40,6 +40,8 @@ const ALLOWED_TABLES = [
   'business_categories',
   'business_sub_categories',
   'designations',
+  'business_positions',
+  'business_sectors',
   'position_allotments',
 ];
 
@@ -66,7 +68,9 @@ const TABLE_COLUMNS = {
   business_categories: ['client_id', 'name', 'code', 'vidhan_sabha_id'],
   business_sub_categories: ['client_id', 'business_category_id', 'name', 'code'],
   designations: ['client_id', 'name', 'code', 'parent_id'],
-  position_allotments: ['client_id', 'name', 'code', 'designation_id'],
+  business_positions: ['client_id', 'name', 'code'],
+  business_sectors: ['client_id', 'name', 'code'],
+  position_allotments: ['client_id', 'level_type', 'area_id', 'business_position_id', 'business_category_id', 'user_name'],
 };
 
 function isAllowed(table) {
