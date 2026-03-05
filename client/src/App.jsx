@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import MasterCrudPage from './views/MasterCrudPage';
 import RegistrationPage from './views/RegistrationPage';
+import LakhpatiDidiRegistrationPage from './views/LakhpatiDidiRegistrationPage';
 import { MAIN_MENU, BUSINESS_MENU, REGISTRATION_MENU, ALLOTMENT_MENU } from './config/menuConfig';
 import { entityFields } from './config/entityFields';
 
@@ -46,7 +47,11 @@ function App() {
           <Route
             key={path}
             path={path}
-            element={<RegistrationPage type={type} title={label} />}
+            element={
+              type === 'lakhpatiDidi'
+                ? <LakhpatiDidiRegistrationPage title={label} />
+                : <RegistrationPage type={type} title={label} />
+            }
           />
         ))}
       </Routes>

@@ -264,6 +264,40 @@ const CREATE_TABLE_STATEMENTS = [
     FOREIGN KEY (vidhan_sabha_id) REFERENCES vidhan_sabhas(id) ON DELETE SET NULL,
     FOREIGN KEY (village_id) REFERENCES villages(id) ON DELETE SET NULL
   )`,
+  `CREATE TABLE IF NOT EXISTS lakhpati_didi_users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    registration_id INT NOT NULL,
+    first_name VARCHAR(100) NOT NULL,
+    middle_name VARCHAR(100),
+    last_name VARCHAR(100) NOT NULL,
+    date_of_birth DATE,
+    blood_group VARCHAR(20),
+    caste VARCHAR(100),
+    education VARCHAR(100),
+    occupation VARCHAR(100),
+    business VARCHAR(255),
+    mobile_number VARCHAR(20),
+    phone_number VARCHAR(20),
+    whatsapp_number VARCHAR(20),
+    pan_card VARCHAR(20),
+    aadhar_card VARCHAR(20),
+    pincode VARCHAR(10),
+    photo_path VARCHAR(255),
+    password_hash VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (registration_id) REFERENCES lakhpati_didi_registrations(id) ON DELETE CASCADE
+  )`,
+  `CREATE TABLE IF NOT EXISTS lakhpati_didi_nominees (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    registration_id INT NOT NULL,
+    nominee_name VARCHAR(255) NOT NULL,
+    nominee_relation VARCHAR(100),
+    nominee_dob DATE,
+    nominee_phone VARCHAR(20),
+    nominee_address TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (registration_id) REFERENCES lakhpati_didi_registrations(id) ON DELETE CASCADE
+  )`,
 ];
 
 async function initDatabase() {
