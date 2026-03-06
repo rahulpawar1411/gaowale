@@ -99,6 +99,6 @@ export const entityFields = {
     { name: 'area_id', label: 'Select Value', type: 'selectFromLevel', levelField: 'level_type', optionsTableMap: { zone: 'zones', village: 'villages', taluka: 'talukas', vidhan_sabha: 'vidhan-sabhas', gram_panchayat: 'gram-panchayats' }, tableHeader: 'Area', optionPlaceholder: 'Select Value' },
     { name: 'business_position_id', label: 'Business Position', type: 'select', optionsTable: 'designations', tableHeader: 'Business Position', optionPlaceholder: 'Select Position' },
     { name: 'business_category_id', label: 'Business Sector', type: 'select', optionsTable: 'business-categories', tableHeader: 'Business Sector', optionPlaceholder: 'Select Business Sector' },
-    { name: 'user_name', label: 'User Name', type: 'text', tableHeader: 'User Name' },
+    { name: 'lakhpati_didi_user_id', label: 'User Name', type: 'select', optionsTable: 'lakhpati-didi-users', optionValue: 'id', optionLabel: 'name', tableHeader: 'User Name', optionPlaceholder: 'Select User' },
   ],
 };

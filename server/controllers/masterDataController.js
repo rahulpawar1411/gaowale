@@ -19,6 +19,7 @@ const getTableName = (param) => {
     'business-positions': 'business_positions',
     'business-sectors': 'business_sectors',
     'position-allotments': 'position_allotments',
+    'lakhpati-didi-users': 'lakhpati_didi_users',
   };
   return map[trimmed] || trimmed.replace(/-/g, '_');
 };

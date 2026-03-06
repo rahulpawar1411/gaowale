@@ -43,6 +43,7 @@ const ALLOWED_TABLES = [
   'business_positions',
   'business_sectors',
   'position_allotments',
+  'lakhpati_didi_users',
 ];
 
 // Columns allowed for create/update per table (excludes id, created_at). client_id = serial client id (not DB id).
@@ -70,7 +71,8 @@ const TABLE_COLUMNS = {
   designations: ['client_id', 'name', 'code', 'parent_id'],
   business_positions: ['client_id', 'name', 'code'],
   business_sectors: ['client_id', 'name', 'code'],
-  position_allotments: ['client_id', 'level_type', 'area_id', 'business_position_id', 'business_category_id', 'user_name'],
+  position_allotments: ['client_id', 'level_type', 'area_id', 'business_position_id', 'business_category_id', 'user_name', 'lakhpati_didi_user_id'],
+  lakhpati_didi_users: ['registration_id', 'first_name', 'middle_name', 'last_name', 'date_of_birth', 'blood_group', 'caste', 'education', 'occupation', 'business', 'mobile_number', 'phone_number', 'whatsapp_number', 'pan_card', 'aadhar_card', 'pincode', 'photo_path', 'password_hash'],
 };
 
 function isAllowed(table) {
@@ -89,6 +91,13 @@ async function findAll(tableName) {
        FROM state_sub_divisions ss
        LEFT JOIN state_divisions sd ON ss.state_division_id = sd.id
        ORDER BY ss.id`
+    );
+    return rows;
+  }
+  if (tableName === 'lakhpati_didi_users') {
+    const [rows] = await pool.execute(
+      `SELECT id, TRIM(CONCAT(IFNULL(first_name,''), ' ', IFNULL(middle_name,''), ' ', IFNULL(last_name,''))) AS name
+       FROM lakhpati_didi_users ORDER BY id`
     );
     return rows;
   }

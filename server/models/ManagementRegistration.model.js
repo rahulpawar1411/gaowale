@@ -3,6 +3,18 @@ const { renumberTable } = require('../utils/renumberTable');
 
 const dbName = process.env.DB_NAME || 'gao0.2';
 
+const ALL_COLUMNS = [
+  'name', 'contact', 'email', 'state_id', 'region_id',
+  'incharge_user_id', 'business_position_id', 'incharge_address', 'incharge_aadhaar', 'officer_department_position_id',
+  'target_to_fill_farm', 'target_completed_so_far', 'existing_terms_according_to_target',
+  'state_division_id', 'zone_id', 'vidhan_sabha_id', 'taluka_id', 'circle_id', 'gram_panchayat_id', 'village_id',
+  'business_category_id', 'business_sub_category_id', 'product_id', 'unit_type_id',
+  'first_name', 'middle_name', 'last_name', 'date_of_birth', 'blood_group', 'caste', 'education', 'occupation', 'business',
+  'mobile_number', 'phone_number', 'whatsapp_number', 'pan_card', 'aadhar_card', 'pincode', 'photo_path', 'voter_id_path', 'password_hash',
+  'nominee_name', 'nominee_relation', 'nominee_dob', 'nominee_phone', 'nominee_address',
+  'management_net_work', 'total_work_baseline_family', 'passport_path', 'birth_certificate_path', 'bank_book_path', 'income_certificate_path',
+];
+
 async function findAll() {
   const [rows] = await pool.execute(
     `SELECT mr.*, s.name as state_name, r.name as region_name
@@ -26,23 +38,46 @@ async function findById(id) {
   return rows[0] || null;
 }
 
+function pick(data) {
+  const out = {};
+  for (const key of ALL_COLUMNS) {
+    if (Object.prototype.hasOwnProperty.call(data, key)) {
+      const v = data[key];
+      out[key] = v === '' ? null : v;
+    }
+  }
+  return out;
+}
+
 async function create(data) {
-  const { name, contact, email, state_id, region_id } = data;
+  const row = pick(data);
+  const keys = Object.keys(row);
+  if (keys.length === 0) {
+    const [result] = await pool.execute(
+      `INSERT INTO management_registrations (name) VALUES (?)`,
+      ['']
+    );
+    return findById(result.insertId);
+  }
+  const cols = keys.join(', ');
+  const placeholders = keys.map(() => '?').join(', ');
+  const values = keys.map((k) => row[k]);
   const [result] = await pool.execute(
-    `INSERT INTO management_registrations (name, contact, email, state_id, region_id)
-     VALUES (?, ?, ?, ?, ?)`,
-    [name || null, contact || null, email || null, state_id || null, region_id || null]
+    `INSERT INTO management_registrations (${cols}) VALUES (${placeholders})`,
+    values
   );
   return findById(result.insertId);
 }
 
 async function update(id, data) {
-  const { name, contact, email, state_id, region_id } = data;
+  const row = pick(data);
+  const keys = Object.keys(row);
+  if (keys.length === 0) return findById(id);
+  const setClause = keys.map((k) => `\`${k}\` = ?`).join(', ');
+  const values = [...keys.map((k) => row[k]), id];
   await pool.execute(
-    `UPDATE management_registrations
-     SET name = ?, contact = ?, email = ?, state_id = ?, region_id = ?
-     WHERE id = ?`,
-    [name || null, contact || null, email || null, state_id || null, region_id || null, id]
+    `UPDATE management_registrations SET ${setClause} WHERE id = ?`,
+    values
   );
   return findById(id);
 }
