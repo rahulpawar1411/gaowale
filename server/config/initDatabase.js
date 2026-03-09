@@ -230,15 +230,66 @@ const CREATE_TABLE_STATEMENTS = [
   )`,
   `CREATE TABLE IF NOT EXISTS farmer_registrations (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
+    name VARCHAR(255),
     contact VARCHAR(100),
-    village_id INT,
-    taluka_id INT,
     state_id INT,
+    state_division_id INT,
+    state_sub_division_id INT,
+    region_id INT,
+    zone_id INT,
+    taluka_id INT,
+    village_id INT,
+    block_id INT,
+    circle_id INT,
+    gram_panchayat_id INT,
+    business_category_id INT,
+    business_sub_category_id INT,
+    business_type_id INT,
+    product_id INT,
+    first_name VARCHAR(100),
+    father_name VARCHAR(255),
+    last_name VARCHAR(100),
+    date_of_birth DATE,
+    blood_group VARCHAR(20),
+    caste VARCHAR(100),
+    photo_path VARCHAR(255),
+    education VARCHAR(100),
+    ration_card_path VARCHAR(255),
+    address TEXT,
+    mobile_number VARCHAR(20),
+    whatsapp_number VARCHAR(20),
+    pan_card_path VARCHAR(255),
+    bank_account_number VARCHAR(50),
+    aadhar_card_path VARCHAR(255),
+    registration_type VARCHAR(100),
+    farm_area VARCHAR(50),
+    email VARCHAR(255),
+    bank_name VARCHAR(255),
+    pincode VARCHAR(10),
+    password_hash VARCHAR(255),
+    family_member_name VARCHAR(255),
+    family_relation VARCHAR(100),
+    family_dob DATE,
+    family_phone VARCHAR(20),
+    family_aadhar_path VARCHAR(255),
+    transactions_below_15_lakh VARCHAR(50),
+    e_bank_account VARCHAR(50),
+    additional_production VARCHAR(50),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (village_id) REFERENCES villages(id) ON DELETE SET NULL,
+    FOREIGN KEY (state_id) REFERENCES states(id) ON DELETE SET NULL,
+    FOREIGN KEY (state_division_id) REFERENCES state_divisions(id) ON DELETE SET NULL,
+    FOREIGN KEY (state_sub_division_id) REFERENCES state_sub_divisions(id) ON DELETE SET NULL,
+    FOREIGN KEY (region_id) REFERENCES regions(id) ON DELETE SET NULL,
+    FOREIGN KEY (zone_id) REFERENCES zones(id) ON DELETE SET NULL,
     FOREIGN KEY (taluka_id) REFERENCES talukas(id) ON DELETE SET NULL,
-    FOREIGN KEY (state_id) REFERENCES states(id) ON DELETE SET NULL
+    FOREIGN KEY (village_id) REFERENCES villages(id) ON DELETE SET NULL,
+    FOREIGN KEY (block_id) REFERENCES blocks(id) ON DELETE SET NULL,
+    FOREIGN KEY (circle_id) REFERENCES circles(id) ON DELETE SET NULL,
+    FOREIGN KEY (gram_panchayat_id) REFERENCES gram_panchayats(id) ON DELETE SET NULL,
+    FOREIGN KEY (business_category_id) REFERENCES business_categories(id) ON DELETE SET NULL,
+    FOREIGN KEY (business_sub_category_id) REFERENCES business_sub_categories(id) ON DELETE SET NULL,
+    FOREIGN KEY (business_type_id) REFERENCES business_types(id) ON DELETE SET NULL,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL
   )`,
   `CREATE TABLE IF NOT EXISTS customer_registrations (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -247,6 +298,10 @@ const CREATE_TABLE_STATEMENTS = [
     email VARCHAR(255),
     state_id INT,
     village_id INT,
+    first_name VARCHAR(100),
+    last_name VARCHAR(100),
+    whatsapp_number VARCHAR(20),
+    password_hash VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (state_id) REFERENCES states(id) ON DELETE SET NULL,
     FOREIGN KEY (village_id) REFERENCES villages(id) ON DELETE SET NULL
@@ -259,18 +314,74 @@ const CREATE_TABLE_STATEMENTS = [
     zone_id INT,
     vidhan_sabha_id INT,
     village_id INT,
+    -- user details (flattened from lakhpati_didi_users)
+    first_name VARCHAR(100),
+    middle_name VARCHAR(100),
+    last_name VARCHAR(100),
+    date_of_birth DATE,
+    blood_group VARCHAR(20),
+    caste VARCHAR(100),
+    education VARCHAR(100),
+    occupation VARCHAR(100),
+    business VARCHAR(255),
+    mobile_number VARCHAR(20),
+    phone_number VARCHAR(20),
+    whatsapp_number VARCHAR(20),
+    pan_card VARCHAR(20),
+    aadhar_card VARCHAR(20),
+    pincode VARCHAR(10),
+    photo_path VARCHAR(255),
+    password_hash VARCHAR(255),
+    -- nominee details (flattened from lakhpati_didi_nominees)
+    nominee_name VARCHAR(255),
+    nominee_relation VARCHAR(100),
+    nominee_dob DATE,
+    nominee_phone VARCHAR(20),
+    nominee_address TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (state_id) REFERENCES states(id) ON DELETE SET NULL,
     FOREIGN KEY (zone_id) REFERENCES zones(id) ON DELETE SET NULL,
     FOREIGN KEY (vidhan_sabha_id) REFERENCES vidhan_sabhas(id) ON DELETE SET NULL,
     FOREIGN KEY (village_id) REFERENCES villages(id) ON DELETE SET NULL
   )`,
+  `CREATE TABLE IF NOT EXISTS lakhpati_didi_locations (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    registration_id INT NOT NULL,
+    state_id INT,
+    state_division_id INT,
+    region_id INT,
+    zone_id INT,
+    vidhan_sabha_id INT,
+    taluka_id INT,
+    circle_id INT,
+    gram_panchayat_id INT,
+    village_id INT,
+    business_category_id INT,
+    business_type_id INT,
+    product_id INT,
+    unit_id INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (registration_id) REFERENCES lakhpati_didi_registrations(id) ON DELETE CASCADE,
+    FOREIGN KEY (state_id) REFERENCES states(id) ON DELETE SET NULL,
+    FOREIGN KEY (state_division_id) REFERENCES state_divisions(id) ON DELETE SET NULL,
+    FOREIGN KEY (region_id) REFERENCES regions(id) ON DELETE SET NULL,
+    FOREIGN KEY (zone_id) REFERENCES zones(id) ON DELETE SET NULL,
+    FOREIGN KEY (vidhan_sabha_id) REFERENCES vidhan_sabhas(id) ON DELETE SET NULL,
+    FOREIGN KEY (taluka_id) REFERENCES talukas(id) ON DELETE SET NULL,
+    FOREIGN KEY (circle_id) REFERENCES circles(id) ON DELETE SET NULL,
+    FOREIGN KEY (gram_panchayat_id) REFERENCES gram_panchayats(id) ON DELETE SET NULL,
+    FOREIGN KEY (village_id) REFERENCES villages(id) ON DELETE SET NULL,
+    FOREIGN KEY (business_category_id) REFERENCES business_categories(id) ON DELETE SET NULL,
+    FOREIGN KEY (business_type_id) REFERENCES business_types(id) ON DELETE SET NULL,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL,
+    FOREIGN KEY (unit_id) REFERENCES units(id) ON DELETE SET NULL
+  )`,
   `CREATE TABLE IF NOT EXISTS lakhpati_didi_users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     registration_id INT NOT NULL,
-    first_name VARCHAR(100) NOT NULL,
+    first_name VARCHAR(100),
     middle_name VARCHAR(100),
-    last_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100),
     date_of_birth DATE,
     blood_group VARCHAR(20),
     caste VARCHAR(100),
@@ -291,13 +402,19 @@ const CREATE_TABLE_STATEMENTS = [
   `CREATE TABLE IF NOT EXISTS lakhpati_didi_nominees (
     id INT AUTO_INCREMENT PRIMARY KEY,
     registration_id INT NOT NULL,
-    nominee_name VARCHAR(255) NOT NULL,
+    nominee_name VARCHAR(255),
     nominee_relation VARCHAR(100),
     nominee_dob DATE,
     nominee_phone VARCHAR(20),
     nominee_address TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (registration_id) REFERENCES lakhpati_didi_registrations(id) ON DELETE CASCADE
+  )`,
+  `CREATE TABLE IF NOT EXISTS admins (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    phone VARCHAR(20) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )`,
 ];
 
@@ -420,6 +537,84 @@ async function initDatabase() {
       `ALTER TABLE management_registrations ADD CONSTRAINT fk_mgmt_unit_type FOREIGN KEY (unit_type_id) REFERENCES unit_types(id) ON DELETE SET NULL`,
       `ALTER TABLE management_registrations ADD CONSTRAINT fk_mgmt_incharge_user FOREIGN KEY (incharge_user_id) REFERENCES lakhpati_didi_users(id) ON DELETE SET NULL`,
       `ALTER TABLE management_registrations ADD CONSTRAINT fk_mgmt_business_position FOREIGN KEY (business_position_id) REFERENCES designations(id) ON DELETE SET NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN first_name VARCHAR(100) NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN last_name VARCHAR(100) NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN whatsapp_number VARCHAR(20) NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN password_hash VARCHAR(255) NULL`,
+      `ALTER TABLE lakhpati_didi_registrations ADD COLUMN first_name VARCHAR(100) NULL`,
+      `ALTER TABLE lakhpati_didi_registrations ADD COLUMN middle_name VARCHAR(100) NULL`,
+      `ALTER TABLE lakhpati_didi_registrations ADD COLUMN last_name VARCHAR(100) NULL`,
+      `ALTER TABLE lakhpati_didi_registrations ADD COLUMN date_of_birth DATE NULL`,
+      `ALTER TABLE lakhpati_didi_registrations ADD COLUMN blood_group VARCHAR(20) NULL`,
+      `ALTER TABLE lakhpati_didi_registrations ADD COLUMN caste VARCHAR(100) NULL`,
+      `ALTER TABLE lakhpati_didi_registrations ADD COLUMN education VARCHAR(100) NULL`,
+      `ALTER TABLE lakhpati_didi_registrations ADD COLUMN occupation VARCHAR(100) NULL`,
+      `ALTER TABLE lakhpati_didi_registrations ADD COLUMN business VARCHAR(255) NULL`,
+      `ALTER TABLE lakhpati_didi_registrations ADD COLUMN mobile_number VARCHAR(20) NULL`,
+      `ALTER TABLE lakhpati_didi_registrations ADD COLUMN phone_number VARCHAR(20) NULL`,
+      `ALTER TABLE lakhpati_didi_registrations ADD COLUMN whatsapp_number VARCHAR(20) NULL`,
+      `ALTER TABLE lakhpati_didi_registrations ADD COLUMN pan_card VARCHAR(20) NULL`,
+      `ALTER TABLE lakhpati_didi_registrations ADD COLUMN aadhar_card VARCHAR(20) NULL`,
+      `ALTER TABLE lakhpati_didi_registrations ADD COLUMN pincode VARCHAR(10) NULL`,
+      `ALTER TABLE lakhpati_didi_registrations ADD COLUMN photo_path VARCHAR(255) NULL`,
+      `ALTER TABLE lakhpati_didi_registrations ADD COLUMN password_hash VARCHAR(255) NULL`,
+      `ALTER TABLE lakhpati_didi_registrations ADD COLUMN nominee_name VARCHAR(255) NULL`,
+      `ALTER TABLE lakhpati_didi_registrations ADD COLUMN nominee_relation VARCHAR(100) NULL`,
+      `ALTER TABLE lakhpati_didi_registrations ADD COLUMN nominee_dob DATE NULL`,
+      `ALTER TABLE lakhpati_didi_registrations ADD COLUMN nominee_phone VARCHAR(20) NULL`,
+      `ALTER TABLE lakhpati_didi_registrations ADD COLUMN nominee_address TEXT NULL`,
+      `ALTER TABLE farmer_registrations MODIFY COLUMN name VARCHAR(255) NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN state_division_id INT NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN state_sub_division_id INT NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN region_id INT NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN zone_id INT NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN block_id INT NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN circle_id INT NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN gram_panchayat_id INT NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN business_category_id INT NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN business_sub_category_id INT NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN business_type_id INT NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN product_id INT NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN first_name VARCHAR(100) NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN father_name VARCHAR(255) NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN last_name VARCHAR(100) NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN date_of_birth DATE NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN blood_group VARCHAR(20) NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN caste VARCHAR(100) NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN photo_path VARCHAR(255) NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN education VARCHAR(100) NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN ration_card_path VARCHAR(255) NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN address TEXT NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN mobile_number VARCHAR(20) NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN whatsapp_number VARCHAR(20) NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN pan_card_path VARCHAR(255) NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN bank_account_number VARCHAR(50) NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN aadhar_card_path VARCHAR(255) NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN registration_type VARCHAR(100) NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN farm_area VARCHAR(50) NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN email VARCHAR(255) NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN bank_name VARCHAR(255) NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN pincode VARCHAR(10) NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN password_hash VARCHAR(255) NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN family_member_name VARCHAR(255) NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN family_relation VARCHAR(100) NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN family_dob DATE NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN family_phone VARCHAR(20) NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN family_aadhar_path VARCHAR(255) NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN transactions_below_15_lakh VARCHAR(50) NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN e_bank_account VARCHAR(50) NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN additional_production VARCHAR(50) NULL`,
+      `ALTER TABLE farmer_registrations ADD CONSTRAINT fk_farmer_state_division FOREIGN KEY (state_division_id) REFERENCES state_divisions(id) ON DELETE SET NULL`,
+      `ALTER TABLE farmer_registrations ADD CONSTRAINT fk_farmer_state_sub_division FOREIGN KEY (state_sub_division_id) REFERENCES state_sub_divisions(id) ON DELETE SET NULL`,
+      `ALTER TABLE farmer_registrations ADD CONSTRAINT fk_farmer_region FOREIGN KEY (region_id) REFERENCES regions(id) ON DELETE SET NULL`,
+      `ALTER TABLE farmer_registrations ADD CONSTRAINT fk_farmer_zone FOREIGN KEY (zone_id) REFERENCES zones(id) ON DELETE SET NULL`,
+      `ALTER TABLE farmer_registrations ADD CONSTRAINT fk_farmer_block FOREIGN KEY (block_id) REFERENCES blocks(id) ON DELETE SET NULL`,
+      `ALTER TABLE farmer_registrations ADD CONSTRAINT fk_farmer_circle FOREIGN KEY (circle_id) REFERENCES circles(id) ON DELETE SET NULL`,
+      `ALTER TABLE farmer_registrations ADD CONSTRAINT fk_farmer_gram_panchayat FOREIGN KEY (gram_panchayat_id) REFERENCES gram_panchayats(id) ON DELETE SET NULL`,
+      `ALTER TABLE farmer_registrations ADD CONSTRAINT fk_farmer_business_category FOREIGN KEY (business_category_id) REFERENCES business_categories(id) ON DELETE SET NULL`,
+      `ALTER TABLE farmer_registrations ADD CONSTRAINT fk_farmer_business_sub_category FOREIGN KEY (business_sub_category_id) REFERENCES business_sub_categories(id) ON DELETE SET NULL`,
+      `ALTER TABLE farmer_registrations ADD CONSTRAINT fk_farmer_business_type FOREIGN KEY (business_type_id) REFERENCES business_types(id) ON DELETE SET NULL`,
+      `ALTER TABLE farmer_registrations ADD CONSTRAINT fk_farmer_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL`,
     ];
     const masterTables = [
       'continents', 'countries', 'country_divisions', 'states', 'state_divisions', 'state_sub_divisions',
@@ -505,6 +700,19 @@ async function initDatabase() {
         console.warn('Backfill client_id warning:', t, e.message);
       }
     }
+
+    // Seed default admin if none exists (phone: 1234567890, password: admin@123)
+    try {
+      const [rows] = await connection.query('SELECT id FROM admins WHERE phone = ?', ['1234567890']);
+      if (rows.length === 0) {
+        const bcrypt = require('bcrypt');
+        const passwordHash = await bcrypt.hash('admin@123', 10);
+        await connection.query('INSERT INTO admins (phone, password_hash) VALUES (?, ?)', ['1234567890', passwordHash]);
+        console.log('Default admin created (phone: 1234567890).');
+      }
+    } catch (e) {
+      console.warn('Admin seed warning:', e.message);
+    }
   } catch (err) {
     console.error('Database init error:', err.message);
     throw err;
@@ -514,3 +722,15 @@ async function initDatabase() {
 }
 
 module.exports = { initDatabase };
+
+if (require.main === module) {
+  initDatabase()
+    .then(() => {
+      console.log('Database init completed.');
+      process.exit(0);
+    })
+    .catch((err) => {
+      console.error('Database init failed:', err);
+      process.exit(1);
+    });
+}

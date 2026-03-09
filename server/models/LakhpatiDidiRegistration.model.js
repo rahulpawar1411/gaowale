@@ -31,22 +31,121 @@ async function findById(id) {
 }
 
 async function create(data) {
-  const { name, contact, state_id, zone_id, vidhan_sabha_id, village_id } = data;
-  const [result] = await pool.execute(
-    `INSERT INTO lakhpati_didi_registrations (name, contact, state_id, zone_id, vidhan_sabha_id, village_id)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [name || null, contact || null, state_id || null, zone_id || null, vidhan_sabha_id || null, village_id || null]
-  );
-  return findById(result.insertId);
+  const name = (data.name || '').trim() || null;
+  const contact = data.contact || null;
+  const state_id = data.state_id || null;
+  const zone_id = data.zone_id || null;
+  const vidhan_sabha_id = data.vidhan_sabha_id || null;
+  const village_id = data.village_id || null;
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    // 1) Main registration row
+    const [regResult] = await connection.execute(
+      `INSERT INTO lakhpati_didi_registrations (name, contact, state_id, zone_id, vidhan_sabha_id, village_id)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [name, contact, state_id, zone_id, vidhan_sabha_id, village_id]
+    );
+    const registrationId = regResult.insertId;
+
+    // 2) Location details
+    await connection.execute(
+      `INSERT INTO lakhpati_didi_locations
+       (registration_id, state_id, state_division_id, region_id, zone_id, vidhan_sabha_id, taluka_id,
+        circle_id, gram_panchayat_id, village_id, business_category_id, business_type_id, product_id, unit_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        registrationId,
+        data.state_id || null,
+        data.state_division_id || null,
+        data.region_id || null,
+        data.zone_id || null,
+        data.vidhan_sabha_id || null,
+        data.taluka_id || null,
+        data.circle_id || null,
+        data.gram_panchayat_id || null,
+        data.village_id || null,
+        data.business_category_id || null,
+        data.business_type_id || null,
+        data.product_id || null,
+        data.unit_id || null,
+      ]
+    );
+
+    // 3) User details
+    await connection.execute(
+      `INSERT INTO lakhpati_didi_users
+       (registration_id, first_name, middle_name, last_name, date_of_birth, blood_group, caste, education, occupation,
+        business, mobile_number, phone_number, whatsapp_number, pan_card, aadhar_card, pincode, photo_path, password_hash)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        registrationId,
+        data.first_name || null,
+        data.middle_name || null,
+        data.last_name || null,
+        data.date_of_birth || null,
+        data.blood_group || null,
+        data.caste || null,
+        data.education || null,
+        data.occupation || null,
+        data.business || null,
+        data.mobile_number || null,
+        data.phone_number || null,
+        data.whatsapp_number || null,
+        data.pan_card || null,
+        data.aadhar_card || null,
+        data.pincode || null,
+        data.photo_path || null,
+        data.password || null,
+      ]
+    );
+
+    // 4) Nominee details (optional)
+    const nomineeName = (data.nominee_name || '').trim();
+    if (nomineeName) {
+      await connection.execute(
+        `INSERT INTO lakhpati_didi_nominees
+         (registration_id, nominee_name, nominee_relation, nominee_dob, nominee_phone, nominee_address)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [
+          registrationId,
+          nomineeName,
+          data.nominee_relation || null,
+          data.nominee_dob || null,
+          data.nominee_phone || null,
+          data.nominee_address || null,
+        ]
+      );
+    }
+
+    await connection.commit();
+    return findById(registrationId);
+  } catch (err) {
+    await connection.rollback();
+    throw err;
+  } finally {
+    connection.release();
+  }
 }
 
+// Note: update() currently only updates the main registration row (list view).
+// If you later add an edit form for Lakhpati Didi, we can extend this to
+// update locations/users/nominees as well.
 async function update(id, data) {
-  const { name, contact, state_id, zone_id, vidhan_sabha_id, village_id } = data;
+  const name = (data.name || '').trim() || null;
+  const contact = data.contact || null;
+  const state_id = data.state_id || null;
+  const zone_id = data.zone_id || null;
+  const vidhan_sabha_id = data.vidhan_sabha_id || null;
+  const village_id = data.village_id || null;
+
   await pool.execute(
     `UPDATE lakhpati_didi_registrations
      SET name = ?, contact = ?, state_id = ?, zone_id = ?, vidhan_sabha_id = ?, village_id = ?
      WHERE id = ?`,
-    [name || null, contact || null, state_id || null, zone_id || null, vidhan_sabha_id || null, village_id || null, id]
+    [name, contact, state_id, zone_id, vidhan_sabha_id, village_id, id]
   );
   return findById(id);
 }

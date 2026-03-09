@@ -55,8 +55,8 @@ export default function LakhpatiDidiRegistrationPage({ title }) {
     e.preventDefault();
     setSaving(true);
     setError(null);
-    // For now, map basic fields into existing registration payload
     const payload = {
+      ...form,
       name: `${form.first_name || ''} ${form.last_name || ''}`.trim(),
       contact: form.mobile_number || '',
       state_id: form.state_id || null,

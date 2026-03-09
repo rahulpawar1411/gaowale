@@ -1,10 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { MAIN_MENU, BUSINESS_MENU, REGISTRATION_MENU, ALLOTMENT_MENU } from '../config/menuConfig';
+import { getAdmin, removeToken } from '../utils/auth';
 
 const LOGO_URL = 'https://www.greatwebsoft.in/gaonmaza/public/images/white-logo.jpeg';
 
 export default function Layout({ children }) {
+  const navigate = useNavigate();
+  const admin = getAdmin();
   const [userOpen, setUserOpen] = useState(false);
   const [mainMenuOpen, setMainMenuOpen] = useState(true);
   const [allotmentOpen, setAllotmentOpen] = useState(false);
@@ -57,15 +60,21 @@ export default function Layout({ children }) {
               aria-haspopup="true"
             >
               <span style={styles.userIcon}>👤</span>
-              <span>User (Unknown)</span>
+              <span>{admin?.phone ? `Admin ${admin.phone}` : 'Admin'}</span>
               <span style={styles.dropdownArrow}>▼</span>
             </button>
             {userOpen && (
               <div style={styles.dropdown}>
-                <button type="button" style={styles.dropdownItem} className="gov-dropdown-item">
-                  Login
-                </button>
-                <button type="button" style={styles.dropdownItem} className="gov-dropdown-item">
+                <button
+                  type="button"
+                  style={styles.dropdownItem}
+                  className="gov-dropdown-item"
+                  onClick={() => {
+                    removeToken();
+                    setUserOpen(false);
+                    navigate('/login', { replace: true });
+                  }}
+                >
                   Logout
                 </button>
               </div>
@@ -77,6 +86,9 @@ export default function Layout({ children }) {
       <div style={styles.body}>
         <aside style={styles.sidebar}>
           <nav style={styles.sidebarNav} className="sidebar-nav-scroll">
+            <NavLink to="/" end style={linkStyle} className="gov-sidebar-link">
+              Dashboard
+            </NavLink>
             {/* Main Menu */}
             {sectionHeader('Main Menu', mainMenuOpen, () => setMainMenuOpen(!mainMenuOpen))}
             {mainMenuOpen && (

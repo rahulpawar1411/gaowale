@@ -27,22 +27,73 @@ async function findById(id) {
 }
 
 async function create(data) {
-  const { name, contact, email, state_id, village_id } = data;
+  const first_name = data.first_name || null;
+  const last_name = data.last_name || null;
+  const name =
+    (first_name && last_name && `${first_name} ${last_name}`) ||
+    first_name ||
+    last_name ||
+    data.name ||
+    null;
+  const whatsapp_number = data.whatsapp_number || data.contact || null;
+  const contact = whatsapp_number;
+  const email = data.email || null;
+  const state_id = data.state_id || null;
+  const village_id = data.village_id || null;
+  const password_hash = data.password || data.password_hash || null;
+
   const [result] = await pool.execute(
-    `INSERT INTO customer_registrations (name, contact, email, state_id, village_id)
-     VALUES (?, ?, ?, ?, ?)`,
-    [name || null, contact || null, email || null, state_id || null, village_id || null]
+    `INSERT INTO customer_registrations
+     (name, contact, email, state_id, village_id, first_name, last_name, whatsapp_number, password_hash)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      name,
+      contact,
+      email,
+      state_id,
+      village_id,
+      first_name,
+      last_name,
+      whatsapp_number,
+      password_hash,
+    ]
   );
   return findById(result.insertId);
 }
 
 async function update(id, data) {
-  const { name, contact, email, state_id, village_id } = data;
+  const first_name = data.first_name || null;
+  const last_name = data.last_name || null;
+  const name =
+    (first_name && last_name && `${first_name} ${last_name}`) ||
+    first_name ||
+    last_name ||
+    data.name ||
+    null;
+  const whatsapp_number = data.whatsapp_number || data.contact || null;
+  const contact = whatsapp_number;
+  const email = data.email || null;
+  const state_id = data.state_id || null;
+  const village_id = data.village_id || null;
+  const password_hash = data.password || data.password_hash || null;
+
   await pool.execute(
     `UPDATE customer_registrations
-     SET name = ?, contact = ?, email = ?, state_id = ?, village_id = ?
+     SET name = ?, contact = ?, email = ?, state_id = ?, village_id = ?,
+         first_name = ?, last_name = ?, whatsapp_number = ?, password_hash = ?
      WHERE id = ?`,
-    [name || null, contact || null, email || null, state_id || null, village_id || null, id]
+    [
+      name,
+      contact,
+      email,
+      state_id,
+      village_id,
+      first_name,
+      last_name,
+      whatsapp_number,
+      password_hash,
+      id,
+    ]
   );
   return findById(id);
 }

@@ -1,11 +1,16 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Layout from './components/Layout';
+import DashboardPage from './views/DashboardPage';
 import MasterCrudPage from './views/MasterCrudPage';
 import RegistrationPage from './views/RegistrationPage';
-import LakhpatiDidiRegistrationPage from './views/LakhpatiDidiRegistrationPage';
 import ManagementRegistrationPage from './views/ManagementRegistrationPage';
+import FarmerRegistrationPage from './views/FarmerRegistrationPage';
+import CustomerRegistrationPage from './views/CustomerRegistrationPage';
+import LakhpatiDidiRegistrationPage from './views/LakhpatiDidiRegistrationPage';
+import LoginPage from './views/LoginPage';
 import { MAIN_MENU, BUSINESS_MENU, REGISTRATION_MENU, ALLOTMENT_MENU } from './config/menuConfig';
 import { entityFields } from './config/entityFields';
+import { getToken } from './utils/auth';
 
 // Dedupe by path so each route is registered once (Product/Business Type appear in two sections)
 const MASTER_ROUTES = [...MAIN_MENU];
@@ -23,11 +28,16 @@ BUSINESS_MENU.forEach((m) => {
   }
 });
 
-function App() {
+function ProtectedApp() {
+  const token = getToken();
+  const location = useLocation();
+  if (!token) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
   return (
     <Layout>
       <Routes>
-        <Route path="/" element={<Navigate to="/continent" replace />} />
+        <Route path="/" element={<DashboardPage />} />
 
         {MASTER_ROUTES.map(({ path, label, table, addButtonLabel }) => (
           <Route
@@ -49,16 +59,29 @@ function App() {
             key={path}
             path={path}
             element={
-              type === 'lakhpatiDidi'
-                ? <LakhpatiDidiRegistrationPage title={label} />
-                : type === 'management'
-                  ? <ManagementRegistrationPage title={label} />
-                  : <RegistrationPage type={type} title={label} />
+              type === 'management'
+                ? <ManagementRegistrationPage title={label} />
+                : type === 'farmer'
+                  ? <FarmerRegistrationPage title={label} />
+                  : type === 'customer'
+                    ? <CustomerRegistrationPage title={label} />
+                    : type === 'lakhpatiDidi'
+                      ? <LakhpatiDidiRegistrationPage title={label} />
+                      : <RegistrationPage type={type} title={label} />
             }
           />
         ))}
       </Routes>
     </Layout>
+  );
+}
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/*" element={<ProtectedApp />} />
+    </Routes>
   );
 }
 

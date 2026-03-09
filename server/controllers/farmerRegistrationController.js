@@ -26,6 +26,7 @@ const create = async (req, res) => {
     const row = await FarmerModel.create(req.body);
     res.status(201).json({ success: true, data: row });
   } catch (err) {
+    console.error('Farmer registration create error:', err.message);
     res.status(500).json({ success: false, message: err.message });
   }
 };
