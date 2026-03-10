@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { masterApi, registrationsApi } from '../services/api';
+import TextField from '../components/TextField';
 
 const locationFieldConfig = [
   { name: 'state_id', label: 'State', table: 'states' },
@@ -57,12 +58,41 @@ export default function LakhpatiDidiRegistrationPage({ title }) {
     setError(null);
     const payload = {
       ...form,
-      name: `${form.first_name || ''} ${form.last_name || ''}`.trim(),
-      contact: form.mobile_number || '',
-      state_id: form.state_id || null,
-      zone_id: form.zone_id || null,
-      vidhan_sabha_id: form.vidhan_sabha_id || null,
-      village_id: form.village_id || null,
+      state_id: form.state_id ?? null,
+      state_division_id: form.state_division_id ?? null,
+      region_id: form.region_id ?? null,
+      zone_id: form.zone_id ?? null,
+      vidhan_sabha_id: form.vidhan_sabha_id ?? null,
+      taluka_id: form.taluka_id ?? null,
+      circle_id: form.circle_id ?? null,
+      gram_panchayat_id: form.gram_panchayat_id ?? null,
+      village_id: form.village_id ?? null,
+      business_category_id: form.business_category_id ?? null,
+      business_type_id: form.business_type_id ?? null,
+      product_id: form.product_id ?? null,
+      unit_id: form.unit_id ?? null,
+      first_name: form.first_name || null,
+      middle_name: form.middle_name || null,
+      last_name: form.last_name || null,
+      date_of_birth: form.date_of_birth || null,
+      blood_group: form.blood_group || null,
+      caste: form.caste || null,
+      education: form.education || null,
+      occupation: form.occupation || null,
+      business: form.business || null,
+      mobile_number: form.mobile_number || null,
+      phone_number: form.phone_number || null,
+      whatsapp_number: form.whatsapp_number || null,
+      pan_card: form.pan_card || null,
+      aadhar_card: form.aadhar_card || null,
+      pincode: form.pincode || null,
+      photo_path: form.photo_path || null,
+      password: form.password || null,
+      nominee_name: form.nominee_name || null,
+      nominee_relation: form.nominee_relation || null,
+      nominee_dob: form.nominee_dob || null,
+      nominee_phone: form.nominee_phone || null,
+      nominee_address: form.nominee_address || null,
     };
     registrationsApi.lakhpatiDidi
       .create(payload)
@@ -73,7 +103,7 @@ export default function LakhpatiDidiRegistrationPage({ title }) {
           setForm({});
         }
       })
-      .catch((err) => setError(err.message))
+      .catch((err) => setError(err.message || 'Failed to save'))
       .finally(() => setSaving(false));
   };
 
@@ -109,10 +139,10 @@ export default function LakhpatiDidiRegistrationPage({ title }) {
         <fieldset style={styles.fieldset}>
           <legend style={styles.legend}>User Details</legend>
           <div style={styles.userGrid4}>
-            <TextField label="First Name" name="first_name" value={form.first_name || ''} onChange={handleUserChange} />
-            <TextField label="Middle Name" name="middle_name" value={form.middle_name || ''} onChange={handleUserChange} />
-            <TextField label="Last Name" name="last_name" value={form.last_name || ''} onChange={handleUserChange} />
-            <TextField label="Date of Birth" name="date_of_birth" type="date" value={form.date_of_birth || ''} onChange={handleUserChange} />
+            <TextField label="First Name" name="first_name" value={form.first_name || ''} onChange={handleUserChange} style={styles.fieldWrap} inputStyle={styles.input} />
+            <TextField label="Middle Name" name="middle_name" value={form.middle_name || ''} onChange={handleUserChange} style={styles.fieldWrap} inputStyle={styles.input} />
+            <TextField label="Last Name" name="last_name" value={form.last_name || ''} onChange={handleUserChange} style={styles.fieldWrap} inputStyle={styles.input} />
+            <TextField label="Date of Birth" name="date_of_birth" type="date" value={form.date_of_birth || ''} onChange={handleUserChange} style={styles.fieldWrap} inputStyle={styles.input} />
 
             <SelectSimple
               label="Blood Group"
@@ -128,7 +158,7 @@ export default function LakhpatiDidiRegistrationPage({ title }) {
               onChange={handleUserChange}
               options={['ST', 'SC', 'OBC', 'OTHERS']}
             />
-            <TextField label="Education" name="education" value={form.education || ''} onChange={handleUserChange} />
+            <TextField label="Education" name="education" value={form.education || ''} onChange={handleUserChange} style={styles.fieldWrap} inputStyle={styles.input} />
             <SelectSimple
               label="Occupation"
               name="occupation"
@@ -137,14 +167,14 @@ export default function LakhpatiDidiRegistrationPage({ title }) {
               options={['Housewife', 'Employed', 'Self-employed']}
             />
 
-            <TextField label="Business" name="business" value={form.business || ''} onChange={handleUserChange} />
-            <TextField label="Mobile Number" name="mobile_number" value={form.mobile_number || ''} onChange={handleUserChange} />
-            <TextField label="Phone Number" name="phone_number" value={form.phone_number || ''} onChange={handleUserChange} />
-            <TextField label="WhatsApp Number" name="whatsapp_number" value={form.whatsapp_number || ''} onChange={handleUserChange} />
+            <TextField label="Business" name="business" value={form.business || ''} onChange={handleUserChange} style={styles.fieldWrap} inputStyle={styles.input} />
+            <TextField label="Mobile Number" name="mobile_number" numericOnly value={form.mobile_number || ''} onChange={handleUserChange} style={styles.fieldWrap} inputStyle={styles.input} />
+            <TextField label="Phone Number" name="phone_number" numericOnly value={form.phone_number || ''} onChange={handleUserChange} style={styles.fieldWrap} inputStyle={styles.input} />
+            <TextField label="WhatsApp Number" name="whatsapp_number" numericOnly value={form.whatsapp_number || ''} onChange={handleUserChange} style={styles.fieldWrap} inputStyle={styles.input} />
 
-            <TextField label="PAN Card" name="pan_card" value={form.pan_card || ''} onChange={handleUserChange} />
-            <TextField label="Aadhar Card" name="aadhar_card" value={form.aadhar_card || ''} onChange={handleUserChange} />
-            <TextField label="Pincode" name="pincode" value={form.pincode || ''} onChange={handleUserChange} />
+            <TextField label="PAN Card" name="pan_card" value={form.pan_card || ''} onChange={handleUserChange} style={styles.fieldWrap} inputStyle={styles.input} />
+            <TextField label="Aadhar Card" name="aadhar_card" numericOnly value={form.aadhar_card || ''} onChange={handleUserChange} style={styles.fieldWrap} inputStyle={styles.input} />
+            <TextField label="Pincode" name="pincode" numericOnly value={form.pincode || ''} onChange={handleUserChange} style={styles.fieldWrap} inputStyle={styles.input} />
             <div style={styles.fieldWrap}>
               <label style={styles.label}>Photo</label>
               <input
@@ -158,8 +188,8 @@ export default function LakhpatiDidiRegistrationPage({ title }) {
               />
             </div>
 
-            <TextField label="Password" name="password" type="password" value={form.password || ''} onChange={handleUserChange} />
-            <TextField label="Confirm Password" name="confirm_password" type="password" value={form.confirm_password || ''} onChange={handleUserChange} />
+            <TextField label="Password" name="password" type="password" value={form.password || ''} onChange={handleUserChange} style={styles.fieldWrap} inputStyle={styles.input} />
+            <TextField label="Confirm Password" name="confirm_password" type="password" value={form.confirm_password || ''} onChange={handleUserChange} style={styles.fieldWrap} inputStyle={styles.input} />
           </div>
         </fieldset>
 
@@ -168,7 +198,7 @@ export default function LakhpatiDidiRegistrationPage({ title }) {
         <fieldset style={styles.fieldset}>
           <legend style={styles.legend}>Nominee Details</legend>
           <div style={styles.userGrid4}>
-            <TextField label="Nominee Name" name="nominee_name" value={form.nominee_name || ''} onChange={handleUserChange} />
+            <TextField label="Nominee Name" name="nominee_name" value={form.nominee_name || ''} onChange={handleUserChange} style={styles.fieldWrap} inputStyle={styles.input} />
             <SelectSimple
               label="Nominee Relation"
               name="nominee_relation"
@@ -176,10 +206,10 @@ export default function LakhpatiDidiRegistrationPage({ title }) {
               onChange={handleUserChange}
               options={['Spouse', 'Father', 'Mother', 'Son', 'Daughter', 'Other']}
             />
-            <TextField label="Nominee DOB" name="nominee_dob" type="date" value={form.nominee_dob || ''} onChange={handleUserChange} />
-            <TextField label="Nominee Phone Number" name="nominee_phone" value={form.nominee_phone || ''} onChange={handleUserChange} />
+            <TextField label="Nominee DOB" name="nominee_dob" type="date" value={form.nominee_dob || ''} onChange={handleUserChange} style={styles.fieldWrap} inputStyle={styles.input} />
+            <TextField label="Nominee Phone Number" name="nominee_phone" numericOnly value={form.nominee_phone || ''} onChange={handleUserChange} style={styles.fieldWrap} inputStyle={styles.input} />
             <div style={{ gridColumn: '1 / span 4' }}>
-              <TextField label="Nominee Address" name="nominee_address" value={form.nominee_address || ''} onChange={handleUserChange} />
+              <TextField label="Nominee Address" name="nominee_address" value={form.nominee_address || ''} onChange={handleUserChange} style={styles.fieldWrap} inputStyle={styles.input} />
             </div>
           </div>
         </fieldset>
@@ -191,21 +221,6 @@ export default function LakhpatiDidiRegistrationPage({ title }) {
           </button>
         </div>
       </form>
-    </div>
-  );
-}
-
-function TextField({ label, name, type = 'text', value, onChange }) {
-  return (
-    <div style={styles.fieldWrap}>
-      <label style={styles.label}>{label}</label>
-      <input
-        type={type}
-        name={name}
-        value={value}
-        onChange={(e) => onChange(name)(e)}
-        style={styles.input}
-      />
     </div>
   );
 }

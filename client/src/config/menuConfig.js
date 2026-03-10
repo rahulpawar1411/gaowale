@@ -34,6 +34,6 @@ export const BUSINESS_MENU = [
 export const REGISTRATION_MENU = [
   { path: '/management-registration', label: 'Management Registration', type: 'management' },
   { path: '/farmer-registration', label: 'Farmer Registration', type: 'farmer' },
-  { path: '/customer-registration', label: 'Customer Registration', type: 'customer' },
   { path: '/lakhpati-didi-registration', label: 'Lakhpati Didi Registration', type: 'lakhpatiDidi' },
+  { path: '/customer-registration', label: 'Customer Registration', type: 'customer' },
 ];

@@ -12,6 +12,7 @@ router.put('/management/:id', managementController.update);
 router.delete('/management/:id', managementController.remove);
 
 router.get('/farmer', farmerController.getAll);
+router.delete('/farmer/all', farmerController.removeAll);
 router.get('/farmer/:id', farmerController.getById);
 router.post('/farmer', farmerController.create);
 router.put('/farmer/:id', farmerController.update);

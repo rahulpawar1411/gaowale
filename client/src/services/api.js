@@ -92,6 +92,7 @@ export const registrationsApi = {
         body: JSON.stringify(data),
       }).then((r) => r.json()),
     delete: (id) => fetch(`${API_BASE}/registrations/farmer/${id}`, { method: 'DELETE', headers: getAuthHeaders() }).then((r) => r.json()),
+    deleteAll: () => fetch(`${API_BASE}/registrations/farmer/all`, { method: 'DELETE', headers: getAuthHeaders() }).then((r) => r.json()),
   },
   customer: {
     getAll: () => fetch(`${API_BASE}/registrations/customer`, { headers: getAuthHeaders() }).then((r) => r.json()),

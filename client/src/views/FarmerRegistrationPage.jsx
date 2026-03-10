@@ -1,37 +1,35 @@
 import React, { useEffect, useState } from 'react';
 import { masterApi, registrationsApi } from '../services/api';
+import TextField from '../components/TextField';
 
 const locationFields = [
   { name: 'state_id', label: 'State', table: 'states' },
-  { name: 'state_division_id', label: 'State Division', table: 'state-divisions' },
-  { name: 'state_sub_division_id', label: 'State Sub Division', table: 'state-sub-divisions' },
-  { name: 'region_id', label: 'Region / Zone', table: 'regions' },
+  { name: 'state_division_id', label: 'District Division', table: 'state-divisions' },
+  { name: 'state_sub_division_id', label: 'Taluka Division', table: 'state-sub-divisions' },
+  { name: 'region_id', label: 'Region / Area', table: 'regions' },
   { name: 'zone_id', label: 'Zone', table: 'zones' },
-  { name: 'taluka_id', label: 'Taluka', table: 'talukas' },
-  { name: 'village_id', label: 'Village', table: 'villages' },
-  { name: 'block_id', label: 'Panchayat Samiti / Block', table: 'blocks' },
+  { name: 'taluka_id', label: 'Taluka / Subdivision', table: 'talukas' },
+  { name: 'village_id', label: 'Village / City', table: 'villages' },
+  { name: 'block_id', label: 'Panchayat / Circle / Group', table: 'blocks' },
   { name: 'circle_id', label: 'Circle', table: 'circles' },
   { name: 'gram_panchayat_id', label: 'Gram Panchayat', table: 'gram-panchayats' },
 ];
 
 const businessFields = [
   { name: 'business_category_id', label: 'Business Category', table: 'business-categories' },
-  { name: 'business_sub_category_id', label: 'Business Sub Category', table: 'business-sub-categories' },
-  { name: 'business_type_id', label: 'Type / Nature', table: 'business-types' },
+  { name: 'business_sub_category_id', label: 'Category', table: 'business-sub-categories' },
+  { name: 'business_type_id', label: 'Type / Class', table: 'business-types' },
   { name: 'product_id', label: 'Product Type', table: 'products' },
 ];
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
-const CASTES = ['ST', 'SC', 'OBC', 'General', 'Others'];
+const GENDERS = ['Male', 'Female', 'Other'];
 const EDUCATION_OPTIONS = ['Illiterate', 'Primary', 'Secondary', 'Higher Secondary', 'Graduate', 'Post Graduate', 'Other'];
-const REGISTRATION_TYPES = ['New', 'Renewal', 'Update', 'Other'];
 const RELATIONS = ['Spouse', 'Father', 'Mother', 'Son', 'Daughter', 'Brother', 'Sister', 'Other'];
 
 export default function FarmerRegistrationPage({ title }) {
   const [options, setOptions] = useState({});
   const [form, setForm] = useState({});
-  const [editingId, setEditingId] = useState(null);
-  const [list, setList] = useState([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -58,13 +56,6 @@ export default function FarmerRegistrationPage({ title }) {
     });
   }, []);
 
-  useEffect(() => {
-    registrationsApi.farmer
-      .getAll()
-      .then((res) => setList(res.success && res.data ? res.data : []))
-      .catch(() => setList([]));
-  }, [success]);
-
   const getOptions = (table) => options[table] || [];
 
   const handleChange = (name) => (e) => {
@@ -82,66 +73,7 @@ export default function FarmerRegistrationPage({ title }) {
     setForm((prev) => ({ ...prev, [name]: file ? file.name : '' }));
   };
 
-  const loadForEdit = (id) => {
-    setEditingId(id);
-    setError(null);
-    setSuccess(null);
-    registrationsApi.farmer
-      .getById(id)
-      .then((res) => {
-        if (res.success && res.data) {
-          const d = res.data;
-          setForm({
-            state_id: d.state_id ?? '',
-            state_division_id: d.state_division_id ?? '',
-            state_sub_division_id: d.state_sub_division_id ?? '',
-            region_id: d.region_id ?? '',
-            zone_id: d.zone_id ?? '',
-            taluka_id: d.taluka_id ?? '',
-            village_id: d.village_id ?? '',
-            block_id: d.block_id ?? '',
-            circle_id: d.circle_id ?? '',
-            gram_panchayat_id: d.gram_panchayat_id ?? '',
-            business_category_id: d.business_category_id ?? '',
-            business_sub_category_id: d.business_sub_category_id ?? '',
-            business_type_id: d.business_type_id ?? '',
-            product_id: d.product_id ?? '',
-            first_name: d.first_name ?? '',
-            father_name: d.father_name ?? '',
-            last_name: d.last_name ?? '',
-            date_of_birth: d.date_of_birth ? d.date_of_birth.slice(0, 10) : '',
-            blood_group: d.blood_group ?? '',
-            caste: d.caste ?? '',
-            photo_path: d.photo_path ?? '',
-            education: d.education ?? '',
-            ration_card_path: d.ration_card_path ?? '',
-            address: d.address ?? '',
-            mobile_number: d.mobile_number ?? '',
-            whatsapp_number: d.whatsapp_number ?? '',
-            pan_card_path: d.pan_card_path ?? '',
-            bank_account_number: d.bank_account_number ?? '',
-            aadhar_card_path: d.aadhar_card_path ?? '',
-            registration_type: d.registration_type ?? '',
-            farm_area: d.farm_area ?? '',
-            email: d.email ?? '',
-            bank_name: d.bank_name ?? '',
-            pincode: d.pincode ?? '',
-            family_member_name: d.family_member_name ?? '',
-            family_relation: d.family_relation ?? '',
-            family_dob: d.family_dob ? d.family_dob.slice(0, 10) : '',
-            family_phone: d.family_phone ?? '',
-            family_aadhar_path: d.family_aadhar_path ?? '',
-            transactions_below_15_lakh: d.transactions_below_15_lakh ?? '',
-            e_bank_account: d.e_bank_account ?? '',
-            additional_production: d.additional_production ?? '',
-          });
-        }
-      })
-      .catch(() => setError('Failed to load farmer.'));
-  };
-
   const clearForm = () => {
-    setEditingId(null);
     setForm({});
     setError(null);
     setSuccess(null);
@@ -175,15 +107,13 @@ export default function FarmerRegistrationPage({ title }) {
       product_id: form.product_id || null,
       password: form.password || undefined,
     };
-    const promise = editingId
-      ? registrationsApi.farmer.update(editingId, payload)
-      : registrationsApi.farmer.create(payload);
-    promise
+    registrationsApi.farmer
+      .create(payload)
       .then((res) => {
         if (!res.success) {
           setError(res.message || 'Failed to save.');
         } else {
-          setSuccess(editingId ? 'Farmer updated successfully.' : 'Farmer registration submitted successfully.');
+          setSuccess('Farmer registration submitted successfully.');
           clearForm();
         }
       })
@@ -196,37 +126,12 @@ export default function FarmerRegistrationPage({ title }) {
       <div style={styles.card}>
         <h1 style={styles.title}>{title}</h1>
         <p style={styles.subtitle}>
-          Register a new farmer or select an existing record to edit. All data is stored in the farmer registration table.
+          Fill the form below to register a new farmer. Data is stored in the farmer_registrations table.
         </p>
-
-        {list.length > 0 && (
-          <section style={styles.section}>
-            <div style={styles.sectionHeader}>Existing Farmers</div>
-            <div style={styles.listWrap}>
-              <select
-                value={editingId || ''}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  if (v) loadForEdit(Number(v));
-                  else clearForm();
-                }}
-                style={styles.select}
-              >
-                <option value="">— New registration —</option>
-                {list.map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {f.name || [f.first_name, f.last_name].filter(Boolean).join(' ') || `ID ${f.id}`}
-                  </option>
-                ))}
-              </select>
-              <span style={styles.hint}>Select to load and edit existing data.</span>
-            </div>
-          </section>
-        )}
 
         <form onSubmit={handleSubmit} style={styles.form}>
           <section style={styles.section}>
-            <div style={styles.sectionHeader}>Geographical Information</div>
+            <div style={styles.sectionHeader}>Geographic Information</div>
             <div style={styles.grid}>
               {locationFields.map((field) => (
                 <div key={field.name} style={styles.fieldWrap}>
@@ -245,6 +150,8 @@ export default function FarmerRegistrationPage({ title }) {
                   </select>
                 </div>
               ))}
+              <TextField label="Ward / Area" name="ward" value={form.ward || ''} onChange={handleChange} placeholder="Select Ward" style={styles.fieldWrap} inputStyle={styles.input} />
+              <TextField label="Police Station / Inquiry" name="police_station" value={form.police_station || ''} onChange={handleChange} placeholder="Select Police Station" style={styles.fieldWrap} inputStyle={styles.input} />
             </div>
           </section>
 
@@ -272,52 +179,51 @@ export default function FarmerRegistrationPage({ title }) {
           </section>
 
           <section style={styles.section}>
-            <div style={styles.sectionHeader}>Personal Information</div>
+            <div style={styles.sectionHeader}>Farmer Information</div>
             <div style={styles.grid}>
-              <TextField label="Name" name="first_name" value={form.first_name || ''} onChange={handleChange} />
-              <TextField label="Father's Name" name="father_name" value={form.father_name || ''} onChange={handleChange} />
-              <TextField label="Last Name" name="last_name" value={form.last_name || ''} onChange={handleChange} />
-              <TextField label="Date of Birth" name="date_of_birth" type="date" value={form.date_of_birth || ''} onChange={handleChange} />
+              <TextField label="First Name" name="first_name" value={form.first_name || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
+              <TextField label="Middle Name" name="middle_name" value={form.middle_name || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
+              <TextField label="Last Name" name="last_name" value={form.last_name || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
+              <TextField label="Date of Birth" name="date_of_birth" type="date" value={form.date_of_birth || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
               <SelectSimple label="Blood Group" name="blood_group" value={form.blood_group || ''} onChange={handleChange} options={BLOOD_GROUPS} />
-              <SelectSimple label="Caste" name="caste" value={form.caste || ''} onChange={handleChange} options={CASTES} />
-              <FileField label="Photo" name="photo_path" value={form.photo_path || ''} onChange={handleFileChange('photo_path')} />
+              <SelectSimple label="Gender" name="gender" value={form.gender || ''} onChange={handleChange} options={GENDERS} />
+              <FileField label="Upload Photo" name="photo_path" value={form.photo_path || ''} onChange={handleFileChange('photo_path')} />
               <SelectSimple label="Education" name="education" value={form.education || ''} onChange={handleChange} options={EDUCATION_OPTIONS} />
+              <TextField label="WhatsApp Number" name="whatsapp_number" numericOnly value={form.whatsapp_number || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
+              <TextField label="Mobile Number" name="mobile_number" numericOnly value={form.mobile_number || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
+              <FileField label="PAN Card" name="pan_card_path" value={form.pan_card_path || ''} onChange={handleFileChange('pan_card_path')} />
+              <FileField label="Election Card" name="election_card_path" value={form.election_card_path || ''} onChange={handleFileChange('election_card_path')} />
+              <FileField label="Aadhaar Card" name="aadhar_card_path" value={form.aadhar_card_path || ''} onChange={handleFileChange('aadhar_card_path')} />
+              <TextField label="Email" name="email" type="email" value={form.email || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
+              <TextField label="Date of Registration" name="registration_date" type="date" value={form.registration_date || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
+              <TextField label="Password" name="password" type="password" value={form.password || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
+              <TextField label="Confirm Password" name="confirm_password" type="password" value={form.confirm_password || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
+              <TextField label="Father's Name" name="father_name" value={form.father_name || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
               <FileField label="Ration Card" name="ration_card_path" value={form.ration_card_path || ''} onChange={handleFileChange('ration_card_path')} />
               <div style={{ gridColumn: '1 / -1' }}>
-                <TextField label="Address" name="address" value={form.address || ''} onChange={handleChange} />
+                <TextField label="Address" name="address" value={form.address || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
               </div>
-              <TextField label="Mobile Number" name="mobile_number" value={form.mobile_number || ''} onChange={handleChange} />
-              <TextField label="WhatsApp Number" name="whatsapp_number" value={form.whatsapp_number || ''} onChange={handleChange} />
-              <FileField label="PAN Card" name="pan_card_path" value={form.pan_card_path || ''} onChange={handleFileChange('pan_card_path')} />
-              <TextField label="Bank Account Number" name="bank_account_number" value={form.bank_account_number || ''} onChange={handleChange} />
-              <FileField label="Aadhar Card" name="aadhar_card_path" value={form.aadhar_card_path || ''} onChange={handleFileChange('aadhar_card_path')} />
-              <SelectSimple label="Registration Type" name="registration_type" value={form.registration_type || ''} onChange={handleChange} options={REGISTRATION_TYPES} />
-              <TextField label="Farm Area" name="farm_area" value={form.farm_area || ''} onChange={handleChange} placeholder="e.g. in acres" />
-              <TextField label="Email ID" name="email" type="email" value={form.email || ''} onChange={handleChange} />
-              <TextField label="Bank Name" name="bank_name" value={form.bank_name || ''} onChange={handleChange} />
-              <TextField label="Pincode" name="pincode" value={form.pincode || ''} onChange={handleChange} />
-              <TextField label="Password" name="password" type="password" value={form.password || ''} onChange={handleChange} />
-              <TextField label="Confirm Password" name="confirm_password" type="password" value={form.confirm_password || ''} onChange={handleChange} />
             </div>
           </section>
 
           <section style={styles.section}>
-            <div style={styles.sectionHeader}>Family Information</div>
+            <div style={styles.sectionHeader}>Relative Information</div>
             <div style={styles.grid}>
-              <TextField label="Family Member's Name" name="family_member_name" value={form.family_member_name || ''} onChange={handleChange} />
+              <TextField label="Relative's Name" name="family_member_name" value={form.family_member_name || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
               <SelectSimple label="Relation" name="family_relation" value={form.family_relation || ''} onChange={handleChange} options={RELATIONS} />
-              <TextField label="Date of Birth" name="family_dob" type="date" value={form.family_dob || ''} onChange={handleChange} />
-              <TextField label="Family Member's Phone Number" name="family_phone" value={form.family_phone || ''} onChange={handleChange} />
-              <FileField label="Family Member's Aadhar Card" name="family_aadhar_path" value={form.family_aadhar_path || ''} onChange={handleFileChange('family_aadhar_path')} />
+              <TextField label="Date of Birth" name="family_dob" type="date" value={form.family_dob || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
+              <TextField label="Relative's Mobile Number" name="family_phone" numericOnly value={form.family_phone || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
+              <FileField label="Relative's Aadhaar Card" name="family_aadhar_path" value={form.family_aadhar_path || ''} onChange={handleFileChange('family_aadhar_path')} />
             </div>
           </section>
 
           <section style={styles.section}>
-            <div style={styles.sectionHeader}>Additional Information</div>
+            <div style={styles.sectionHeader}>Bank Information</div>
             <div style={styles.grid}>
-              <TextField label="Transactions below 15 lakhs (total bank accounts)" name="transactions_below_15_lakh" value={form.transactions_below_15_lakh || ''} onChange={handleChange} placeholder="e.g. Rs 1.5 lakh" />
-              <TextField label="E-Bank Account" name="e_bank_account" value={form.e_bank_account || ''} onChange={handleChange} placeholder="Rs 0" />
-              <TextField label="Additional Production" name="additional_production" value={form.additional_production || ''} onChange={handleChange} placeholder="Rs 0.00 / year" />
+              <TextField label="Bank Name" name="bank_name" value={form.bank_name || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
+              <TextField label="IFSC Code" name="ifsc_code" value={form.ifsc_code || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
+              <TextField label="Account Number" name="bank_account_number" numericOnly value={form.bank_account_number || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
+              <TextField label="Pincode" name="pincode" numericOnly value={form.pincode || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
             </div>
           </section>
 
@@ -329,31 +235,15 @@ export default function FarmerRegistrationPage({ title }) {
               Clear
             </button>
             <button type="submit" disabled={saving} style={styles.submit}>
-              {saving ? 'Saving…' : editingId ? 'Update Registration' : 'Submit Registration'}
+              {saving ? 'Saving…' : 'Submit Registration'}
             </button>
           </div>
         </form>
 
         <footer style={styles.footer}>
-          © {new Date().getFullYear()} Mahabalay. All rights reserved.
+          © {new Date().getFullYear()} Farmer Registration Form. All rights reserved.
         </footer>
       </div>
-    </div>
-  );
-}
-
-function TextField({ label, name, type = 'text', value, onChange, placeholder }) {
-  return (
-    <div style={styles.fieldWrap}>
-      <label style={styles.label}>{label}</label>
-      <input
-        type={type}
-        name={name}
-        value={value}
-        onChange={(e) => onChange(name)(e)}
-        style={styles.input}
-        placeholder={placeholder}
-      />
     </div>
   );
 }
@@ -434,14 +324,6 @@ const styles = {
     gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
     gap: '0.75rem 1rem',
   },
-  listWrap: {
-    padding: '0.75rem 1rem',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-    flexWrap: 'wrap',
-  },
-  hint: { fontSize: '0.8rem', color: '#666' },
   fieldWrap: { display: 'flex', flexDirection: 'column', gap: 4 },
   label: { fontSize: '0.85rem', fontWeight: 500, color: '#333' },
   input: {

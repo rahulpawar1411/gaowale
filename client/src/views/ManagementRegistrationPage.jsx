@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { masterApi, registrationsApi } from '../services/api';
+import TextField from '../components/TextField';
 
 const dropdownConfig = [
   { name: 'business_position_id', label: 'Business Position', table: 'designations' },
@@ -147,9 +148,9 @@ export default function ManagementRegistrationPage({ title }) {
               options={getOptions('designations')}
               onChange={handleChange}
             />
-            <TextField label="Target to fill the farm" name="target_to_fill_farm" type="number" value={form.target_to_fill_farm ?? ''} onChange={handleTextChange} placeholder="0" />
-            <TextField label="Target completed so far" name="target_completed_so_far" type="number" value={form.target_completed_so_far ?? ''} onChange={handleTextChange} placeholder="0" />
-            <TextField label="Existing terms according to Target" name="existing_terms_according_to_target" value={form.existing_terms_according_to_target || ''} onChange={handleTextChange} placeholder="Terms" />
+            <TextField label="Target to fill the farm" name="target_to_fill_farm" type="number" value={form.target_to_fill_farm ?? ''} onChange={handleTextChange} placeholder="0" style={styles.fieldWrap} inputStyle={styles.input} />
+            <TextField label="Target completed so far" name="target_completed_so_far" type="number" value={form.target_completed_so_far ?? ''} onChange={handleTextChange} placeholder="0" style={styles.fieldWrap} inputStyle={styles.input} />
+            <TextField label="Existing terms according to Target" name="existing_terms_according_to_target" value={form.existing_terms_according_to_target || ''} onChange={handleTextChange} placeholder="Terms" style={styles.fieldWrap} inputStyle={styles.input} />
           </div>
         </fieldset>
 
@@ -181,36 +182,36 @@ export default function ManagementRegistrationPage({ title }) {
         <fieldset style={styles.fieldset}>
           <legend style={styles.legend}>Personal Info</legend>
           <div style={styles.grid4}>
-            <TextField label="First Name" name="first_name" value={form.first_name || ''} onChange={handleTextChange} />
-            <TextField label="Middle Name" name="middle_name" value={form.middle_name || ''} onChange={handleTextChange} />
-            <TextField label="Last Name" name="last_name" value={form.last_name || ''} onChange={handleTextChange} />
-            <TextField label="Date of Birth" name="date_of_birth" type="date" value={form.date_of_birth || ''} onChange={handleTextChange} />
+            <TextField label="First Name" name="first_name" value={form.first_name || ''} onChange={handleTextChange} style={styles.fieldWrap} inputStyle={styles.input} />
+            <TextField label="Middle Name" name="middle_name" value={form.middle_name || ''} onChange={handleTextChange} style={styles.fieldWrap} inputStyle={styles.input} />
+            <TextField label="Last Name" name="last_name" value={form.last_name || ''} onChange={handleTextChange} style={styles.fieldWrap} inputStyle={styles.input} />
+            <TextField label="Date of Birth" name="date_of_birth" type="date" value={form.date_of_birth || ''} onChange={handleTextChange} style={styles.fieldWrap} inputStyle={styles.input} />
             <SelectSimple label="Blood Group" name="blood_group" value={form.blood_group || ''} onChange={handleTextChange} options={BLOOD_GROUPS} />
             <SelectSimple label="Caste" name="caste" value={form.caste || ''} onChange={handleTextChange} options={CASTE_OPTIONS} />
-            <TextField label="Education" name="education" value={form.education || ''} onChange={handleTextChange} />
+            <TextField label="Education" name="education" value={form.education || ''} onChange={handleTextChange} style={styles.fieldWrap} inputStyle={styles.input} />
             <SelectSimple label="Occupation" name="occupation" value={form.occupation || ''} onChange={handleTextChange} options={OCCUPATION_OPTIONS} />
-            <TextField label="Mobile Number" name="mobile_number" value={form.mobile_number || ''} onChange={handleTextChange} />
-            <TextField label="Phone Number" name="phone_number" value={form.phone_number || ''} onChange={handleTextChange} />
-            <TextField label="WhatsApp Number" name="whatsapp_number" value={form.whatsapp_number || ''} onChange={handleTextChange} />
-            <TextField label="PAN Card" name="pan_card" value={form.pan_card || ''} onChange={handleTextChange} />
+            <TextField label="Mobile Number" name="mobile_number" numericOnly value={form.mobile_number || ''} onChange={handleTextChange} style={styles.fieldWrap} inputStyle={styles.input} />
+            <TextField label="Phone Number" name="phone_number" numericOnly value={form.phone_number || ''} onChange={handleTextChange} style={styles.fieldWrap} inputStyle={styles.input} />
+            <TextField label="WhatsApp Number" name="whatsapp_number" numericOnly value={form.whatsapp_number || ''} onChange={handleTextChange} style={styles.fieldWrap} inputStyle={styles.input} />
+            <TextField label="PAN Card" name="pan_card" value={form.pan_card || ''} onChange={handleTextChange} style={styles.fieldWrap} inputStyle={styles.input} />
             <FileField label="Aadhaar Card" name="aadhar_card" value={form.aadhar_card} onChange={handleFileChange} />
             <FileField label="Voter ID Card" name="voter_id_path" value={form.voter_id_path} onChange={handleFileChange} />
-            <TextField label="Pincode" name="pincode" value={form.pincode || ''} onChange={handleTextChange} />
+            <TextField label="Pincode" name="pincode" numericOnly value={form.pincode || ''} onChange={handleTextChange} style={styles.fieldWrap} inputStyle={styles.input} />
             <FileField label="Photo" name="photo_path" value={form.photo_path} onChange={handleFileChange} />
-            <TextField label="Password" name="password" type="password" value={form.password || ''} onChange={handleTextChange} />
-            <TextField label="Confirm Password" name="confirm_password" type="password" value={form.confirm_password || ''} onChange={handleTextChange} />
+            <TextField label="Password" name="password" type="password" value={form.password || ''} onChange={handleTextChange} style={styles.fieldWrap} inputStyle={styles.input} />
+            <TextField label="Confirm Password" name="confirm_password" type="password" value={form.confirm_password || ''} onChange={handleTextChange} style={styles.fieldWrap} inputStyle={styles.input} />
           </div>
         </fieldset>
 
         <fieldset style={styles.fieldset}>
           <legend style={styles.legend}>Nominee Info</legend>
           <div style={styles.grid4}>
-            <TextField label="Nominee Name" name="nominee_name" value={form.nominee_name || ''} onChange={handleTextChange} />
+            <TextField label="Nominee Name" name="nominee_name" value={form.nominee_name || ''} onChange={handleTextChange} style={styles.fieldWrap} inputStyle={styles.input} />
             <SelectSimple label="Relation" name="nominee_relation" value={form.nominee_relation || ''} onChange={handleTextChange} options={NOMINEE_RELATION_OPTIONS} />
-            <TextField label="Date of Birth" name="nominee_dob" type="date" value={form.nominee_dob || ''} onChange={handleTextChange} />
-            <TextField label="Nominee Phone Number" name="nominee_phone" value={form.nominee_phone || ''} onChange={handleTextChange} />
+            <TextField label="Date of Birth" name="nominee_dob" type="date" value={form.nominee_dob || ''} onChange={handleTextChange} style={styles.fieldWrap} inputStyle={styles.input} />
+            <TextField label="Nominee Phone Number" name="nominee_phone" numericOnly value={form.nominee_phone || ''} onChange={handleTextChange} style={styles.fieldWrap} inputStyle={styles.input} />
             <div style={{ gridColumn: '1 / -1' }}>
-              <TextField label="Nominee Address" name="nominee_address" value={form.nominee_address || ''} onChange={handleTextChange} />
+              <TextField label="Nominee Address" name="nominee_address" value={form.nominee_address || ''} onChange={handleTextChange} style={styles.fieldWrap} inputStyle={styles.input} />
             </div>
           </div>
         </fieldset>
@@ -218,8 +219,8 @@ export default function ManagementRegistrationPage({ title }) {
         <fieldset style={styles.fieldset}>
           <legend style={styles.legend}>Other Info</legend>
           <div style={styles.grid4}>
-            <TextField label="Management Net Work (₹)" name="management_net_work" type="number" value={form.management_net_work ?? ''} onChange={handleTextChange} placeholder="0" />
-            <TextField label="Total Work of Baseline Family (₹)" name="total_work_baseline_family" type="number" value={form.total_work_baseline_family ?? ''} onChange={handleTextChange} placeholder="0" />
+            <TextField label="Management Net Work (₹)" name="management_net_work" type="number" value={form.management_net_work ?? ''} onChange={handleTextChange} placeholder="0" style={styles.fieldWrap} inputStyle={styles.input} />
+            <TextField label="Total Work of Baseline Family (₹)" name="total_work_baseline_family" type="number" value={form.total_work_baseline_family ?? ''} onChange={handleTextChange} placeholder="0" style={styles.fieldWrap} inputStyle={styles.input} />
             <FileField label="Passport" name="passport_path" value={form.passport_path} onChange={handleFileChange} />
             <FileField label="Birth Certificate / School Leaving Certificate (S.L.C)" name="birth_certificate_path" value={form.birth_certificate_path} onChange={handleFileChange} />
             <FileField label="Bank Book or Chequebook Copy" name="bank_book_path" value={form.bank_book_path} onChange={handleFileChange} />
@@ -235,22 +236,6 @@ export default function ManagementRegistrationPage({ title }) {
           </button>
         </div>
       </form>
-    </div>
-  );
-}
-
-function TextField({ label, name, type = 'text', value, onChange, placeholder }) {
-  return (
-    <div style={styles.fieldWrap}>
-      <label style={styles.label}>{label}</label>
-      <input
-        type={type}
-        name={name}
-        value={value}
-        onChange={(e) => onChange(name)(e)}
-        style={styles.input}
-        placeholder={placeholder}
-      />
     </div>
   );
 }

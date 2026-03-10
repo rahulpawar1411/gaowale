@@ -5,6 +5,7 @@ const CARD_CONFIG = [
   { key: 'totalUsers', label: 'Total Users', color: '#2563eb' },
   { key: 'members', label: 'Members', color: '#16a34a' },
   { key: 'farmers', label: 'Farmers', color: '#ca8a04' },
+  { key: 'lakhpatiDidi', label: 'Lakhpati Didi', color: '#9333ea' },
   { key: 'customers', label: 'Customers', color: '#0891b2' },
 ];
 

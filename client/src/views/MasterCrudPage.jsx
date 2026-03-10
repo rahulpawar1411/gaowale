@@ -432,9 +432,20 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
               ) : (
                 <input
                   type="text"
+                  inputMode={f.type === 'number' || f.numericOnly ? 'numeric' : undefined}
                   name={f.name}
                   value={form[f.name] != null ? form[f.name] : ''}
-                  onChange={(e) => setForm((prev) => ({ ...prev, [f.name]: e.target.value }))}
+                  onChange={(e) => {
+                    let v = e.target.value;
+                    if (f.type === 'number') {
+                      v = v.replace(/[^\d.]/g, '').replace(/(\..*)\./g, '$1');
+                    } else if (f.numericOnly) {
+                      v = v.replace(/\D/g, '');
+                    } else {
+                      v = e.target.value;
+                    }
+                    setForm((prev) => ({ ...prev, [f.name]: v }));
+                  }}
                   placeholder={f.label}
                   style={styles.input}
                 />

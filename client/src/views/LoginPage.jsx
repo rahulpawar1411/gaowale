@@ -34,6 +34,11 @@ export default function LoginPage() {
       .finally(() => setLoading(false));
   };
 
+  const handlePhoneChange = (e) => {
+    const v = e.target.value.replace(/\D/g, '');
+    setPhone(v);
+  };
+
   return (
     <div style={styles.wrapper}>
       <div style={styles.card}>
@@ -44,8 +49,9 @@ export default function LoginPage() {
             <label style={styles.label}>Phone number</label>
             <input
               type="text"
+              inputMode="numeric"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              onChange={handlePhoneChange}
               placeholder="e.g. 1234567890"
               style={styles.input}
               autoComplete="tel"

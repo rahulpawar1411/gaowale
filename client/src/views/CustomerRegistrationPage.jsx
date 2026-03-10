@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { registrationsApi } from '../services/api';
+import TextField from '../components/TextField';
 
 export default function CustomerRegistrationPage({ title }) {
   const [form, setForm] = useState({});
@@ -60,18 +61,25 @@ export default function CustomerRegistrationPage({ title }) {
                 name="first_name"
                 value={form.first_name || ''}
                 onChange={handleChange}
+                style={styles.fieldWrap}
+                inputStyle={styles.input}
               />
               <TextField
                 label="Last Name"
                 name="last_name"
                 value={form.last_name || ''}
                 onChange={handleChange}
+                style={styles.fieldWrap}
+                inputStyle={styles.input}
               />
               <TextField
                 label="WhatsApp Number"
                 name="whatsapp_number"
+                numericOnly
                 value={form.whatsapp_number || ''}
                 onChange={handleChange}
+                style={styles.fieldWrap}
+                inputStyle={styles.input}
               />
             </div>
           </section>
@@ -85,6 +93,8 @@ export default function CustomerRegistrationPage({ title }) {
                 type="password"
                 value={form.password || ''}
                 onChange={handleChange}
+                style={styles.fieldWrap}
+                inputStyle={styles.input}
               />
               <TextField
                 label="Confirm Password"
@@ -92,6 +102,8 @@ export default function CustomerRegistrationPage({ title }) {
                 type="password"
                 value={form.confirm_password || ''}
                 onChange={handleChange}
+                style={styles.fieldWrap}
+                inputStyle={styles.input}
               />
             </div>
           </section>
@@ -110,21 +122,6 @@ export default function CustomerRegistrationPage({ title }) {
           © {new Date().getFullYear()} Customer Registration System. All rights reserved.
         </footer>
       </div>
-    </div>
-  );
-}
-
-function TextField({ label, name, type = 'text', value, onChange }) {
-  return (
-    <div style={styles.fieldWrap}>
-      <label style={styles.label}>{label}</label>
-      <input
-        type={type}
-        name={name}
-        value={value}
-        onChange={(e) => onChange(name)(e)}
-        style={styles.input}
-      />
     </div>
   );
 }
