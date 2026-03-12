@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { masterApi } from '../services/api';
+import { masterApi, registrationsApi } from '../services/api';
 
 export default function MasterCrudPage({ table, title, fields = [], addButtonLabel }) {
   const [data, setData] = useState([]);
@@ -10,6 +10,7 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
   const [form, setForm] = useState({});
   const [editingId, setEditingId] = useState(null);
   const [submitLoading, setSubmitLoading] = useState(false);
+  const [filters, setFilters] = useState({});
 
   const loadData = useCallback(() => {
     if (!table) return Promise.resolve();
@@ -45,6 +46,19 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
       }
     });
     tables.forEach((t) => {
+      if (t === 'management-registrations') {
+        registrationsApi.management
+          .getAll()
+          .then((res) => {
+            const list = (res.success ? res.data || [] : []).map((row) => ({
+              id: row.id,
+              name: row.name || [row.first_name, row.middle_name, row.last_name].filter(Boolean).join(' ').trim() || '—',
+            }));
+            setOptions((prev) => ({ ...prev, [t]: list }));
+          })
+          .catch(() => setOptions((prev) => ({ ...prev, [t]: [] })));
+        return;
+      }
       masterApi
         .getTable(t)
         .then((res) => {
@@ -60,9 +74,191 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
   }, [table, loadOptions]);
 
   const getDisplayValue = (row, field) => {
+    // Special display logic for Position Allotments: show location chain clearly
+    if (table === 'position-allotments') {
+      const levelType = row.level_type;
+      const areaId = row.area_id != null ? Number(row.area_id) : null;
+      const locationFields = [
+        'zone_id',
+        'vidhan_sabha_id',
+        'taluka_id',
+        'block_id',
+        'circle_id',
+        'gram_panchayat_id',
+        'village_id',
+      ];
+      const levelHumanMap = {
+        zone: 'Zone',
+        vidhan_sabha: 'Vidhan Sabha',
+        taluka: 'Taluka',
+        block: 'Block',
+        circle: 'Panchayat Samiti Circle',
+        gram_panchayat: 'Gram Panchayat',
+        village: 'Village',
+      };
+
+      // Human-readable Level column
+      if (field.name === 'level_type') {
+        if (!levelType) return '—';
+        return levelHumanMap[levelType] || String(levelType);
+      }
+
+      // Location columns (Zone / Vidhan Sabha / Taluka / Block / Circle / Gram Panchayat / Village)
+      if (locationFields.includes(field.name)) {
+        if (areaId == null || Number.isNaN(areaId) || !levelType) return '—';
+        const zones = options.zones || [];
+        const vidhanSabhas = options['vidhan-sabhas'] || [];
+        const talukas = options.talukas || [];
+        const blocks = options.blocks || [];
+        const circles = options.circles || [];
+        const gramPanchayats = options['gram-panchayats'] || [];
+        const villages = options.villages || [];
+
+        let zone = null;
+        let vs = null;
+        let taluka = null;
+        let block = null;
+        let circle = null;
+        let gp = null;
+        let village = null;
+
+        switch (levelType) {
+          case 'zone': {
+            zone = zones.find((z) => Number(z.id) === areaId);
+            break;
+          }
+          case 'vidhan_sabha': {
+            vs = vidhanSabhas.find((v) => Number(v.id) === areaId);
+            if (vs) {
+              zone = zones.find((z) => Number(z.id) === Number(vs.zone_id));
+            }
+            break;
+          }
+          case 'taluka': {
+            taluka = talukas.find((t) => Number(t.id) === areaId);
+            if (taluka) {
+              vs = vidhanSabhas.find(
+                (v) => Number(v.id) === Number(taluka.vidhan_sabha_id)
+              );
+              if (vs) {
+                zone = zones.find((z) => Number(z.id) === Number(vs.zone_id));
+              }
+            }
+            break;
+          }
+          case 'block': {
+            block = blocks.find((b) => Number(b.id) === areaId);
+            if (block) {
+              taluka = talukas.find(
+                (t) => Number(t.id) === Number(block.taluka_id)
+              );
+              if (taluka) {
+                vs = vidhanSabhas.find(
+                  (v) => Number(v.id) === Number(taluka.vidhan_sabha_id)
+                );
+                if (vs) {
+                  zone = zones.find(
+                    (z) => Number(z.id) === Number(vs.zone_id)
+                  );
+                }
+              }
+            }
+            break;
+          }
+          case 'circle': {
+            circle = circles.find((c) => Number(c.id) === areaId);
+            if (circle) {
+              block = blocks.find(
+                (b) => Number(b.id) === Number(circle.block_id)
+              );
+              if (block) {
+                taluka = talukas.find(
+                  (t) => Number(t.id) === Number(block.taluka_id)
+                );
+              }
+              if (taluka) {
+                vs = vidhanSabhas.find(
+                  (v) => Number(v.id) === Number(taluka.vidhan_sabha_id)
+                );
+                if (vs) {
+                  zone = zones.find(
+                    (z) => Number(z.id) === Number(vs.zone_id)
+                  );
+                }
+              }
+            }
+            break;
+          }
+          case 'gram_panchayat': {
+            gp = gramPanchayats.find((g) => Number(g.id) === areaId);
+            if (gp) {
+              taluka = talukas.find(
+                (t) => Number(t.id) === Number(gp.taluka_id)
+              );
+              circle = circles.find(
+                (c) => Number(c.id) === Number(gp.circle_id)
+              );
+            }
+            if (taluka) {
+              vs = vidhanSabhas.find(
+                (v) => Number(v.id) === Number(taluka.vidhan_sabha_id)
+              );
+              if (vs) {
+                zone = zones.find(
+                  (z) => Number(z.id) === Number(vs.zone_id)
+                );
+              }
+            }
+            break;
+          }
+          case 'village': {
+            village = villages.find((v) => Number(v.id) === areaId);
+            if (village) {
+              gp = gramPanchayats.find(
+                (g) => Number(g.id) === Number(village.gram_panchayat_id)
+              );
+            }
+            if (gp) {
+              taluka = talukas.find(
+                (t) => Number(t.id) === Number(gp.taluka_id)
+              );
+              circle = circles.find(
+                (c) => Number(c.id) === Number(gp.circle_id)
+              );
+            }
+            if (taluka) {
+              vs = vidhanSabhas.find(
+                (v) => Number(v.id) === Number(taluka.vidhan_sabha_id)
+              );
+              if (vs) {
+                zone = zones.find(
+                  (z) => Number(z.id) === Number(vs.zone_id)
+                );
+              }
+            }
+            break;
+          }
+          default:
+            break;
+        }
+
+        const nameMap = {
+          zone_id: zone && zone.name,
+          vidhan_sabha_id: vs && vs.name,
+          taluka_id: taluka && taluka.name,
+          block_id: block && block.name,
+          circle_id: circle && circle.name,
+          gram_panchayat_id: gp && gp.name,
+          village_id: village && village.name,
+        };
+        const name = nameMap[field.name];
+        return name != null && String(name).trim() !== '' ? String(name) : '—';
+      }
+    }
+
     const val = row[field.name];
     if (field.type === 'radio') {
-      // Unit of Type: fallback to name when type_category is null (old records)
+      // Types of Units: fallback to name when type_category is null (old records)
       const displayVal = field.name === 'type_category' ? (val != null ? val : row.name) : val;
       return displayVal != null ? String(displayVal) : '—';
     }
@@ -145,16 +341,60 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
     fields.forEach((f) => {
       let val = form[f.name];
       if (val === undefined) val = f.type === 'select' ? null : '';
-      // Send _id select values as numbers so backend stores FK correctly (e.g. parent_id)
-      if (f.type === 'select' && f.name.endsWith('_id') && val != null && val !== '') {
+      // Send _id select values as numbers so backend stores FK correctly (e.g. parent_id, area_id)
+      if (f.name.endsWith('_id') && val != null && val !== '') {
         const n = Number(val);
         val = Number.isNaN(n) ? val : n;
       }
       payload[f.name] = val;
     });
-    // Validate dropdowns: if any required select field is empty, show custom alert and stop
+
+    // For position-allotments, derive level_type + area_id from the deepest selected location
+    if (table === 'position-allotments') {
+      const order = [
+        'zone_id',
+        'vidhan_sabha_id',
+        'taluka_id',
+        'block_id',
+        'circle_id',
+        'gram_panchayat_id',
+        'village_id',
+      ];
+      const levelMap = {
+        zone_id: 'zone',
+        vidhan_sabha_id: 'vidhan_sabha',
+        taluka_id: 'taluka',
+        block_id: 'block',
+        circle_id: 'circle',
+        gram_panchayat_id: 'gram_panchayat',
+        village_id: 'village',
+      };
+      let pickedField = null;
+      for (let i = order.length - 1; i >= 0; i--) {
+        const fieldName = order[i];
+        const v = payload[fieldName];
+        if (v != null && v !== '') {
+          pickedField = fieldName;
+          break;
+        }
+      }
+      if (!pickedField) {
+        setDropdownAlert('Please select at least one location (Zone / Vidhan Sabha / Taluka / Block / Circle / Gram Panchayat / Village).');
+        return;
+      }
+      payload.level_type = levelMap[pickedField];
+      payload.area_id = payload[pickedField];
+    }
+    // Validate dropdowns: if any required select field is empty, show custom alert and stop.
+    // For position-allotments, location selects are validated via the custom logic above,
+    // so we skip them here to allow stopping at any depth (e.g. Block only).
+    const locationSelects =
+      table === 'position-allotments'
+        ? ['zone_id', 'vidhan_sabha_id', 'taluka_id', 'block_id', 'circle_id', 'gram_panchayat_id', 'village_id']
+        : [];
     for (const f of fields) {
       if (f.type === 'select' && f.required !== false) {
+        if (locationSelects.includes(f.name)) continue;
         const val = payload[f.name];
         if (val == null || val === '') {
           setDropdownAlert(`Please fill this field: ${f.label}`);
@@ -163,11 +403,11 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
       }
     }
 
-    // Units: require Unit Name, Unit Type, and Status — show alert listing missing fields
+    // Units: require Unit Name, Types of Units, and Status — show alert listing missing fields
     if (table === 'units') {
       const missing = [];
       if (!payload.name || !String(payload.name).trim()) missing.push('Unit Name');
-      if (payload.unit_type_id == null || payload.unit_type_id === '') missing.push('Unit Type');
+      if (payload.unit_type_id == null || payload.unit_type_id === '') missing.push('Types of Units');
       if (payload.status == null || payload.status === '') missing.push('Status');
       if (missing.length > 0) {
         setDropdownAlert(`Please fill: ${missing.join(', ')}`);
@@ -175,7 +415,7 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
       }
     }
 
-    // Unit of Type: type select from DB or "Other"; use type_category as name for DB
+    // Types of Units: type select from DB or "Other"; use type_category as name for DB
     if (table === 'unit-types') {
       let typeVal = payload.type_category;
       if (typeVal === '__OTHER__') {
@@ -191,7 +431,8 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
         return;
       }
       payload.name = payload.type_category;
-    } else {
+    } else if (fields.some((f) => f.name === 'name')) {
+      // Only require name when this table has a name field (e.g. most masters; not position-allotments)
       if (!payload.name || !String(payload.name).trim()) {
         setError('Name is required');
         return;
@@ -266,9 +507,196 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
 
   const addLabel = addButtonLabel || `Add ${title}`;
 
+  const filteredData =
+    table === 'position-allotments'
+      ? filterPositionAllotments(data, filters, options)
+      : data;
+
   return (
     <div style={styles.page}>
       <h1 style={styles.h1}>{title}</h1>
+
+      {table === 'position-allotments' && (
+        <div style={styles.filterRow}>
+          <div style={styles.filterGroup}>
+            <label style={styles.filterLabel}>Zone</label>
+            <select
+              value={filters.zone_id || ''}
+              onChange={(e) =>
+                setFilters((prev) => ({ ...prev, zone_id: e.target.value || null }))
+              }
+              style={styles.filterSelect}
+            >
+              <option value="">All</option>
+              {(options.zones || []).map((z) => (
+                <option key={z.id} value={z.id}>
+                  {z.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div style={styles.filterGroup}>
+            <label style={styles.filterLabel}>Vidhan Sabha</label>
+            <select
+              value={filters.vidhan_sabha_id || ''}
+              onChange={(e) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  vidhan_sabha_id: e.target.value || null,
+                }))
+              }
+              style={styles.filterSelect}
+            >
+              <option value="">All</option>
+              {(options['vidhan-sabhas'] || []).map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div style={styles.filterGroup}>
+            <label style={styles.filterLabel}>Taluka</label>
+            <select
+              value={filters.taluka_id || ''}
+              onChange={(e) =>
+                setFilters((prev) => ({ ...prev, taluka_id: e.target.value || null }))
+              }
+              style={styles.filterSelect}
+            >
+              <option value="">All</option>
+              {(options.talukas || []).map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div style={styles.filterGroup}>
+            <label style={styles.filterLabel}>Block</label>
+            <select
+              value={filters.block_id || ''}
+              onChange={(e) =>
+                setFilters((prev) => ({ ...prev, block_id: e.target.value || null }))
+              }
+              style={styles.filterSelect}
+            >
+              <option value="">All</option>
+              {(options.blocks || []).map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div style={styles.filterGroup}>
+            <label style={styles.filterLabel}>Circle</label>
+            <select
+              value={filters.circle_id || ''}
+              onChange={(e) =>
+                setFilters((prev) => ({ ...prev, circle_id: e.target.value || null }))
+              }
+              style={styles.filterSelect}
+            >
+              <option value="">All</option>
+              {(options.circles || []).map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div style={styles.filterGroup}>
+            <label style={styles.filterLabel}>Gram Panchayat</label>
+            <select
+              value={filters.gram_panchayat_id || ''}
+              onChange={(e) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  gram_panchayat_id: e.target.value || null,
+                }))
+              }
+              style={styles.filterSelect}
+            >
+              <option value="">All</option>
+              {(options['gram-panchayats'] || []).map((g) => (
+                <option key={g.id} value={g.id}>
+                  {g.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div style={styles.filterGroup}>
+            <label style={styles.filterLabel}>Village</label>
+            <select
+              value={filters.village_id || ''}
+              onChange={(e) =>
+                setFilters((prev) => ({ ...prev, village_id: e.target.value || null }))
+              }
+              style={styles.filterSelect}
+            >
+              <option value="">All</option>
+              {(options.villages || []).map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div style={styles.filterGroup}>
+            <label style={styles.filterLabel}>Business Position</label>
+            <select
+              value={filters.business_position_id || ''}
+              onChange={(e) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  business_position_id: e.target.value || null,
+                }))
+              }
+              style={styles.filterSelect}
+            >
+              <option value="">All</option>
+              {(options.designations || []).map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div style={styles.filterGroup}>
+            <label style={styles.filterLabel}>Business Sector</label>
+            <select
+              value={filters.business_category_id || ''}
+              onChange={(e) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  business_category_id: e.target.value || null,
+                }))
+              }
+              style={styles.filterSelect}
+            >
+              <option value="">All</option>
+              {(options['business-categories'] || []).map((bc) => (
+                <option key={bc.id} value={bc.id}>
+                  {bc.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div style={styles.filterGroup}>
+            <label style={styles.filterLabel}>User Name</label>
+            <input
+              type="text"
+              value={filters.user_name || ''}
+              onChange={(e) =>
+                setFilters((prev) => ({ ...prev, user_name: e.target.value || '' }))
+              }
+              placeholder="Search user"
+              style={styles.filterSelect}
+            />
+          </div>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} style={styles.form}>
         <div style={styles.formRow}>
@@ -343,48 +771,148 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
                 })()
               ) : f.type === 'select' ? (
                 (() => {
-                  const dbOpts = options[f.optionsTable] || [];
+                  let dbOpts = options[f.optionsTable] || [];
                   // When editing a self-referential field (e.g. designations parent_id), exclude current row from options
-                  let filteredDbOpts = dbOpts;
                   if (editingId && f.optionsTable === table && f.name === 'parent_id') {
-                    filteredDbOpts = dbOpts.filter(
+                    dbOpts = dbOpts.filter(
                       (o) => String(o.client_id != null ? o.client_id : o.id) !== String(editingId)
                     );
                   }
+                  // Special cascade for position-allotments: Zone → Vidhan Sabha → Taluka → Block → Circle → Gram Panchayat → Village
+                  if (table === 'position-allotments') {
+                    if (f.name === 'vidhan_sabha_id') {
+                      const zoneId = form.zone_id != null ? Number(form.zone_id) : null;
+                      if (zoneId != null && !Number.isNaN(zoneId)) {
+                        dbOpts = dbOpts.filter((o) => o.zone_id === zoneId);
+                      } else {
+                        dbOpts = [];
+                      }
+                    } else if (f.name === 'taluka_id') {
+                      const vsId = form.vidhan_sabha_id != null ? Number(form.vidhan_sabha_id) : null;
+                      if (vsId != null && !Number.isNaN(vsId)) {
+                        dbOpts = dbOpts.filter((o) => o.vidhan_sabha_id === vsId);
+                      } else {
+                        dbOpts = [];
+                      }
+                    } else if (f.name === 'block_id') {
+                      const talukaId = form.taluka_id != null ? Number(form.taluka_id) : null;
+                      if (talukaId != null && !Number.isNaN(talukaId)) {
+                        dbOpts = dbOpts.filter((o) => o.taluka_id === talukaId);
+                      } else {
+                        dbOpts = [];
+                      }
+                    } else if (f.name === 'circle_id') {
+                      const blockId = form.block_id != null ? Number(form.block_id) : null;
+                      if (blockId != null && !Number.isNaN(blockId)) {
+                        dbOpts = dbOpts.filter((o) => o.block_id === blockId);
+                      } else {
+                        dbOpts = [];
+                      }
+                    } else if (f.name === 'gram_panchayat_id') {
+                      const circleId = form.circle_id != null ? Number(form.circle_id) : null;
+                      if (circleId != null && !Number.isNaN(circleId)) {
+                        dbOpts = dbOpts.filter((o) => o.circle_id === circleId);
+                      } else {
+                        dbOpts = [];
+                      }
+                    } else if (f.name === 'village_id') {
+                      const gpId = form.gram_panchayat_id != null ? Number(form.gram_panchayat_id) : null;
+                      if (gpId != null && !Number.isNaN(gpId)) {
+                        dbOpts = dbOpts.filter((o) => o.gram_panchayat_id === gpId);
+                      } else {
+                        dbOpts = [];
+                      }
+                    }
+                  }
                   const staticList = f.optionStatic || [];
-                  const staticOpts = staticList.map((s) =>
-                    (typeof s === 'object' && s !== null && ('id' in s || 'name' in s))
-                      ? s
-                      : { id: s, name: s }
-                  ).filter((s) => !filteredDbOpts.some((o) => (o.id != null && o.id === s.id) || (o.id === s.id)));
-                  const selectOptions = [...filteredDbOpts, ...staticOpts];
-                  return (
-                <select
-                  name={f.name}
-                  value={form[f.name] != null ? form[f.name] : ''}
-                  onChange={(e) => {
-                    const raw = e.target.value;
-                    const useNumber = raw !== '' && (!f.optionValue && f.name.endsWith('_id') || f.optionValue === 'id');
-                    setForm((prev) => {
-                      const next = { ...prev, [f.name]: raw === '' ? null : (useNumber ? Number(raw) : raw) };
-                      const dependent = fields.find((x) => x.type === 'selectFromLevel' && x.levelField === f.name);
-                      if (dependent) next[dependent.name] = null;
-                      return next;
-                    });
-                  }}
-                  style={styles.input}
-                >
-                  <option value="">{f.optionPlaceholder || 'Select...'}</option>
-                  {selectOptions.map((opt) => {
-                    const optValue = f.optionValue != null ? (opt[f.optionValue] ?? '') : opt.id;
-                    const optLabel = f.optionLabel != null ? (opt[f.optionLabel] ?? opt.name) : opt.name;
-                    return (
-                      <option key={optValue !== '' ? optValue : opt.id} value={optValue}>
-                        {optLabel}
-                      </option>
+                  const staticOpts = staticList
+                    .map((s) =>
+                      typeof s === 'object' && s !== null && ('id' in s || 'name' in s)
+                        ? s
+                        : { id: s, name: s }
+                    )
+                    .filter(
+                      (s) =>
+                        !dbOpts.some(
+                          (o) => (o.id != null && o.id === s.id) || o.id === s.id
+                        )
                     );
-                  })}
-                </select>
+                  const selectOptions = [...dbOpts, ...staticOpts];
+                  const isLocationCascade =
+                    table === 'position-allotments' &&
+                    ['zone_id', 'vidhan_sabha_id', 'taluka_id', 'block_id', 'circle_id', 'gram_panchayat_id', 'village_id'].includes(
+                      f.name
+                    );
+                  const parentMap = {
+                    vidhan_sabha_id: 'zone_id',
+                    taluka_id: 'vidhan_sabha_id',
+                    block_id: 'taluka_id',
+                    circle_id: 'block_id',
+                    gram_panchayat_id: 'circle_id',
+                    village_id: 'gram_panchayat_id',
+                  };
+                  const parentField = parentMap[f.name];
+                  const disabled =
+                    isLocationCascade && parentField ? !form[parentField] : false;
+                  return (
+                    <select
+                      name={f.name}
+                      value={form[f.name] != null ? form[f.name] : ''}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        const useNumber =
+                          raw !== '' &&
+                          ((!f.optionValue && f.name.endsWith('_id')) ||
+                            f.optionValue === 'id');
+                        setForm((prev) => {
+                          const next = {
+                            ...prev,
+                            [f.name]: raw === '' ? null : useNumber ? Number(raw) : raw,
+                          };
+                          // Clear deeper cascade fields for position-allotments
+                          if (table === 'position-allotments') {
+                            const order = [
+                              'zone_id',
+                              'vidhan_sabha_id',
+                              'taluka_id',
+                              'block_id',
+                              'circle_id',
+                              'gram_panchayat_id',
+                              'village_id',
+                            ];
+                            const idx = order.indexOf(f.name);
+                            if (idx !== -1) {
+                              for (let i = idx + 1; i < order.length; i++) {
+                                next[order[i]] = null;
+                              }
+                            }
+                          }
+                          const dependent = fields.find(
+                            (x) => x.type === 'selectFromLevel' && x.levelField === f.name
+                          );
+                          if (dependent) next[dependent.name] = null;
+                          return next;
+                        });
+                      }}
+                      style={styles.input}
+                      disabled={disabled}
+                    >
+                      <option value="">{f.optionPlaceholder || 'Select...'}</option>
+                      {selectOptions.map((opt) => {
+                        const optValue =
+                          f.optionValue != null ? opt[f.optionValue] ?? '' : opt.id;
+                        const optLabel =
+                          f.optionLabel != null ? opt[f.optionLabel] ?? opt.name : opt.name;
+                        return (
+                          <option
+                            key={optValue !== '' ? optValue : opt.id}
+                            value={optValue}
+                          >
+                            {optLabel}
+                          </option>
+                        );
+                      })}
+                    </select>
                   );
                 })()
               ) : f.type === 'selectFromLevel' ? (
@@ -430,25 +958,70 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
                   ))}
                 </div>
               ) : (
-                <input
-                  type="text"
-                  inputMode={f.type === 'number' || f.numericOnly ? 'numeric' : undefined}
-                  name={f.name}
-                  value={form[f.name] != null ? form[f.name] : ''}
-                  onChange={(e) => {
-                    let v = e.target.value;
-                    if (f.type === 'number') {
-                      v = v.replace(/[^\d.]/g, '').replace(/(\..*)\./g, '$1');
-                    } else if (f.numericOnly) {
-                      v = v.replace(/\D/g, '');
-                    } else {
-                      v = e.target.value;
+                (() => {
+                  // Special read-only auto-derived Level field for position-allotments
+                  if (table === 'position-allotments' && f.name === 'level_type') {
+                    const order = [
+                      'zone_id',
+                      'vidhan_sabha_id',
+                      'taluka_id',
+                      'block_id',
+                      'circle_id',
+                      'gram_panchayat_id',
+                      'village_id',
+                    ];
+                    const labelMap = {
+                      zone_id: 'Zone',
+                      vidhan_sabha_id: 'Vidhan Sabha',
+                      taluka_id: 'Taluka',
+                      block_id: 'Block',
+                      circle_id: 'Panchayat Samiti Circle',
+                      gram_panchayat_id: 'Gram Panchayat',
+                      village_id: 'Village',
+                    };
+                    let levelLabel = '';
+                    for (let i = order.length - 1; i >= 0; i--) {
+                      const fieldName = order[i];
+                      const v = form[fieldName];
+                      if (v != null && v !== '') {
+                        levelLabel = labelMap[fieldName];
+                        break;
+                      }
                     }
-                    setForm((prev) => ({ ...prev, [f.name]: v }));
-                  }}
-                  placeholder={f.label}
-                  style={styles.input}
-                />
+                    return (
+                      <input
+                        type="text"
+                        name={f.name}
+                        value={levelLabel}
+                        readOnly
+                        placeholder="Auto from selection"
+                        style={{ ...styles.input, backgroundColor: '#f9fafb' }}
+                      />
+                    );
+                  }
+
+                  return (
+                    <input
+                      type="text"
+                      inputMode={f.type === 'number' || f.numericOnly ? 'numeric' : undefined}
+                      name={f.name}
+                      value={form[f.name] != null ? form[f.name] : ''}
+                      onChange={(e) => {
+                        let v = e.target.value;
+                        if (f.type === 'number') {
+                          v = v.replace(/[^\d.]/g, '').replace(/(\..*)\./g, '$1');
+                        } else if (f.numericOnly) {
+                          v = v.replace(/\D/g, '');
+                        } else {
+                          v = e.target.value;
+                        }
+                        setForm((prev) => ({ ...prev, [f.name]: v }));
+                      }}
+                      placeholder={f.label}
+                      style={styles.input}
+                    />
+                  );
+                })()
               )}
             </div>
           ))}
@@ -498,14 +1071,14 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
                   Loading…
                 </td>
               </tr>
-            ) : data.length === 0 ? (
+            ) : filteredData.length === 0 ? (
               <tr>
                 <td colSpan={fields.length + 2} style={styles.td}>
                   No data.
                 </td>
               </tr>
             ) : (
-              data.map((row) => {
+              filteredData.map((row) => {
                 const rowId = row.client_id != null ? String(row.client_id) : row.id;
                 const displayId = row.client_id != null ? String(row.client_id) : row.id;
                 return (
@@ -517,20 +1090,22 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
                     </td>
                   ))}
                   <td style={styles.td}>
-                    <button
-                      type="button"
-                      onClick={() => startEdit(row)}
-                      style={styles.btnEdit}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(rowId)}
-                      style={styles.btnDelete}
-                    >
-                      Delete
-                    </button>
+                    <div style={styles.tableActions}>
+                      <button
+                        type="button"
+                        onClick={() => startEdit(row)}
+                        style={styles.btnEdit}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(rowId)}
+                        style={styles.btnDelete}
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );
@@ -553,26 +1128,233 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
   );
 }
 
+function filterPositionAllotments(rows, filters, options) {
+  if (!rows || rows.length === 0) return [];
+  const zones = options.zones || [];
+  const vidhanSabhas = options['vidhan-sabhas'] || [];
+  const talukas = options.talukas || [];
+  const blocks = options.blocks || [];
+  const circles = options.circles || [];
+  const gramPanchayats = options['gram-panchayats'] || [];
+  const villages = options.villages || [];
+
+  const numOrNull = (v) => {
+    if (v === undefined || v === null || v === '') return null;
+    const n = Number(v);
+    return Number.isNaN(n) ? null : n;
+  };
+
+  const fZone = numOrNull(filters.zone_id);
+  const fVs = numOrNull(filters.vidhan_sabha_id);
+  const fTaluka = numOrNull(filters.taluka_id);
+  const fBlock = numOrNull(filters.block_id);
+  const fCircle = numOrNull(filters.circle_id);
+  const fGp = numOrNull(filters.gram_panchayat_id);
+  const fVillage = numOrNull(filters.village_id);
+  const fPos = numOrNull(filters.business_position_id);
+  const fCat = numOrNull(filters.business_category_id);
+  const fUser = (filters.user_name || '').trim().toLowerCase();
+
+  return rows.filter((row) => {
+    if (fPos != null && numOrNull(row.business_position_id) !== fPos) return false;
+    if (fCat != null && numOrNull(row.business_category_id) !== fCat) return false;
+    if (fUser) {
+      const u = (row.user_name || '').toString().toLowerCase();
+      if (!u.includes(fUser)) return false;
+    }
+
+    const levelType = row.level_type;
+    const areaId = numOrNull(row.area_id);
+    if (
+      fZone == null &&
+      fVs == null &&
+      fTaluka == null &&
+      fBlock == null &&
+      fCircle == null &&
+      fGp == null &&
+      fVillage == null
+    ) {
+      return true;
+    }
+    if (!levelType || areaId == null) return false;
+
+    let zone = null;
+    let vs = null;
+    let taluka = null;
+    let block = null;
+    let circle = null;
+    let gp = null;
+    let village = null;
+
+    switch (levelType) {
+      case 'zone': {
+        zone = zones.find((z) => numOrNull(z.id) === areaId) || null;
+        break;
+      }
+      case 'vidhan_sabha': {
+        vs = vidhanSabhas.find((v) => numOrNull(v.id) === areaId) || null;
+        if (vs) {
+          zone = zones.find((z) => numOrNull(z.id) === numOrNull(vs.zone_id)) || null;
+        }
+        break;
+      }
+      case 'taluka': {
+        taluka = talukas.find((t) => numOrNull(t.id) === areaId) || null;
+        if (taluka) {
+          vs =
+            vidhanSabhas.find(
+              (v) => numOrNull(v.id) === numOrNull(taluka.vidhan_sabha_id)
+            ) || null;
+          if (vs) {
+            zone =
+              zones.find((z) => numOrNull(z.id) === numOrNull(vs.zone_id)) || null;
+          }
+        }
+        break;
+      }
+      case 'block': {
+        block = blocks.find((b) => numOrNull(b.id) === areaId) || null;
+        if (block) {
+          taluka =
+            talukas.find((t) => numOrNull(t.id) === numOrNull(block.taluka_id)) ||
+            null;
+          if (taluka) {
+            vs =
+              vidhanSabhas.find(
+                (v) => numOrNull(v.id) === numOrNull(taluka.vidhan_sabha_id)
+              ) || null;
+            if (vs) {
+              zone =
+                zones.find((z) => numOrNull(z.id) === numOrNull(vs.zone_id)) || null;
+            }
+          }
+        }
+        break;
+      }
+      case 'circle': {
+        circle = circles.find((c) => numOrNull(c.id) === areaId) || null;
+        if (circle) {
+          block =
+            blocks.find((b) => numOrNull(b.id) === numOrNull(circle.block_id)) ||
+            null;
+          if (block) {
+            taluka =
+              talukas.find((t) => numOrNull(t.id) === numOrNull(block.taluka_id)) ||
+              null;
+          }
+          if (taluka) {
+            vs =
+              vidhanSabhas.find(
+                (v) => numOrNull(v.id) === numOrNull(taluka.vidhan_sabha_id)
+              ) || null;
+            if (vs) {
+              zone =
+                zones.find((z) => numOrNull(z.id) === numOrNull(vs.zone_id)) || null;
+            }
+          }
+        }
+        break;
+      }
+      case 'gram_panchayat': {
+        gp = gramPanchayats.find((g) => numOrNull(g.id) === areaId) || null;
+        if (gp) {
+          taluka =
+            talukas.find((t) => numOrNull(t.id) === numOrNull(gp.taluka_id)) ||
+            null;
+          circle =
+            circles.find((c) => numOrNull(c.id) === numOrNull(gp.circle_id)) ||
+            null;
+        }
+        if (taluka) {
+          vs =
+            vidhanSabhas.find(
+              (v) => numOrNull(v.id) === numOrNull(taluka.vidhan_sabha_id)
+            ) || null;
+          if (vs) {
+            zone =
+              zones.find((z) => numOrNull(z.id) === numOrNull(vs.zone_id)) || null;
+          }
+        }
+        break;
+      }
+      case 'village': {
+        village = villages.find((v) => numOrNull(v.id) === areaId) || null;
+        if (village) {
+          gp =
+            gramPanchayats.find(
+              (g) => numOrNull(g.id) === numOrNull(village.gram_panchayat_id)
+            ) || null;
+        }
+        if (gp) {
+          taluka =
+            talukas.find((t) => numOrNull(t.id) === numOrNull(gp.taluka_id)) ||
+            null;
+          circle =
+            circles.find((c) => numOrNull(c.id) === numOrNull(gp.circle_id)) ||
+            null;
+        }
+        if (taluka) {
+          vs =
+            vidhanSabhas.find(
+              (v) => numOrNull(v.id) === numOrNull(taluka.vidhan_sabha_id)
+            ) || null;
+          if (vs) {
+            zone =
+              zones.find((z) => numOrNull(z.id) === numOrNull(vs.zone_id)) || null;
+          }
+        }
+        break;
+      }
+      default:
+        break;
+    }
+
+    if (fZone != null && (!zone || numOrNull(zone.id) !== fZone)) return false;
+    if (fVs != null && (!vs || numOrNull(vs.id) !== fVs)) return false;
+    if (fTaluka != null && (!taluka || numOrNull(taluka.id) !== fTaluka))
+      return false;
+    if (fBlock != null && (!block || numOrNull(block.id) !== fBlock)) return false;
+    if (fCircle != null && (!circle || numOrNull(circle.id) !== fCircle))
+      return false;
+    if (fGp != null && (!gp || numOrNull(gp.id) !== fGp)) return false;
+    if (fVillage != null && (!village || numOrNull(village.id) !== fVillage))
+      return false;
+
+    return true;
+  });
+}
+
 function buildDesignationTree(rows) {
+  if (!rows || rows.length === 0) return [];
   const byId = new Map();
   rows.forEach((r) => {
-    byId.set(r.id, { ...r, children: [] });
+    const id = r.id != null ? Number(r.id) : null;
+    if (id == null || Number.isNaN(id)) return;
+    byId.set(id, { ...r, id, children: [] });
   });
   const roots = [];
   byId.forEach((node) => {
-    if (node.parent_id && byId.has(node.parent_id)) {
-      byId.get(node.parent_id).children.push(node);
+    const parentId = node.parent_id != null && node.parent_id !== '' ? Number(node.parent_id) : null;
+    const parent = parentId != null && !Number.isNaN(parentId) ? byId.get(parentId) : null;
+    if (parent) {
+      parent.children.push(node);
     } else {
       roots.push(node);
     }
+  });
+  const sortById = (a, b) => (a.id - b.id);
+  roots.sort(sortById);
+  byId.forEach((node) => {
+    if (node.children && node.children.length > 0) node.children.sort(sortById);
   });
   return roots;
 }
 
 function HierarchyItem({ node }) {
+  const label = node.name != null && String(node.name).trim() !== '' ? String(node.name).trim() : '—';
   return (
     <li style={styles.hierarchyItem}>
-      <div style={styles.hierarchyLabel}>{node.name}</div>
+      <div style={styles.hierarchyLabel}>{label}</div>
       {node.children && node.children.length > 0 && (
         <ul style={styles.hierarchySubList}>
           {node.children.map((child) => (
@@ -591,6 +1373,26 @@ const styles = {
     fontSize: '1.75rem',
     fontFamily: 'Georgia, "Times New Roman", serif',
     color: '#1a1a1a',
+  },
+  filterRow: {
+    marginTop: '0.5rem',
+    marginBottom: '0.75rem',
+    padding: '0.5rem',
+    borderRadius: 4,
+    border: '1px solid #ddd',
+    background: '#fafafa',
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '0.5rem 1rem',
+  },
+  filterGroup: { display: 'flex', flexDirection: 'column', gap: 2 },
+  filterLabel: { fontSize: '0.75rem', fontWeight: 500, color: '#555' },
+  filterSelect: {
+    minWidth: 140,
+    padding: '0.3rem 0.45rem',
+    borderRadius: 4,
+    border: '1px solid #bbb',
+    fontSize: '0.8rem',
   },
   form: { marginBottom: '0.5rem' },
   formRow: { display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: '1rem' },
@@ -623,14 +1425,18 @@ const styles = {
     background: '#fff',
     color: '#333',
   },
+  tableActions: {
+    display: 'inline-flex',
+    gap: '0.4rem',
+    alignItems: 'center',
+  },
   btnEdit: {
-    padding: '0.35rem 0.6rem',
+    padding: '0.35rem 0.75rem',
     fontSize: '0.85rem',
     borderRadius: 4,
     border: 'none',
     background: '#1a5fb4',
     color: '#fff',
-    marginRight: '0.5rem',
   },
   btnDelete: {
     padding: '0.35rem 0.6rem',
@@ -640,17 +1446,29 @@ const styles = {
     background: '#8B1538',
     color: '#fff',
   },
-  tableWrap: { overflowX: 'auto', background: '#fff', border: '1px solid #ddd', borderRadius: 4 },
-  table: { width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' },
+  tableWrap: {
+    overflowX: 'auto',
+    overflowY: 'auto',
+    maxHeight: '60vh',
+    background: '#fff',
+    border: '1px solid #ddd',
+    borderRadius: 4,
+  },
+  table: { width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' },
   th: {
     textAlign: 'left',
-    padding: '0.5rem 0.75rem',
+    padding: '0.3rem 0.4rem',
     borderBottom: '2px solid #4a4a4e',
     color: '#333',
     fontWeight: 600,
     background: '#f5f5f5',
+    whiteSpace: 'nowrap',
   },
-  td: { padding: '0.5rem 0.75rem', borderBottom: '1px solid #ddd' },
+  td: {
+    padding: '0.3rem 0.4rem',
+    borderBottom: '1px solid #ddd',
+    whiteSpace: 'nowrap',
+  },
   alertOverlay: {
     position: 'fixed',
     top: 0,

@@ -35,24 +35,25 @@ export default function LoginPage() {
   };
 
   const handlePhoneChange = (e) => {
-    const v = e.target.value.replace(/\D/g, '');
-    setPhone(v);
+    const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
+    setPhone(digits);
   };
 
   return (
     <div style={styles.wrapper}>
       <div style={styles.card}>
         <img src={LOGO_URL} alt="Logo" style={styles.logo} />
-        <h1 style={styles.title}>Admin Login</h1>
+        <h1 style={styles.foundationName}>GAON MAJHA UDYOG FOUNDATION</h1>
+        <h2 style={styles.title}>Admin Login</h2>
         <form onSubmit={handleSubmit} style={styles.form}>
           <div style={styles.field}>
             <label style={styles.label}>Phone number</label>
             <input
               type="text"
               inputMode="numeric"
-              value={phone}
+              value={phone ? phone.replace(/(\d{2})(?=\d)/g, '$1-') : ''}
               onChange={handlePhoneChange}
-              placeholder="e.g. 1234567890"
+              placeholder="e.g. 9876543210"
               style={styles.input}
               autoComplete="tel"
             />
@@ -102,11 +103,20 @@ const styles = {
     margin: '0 auto 1.5rem',
     objectFit: 'contain',
   },
-  title: {
-    margin: '0 0 1.5rem',
-    fontSize: '1.5rem',
+  foundationName: {
+    margin: '0 0 0.5rem',
+    fontSize: '1.1rem',
     fontWeight: 700,
     color: '#1a1a1a',
+    textAlign: 'center',
+    letterSpacing: '0.02em',
+    lineHeight: 1.3,
+  },
+  title: {
+    margin: '0 0 1.5rem',
+    fontSize: '1.25rem',
+    fontWeight: 600,
+    color: '#555',
     textAlign: 'center',
   },
   form: { display: 'flex', flexDirection: 'column', gap: '1rem' },

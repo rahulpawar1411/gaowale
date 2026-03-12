@@ -17,6 +17,27 @@ function decimalOnly(value) {
   return parts[0] + '.' + parts.slice(1).join('');
 }
 
+function formatGroupsOf4(digits) {
+  if (!digits) return '';
+  const clean = digitsOnly(digits);
+  if (clean.length <= 10) return clean;
+  const chunks = [];
+  for (let i = 0; i < clean.length; i += 4) {
+    chunks.push(clean.slice(i, i + 4));
+  }
+  return chunks.join('-');
+}
+
+function formatPhonePairs(digits) {
+  if (!digits) return '';
+  const clean = digitsOnly(digits).slice(0, 10);
+  const chunks = [];
+  for (let i = 0; i < clean.length; i += 2) {
+    chunks.push(clean.slice(i, i + 2));
+  }
+  return chunks.join('-');
+}
+
 /**
  * Shared TextField. For number inputs: only numbers allowed.
  * For type="number": digits + one decimal. For numericOnly: digits only. Otherwise: string.
@@ -31,13 +52,18 @@ export default function TextField({
   style,
   inputStyle,
   numericOnly,
+  maxLength,
+  format,
 }) {
   const isDecimal = type === 'number';
 
   const handleChange = (e) => {
     const raw = e.target.value;
     if (type === 'number' || numericOnly) {
-      const filtered = isDecimal ? decimalOnly(raw) : digitsOnly(raw);
+      let filtered = isDecimal ? decimalOnly(raw) : digitsOnly(raw);
+      if (typeof maxLength === 'number' && maxLength > 0) {
+        filtered = filtered.slice(0, maxLength);
+      }
       const synthetic = { target: { name, value: filtered } };
       onChange(name)(synthetic);
       return;
@@ -48,18 +74,52 @@ export default function TextField({
   const inputType = type === 'number' ? 'text' : type;
   const inputMode = type === 'number' ? 'decimal' : numericOnly ? 'numeric' : undefined;
 
+  let displayValue = value;
+  if (numericOnly && typeof value === 'string') {
+    if (format === 'phonePairs') {
+      displayValue = formatPhonePairs(value);
+    } else if (format === 'groups4') {
+      displayValue = formatGroupsOf4(value);
+    } else {
+      displayValue = digitsOnly(value);
+    }
+  }
+  // Ensure input is always controlled with a string (avoids undefined/null issues)
+  const safeValue = displayValue != null ? String(displayValue) : '';
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4, ...style }}>
       {label && <label style={{ fontSize: '0.85rem', fontWeight: 500, color: '#333' }}>{label}</label>}
       <input
         type={inputType}
         name={name}
-        value={value}
+        value={safeValue}
         onChange={handleChange}
+        onKeyDown={handleInputKeyDown}
         placeholder={placeholder}
         inputMode={inputMode}
         style={inputStyle}
       />
     </div>
   );
+}
+
+function handleInputKeyDown(e) {
+  if (e.key !== 'Tab') return;
+  const form = e.target.closest('form');
+  if (!form) return;
+  const focusable = form.querySelectorAll(
+    'select:not([disabled]), input:not([disabled]):not([type="hidden"]), button:not([disabled])'
+  );
+  const list = Array.from(focusable);
+  const idx = list.indexOf(e.target);
+  if (idx === -1) return;
+  e.preventDefault();
+  if (e.shiftKey) {
+    const prev = list[idx - 1];
+    if (prev) prev.focus();
+  } else {
+    const next = list[idx + 1];
+    if (next) next.focus();
+  }
 }

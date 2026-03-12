@@ -105,7 +105,7 @@ export default function HomePage() {
           style={styles.input}
         />
         <div style={styles.actions}>
-          <button type="submit" disabled={submitLoading} style={styles.btn}>
+          <button type="submit" disabled={submitLoading} style={styles.btnPrimary}>
             {submitLoading ? 'Saving…' : editingId ? 'Update' : 'Add'}
           </button>
           {editingId && (
@@ -167,13 +167,16 @@ const styles = {
     color: '#333',
   },
   actions: { display: 'flex', gap: '0.5rem', alignItems: 'center' },
-  btn: {
-    padding: '0.5rem 1rem',
+  btnPrimary: {
+    minWidth: 220,
+    padding: '0.55rem 1.5rem',
     borderRadius: 4,
     border: 'none',
-    background: '#1a5fb4',
+    background: '#15803d',
     color: '#fff',
     fontWeight: 600,
+    fontSize: '0.95rem',
+    cursor: 'pointer',
   },
   btnSecondary: {
     padding: '0.5rem 1rem',

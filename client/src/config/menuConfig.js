@@ -15,7 +15,7 @@ export const MAIN_MENU = [
   { path: '/circle', label: 'Panchayat Samiti Circle', table: 'circles' },
   { path: '/gram-panchayat', label: 'Gram Panchayat', table: 'gram-panchayats' },
   { path: '/village', label: 'Village', table: 'villages' },
-  { path: '/unit-type', label: 'Unit of Type', table: 'unit-types' },
+  { path: '/unit-type', label: 'Types of Units', table: 'unit-types' },
   { path: '/unit', label: 'Unit', table: 'units' },
 ];
 
@@ -36,4 +36,5 @@ export const REGISTRATION_MENU = [
   { path: '/farmer-registration', label: 'Farmer Registration', type: 'farmer' },
   { path: '/lakhpati-didi-registration', label: 'Lakhpati Didi Registration', type: 'lakhpatiDidi' },
   { path: '/customer-registration', label: 'Customer Registration', type: 'customer' },
+  { path: '/user-details', label: 'User Details', type: 'userDetails' },
 ];

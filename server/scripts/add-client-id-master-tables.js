@@ -12,7 +12,7 @@ const dbName = process.env.DB_NAME || 'gao0.2';
 const MASTER_TABLES = [
   'continents', 'countries', 'country_divisions', 'states', 'state_divisions', 'state_sub_divisions',
   'regions', 'zones', 'vidhan_sabhas', 'talukas', 'circles', 'gram_panchayats', 'villages',
-  'products', 'business_types', 'units', 'unit_types', 'business_categories', 'business_sub_categories',
+  'products', 'business_types', 'units', 'types_of_units', 'business_categories', 'business_sub_categories',
 ];
 
 async function run() {

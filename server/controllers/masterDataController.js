@@ -13,7 +13,7 @@ const getTableName = (param) => {
     'vidhan-sabhas': 'vidhan_sabhas',
     'gram-panchayats': 'gram_panchayats',
     'business-types': 'business_types',
-    'unit-types': 'unit_types',
+    'unit-types': 'types_of_units',
     'business-categories': 'business_categories',
     'business-sub-categories': 'business_sub_categories',
     'business-positions': 'business_positions',
@@ -72,7 +72,8 @@ const create = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid table name' });
     }
     const body = req.body || {};
-    if (body.name !== undefined && !String(body.name).trim()) {
+    const skipNameCheck = table === 'position_allotments';
+    if (!skipNameCheck && body.name !== undefined && !String(body.name).trim()) {
       return res.status(400).json({ success: false, message: 'Name is required' });
     }
     // Business Sub Category requires a business category
@@ -98,7 +99,8 @@ const update = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid table name' });
     }
     const body = req.body || {};
-    if (body.name !== undefined && !String(body.name).trim()) {
+    const skipNameCheck = table === 'position_allotments';
+    if (!skipNameCheck && body.name !== undefined && !String(body.name).trim()) {
       return res.status(400).json({ success: false, message: 'Name is required' });
     }
     if (table === 'business_sub_categories' && (body.business_category_id == null || body.business_category_id === '')) {

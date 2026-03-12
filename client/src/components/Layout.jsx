@@ -1,18 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { MAIN_MENU, BUSINESS_MENU, REGISTRATION_MENU, ALLOTMENT_MENU } from '../config/menuConfig';
-import { getAdmin, removeToken } from '../utils/auth';
+import { removeToken } from '../utils/auth';
 
 const LOGO_URL = 'https://www.greatwebsoft.in/gaonmaza/public/images/white-logo.jpeg';
 
 export default function Layout({ children }) {
   const navigate = useNavigate();
-  const admin = getAdmin();
   const [userOpen, setUserOpen] = useState(false);
   const [mainMenuOpen, setMainMenuOpen] = useState(true);
   const [allotmentOpen, setAllotmentOpen] = useState(false);
   const [businessOpen, setBusinessOpen] = useState(false);
   const [registrationOpen, setRegistrationOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userWrapRef = useRef(null);
 
   useEffect(() => {
@@ -60,7 +60,7 @@ export default function Layout({ children }) {
               aria-haspopup="true"
             >
               <span style={styles.userIcon}>👤</span>
-              <span>{admin?.phone ? `Admin ${admin.phone}` : 'Admin'}</span>
+              <span>Admin</span>
               <span style={styles.dropdownArrow}>▼</span>
             </button>
             {userOpen && (
@@ -129,11 +129,21 @@ export default function Layout({ children }) {
             {sectionHeader('Registration', registrationOpen, () => setRegistrationOpen(!registrationOpen))}
             {registrationOpen && (
               <div style={styles.sectionLinks}>
-                {REGISTRATION_MENU.map(({ path, label }) => (
+                {REGISTRATION_MENU.filter(({ type }) => type !== 'userDetails').map(({ path, label }) => (
                   <NavLink key={path} to={path} style={linkStyle} className="gov-sidebar-link">
                     {label}
                   </NavLink>
                 ))}
+              </div>
+            )}
+
+            {/* User Details section (same theme as others) */}
+            {sectionHeader('User Details', userMenuOpen, () => setUserMenuOpen(!userMenuOpen))}
+            {userMenuOpen && (
+              <div style={styles.sectionLinks}>
+                <NavLink to="/user-details" style={linkStyle} className="gov-sidebar-link">
+                  User Details
+                </NavLink>
               </div>
             )}
           </nav>

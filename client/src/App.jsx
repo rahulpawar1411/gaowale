@@ -7,6 +7,7 @@ import ManagementRegistrationPage from './views/ManagementRegistrationPage';
 import FarmerRegistrationPage from './views/FarmerRegistrationPage';
 import CustomerRegistrationPage from './views/CustomerRegistrationPage';
 import LakhpatiDidiRegistrationPage from './views/LakhpatiDidiRegistrationPage';
+import UsersPage from './views/UsersPage';
 import LoginPage from './views/LoginPage';
 import { MAIN_MENU, BUSINESS_MENU, REGISTRATION_MENU, ALLOTMENT_MENU } from './config/menuConfig';
 import { entityFields } from './config/entityFields';
@@ -67,7 +68,9 @@ function ProtectedApp() {
                     ? <CustomerRegistrationPage title={label} />
                     : type === 'lakhpatiDidi'
                       ? <LakhpatiDidiRegistrationPage title={label} />
-                      : <RegistrationPage type={type} title={label} />
+                      : type === 'userDetails'
+                        ? <UsersPage />
+                        : <RegistrationPage type={type} title={label} />
             }
           />
         ))}
