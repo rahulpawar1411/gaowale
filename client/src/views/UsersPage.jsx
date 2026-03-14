@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { registrationsApi } from '../services/api';
 
 const TYPE_LABELS = {
@@ -82,9 +83,9 @@ export default function UsersPage() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeRow, setActiveRow] = useState(null);
   const [typeFilter, setTypeFilter] = useState('all');
   const [search, setSearch] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     let cancelled = false;
@@ -132,7 +133,7 @@ export default function UsersPage() {
   }, []);
 
   const handleView = (row) => {
-    setActiveRow((prev) => (prev && prev.id === row.id ? null : row));
+    navigate(`/user-details/${row.type}/${row.rawId}`);
   };
 
   const filteredRows = rows.filter((r) => {
@@ -153,55 +154,57 @@ export default function UsersPage() {
 
   return (
     <div style={styles.page}>
-      <h1 style={styles.title}>User Details</h1>
-      <p style={styles.subtitle}>All registered users across Management, Farmer, Customer and Lakhpati Didi.</p>
+      <div style={styles.card}>
+        <h1 style={styles.title}>User Details</h1>
+        <p style={styles.subtitle}>
+          All registered users across Management, Farmer, Customer and Lakhpati Didi.
+        </p>
 
-      <div style={styles.filtersRow}>
-        <label style={styles.filterLabel}>
-          User type:
-          <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-            style={styles.filterSelect}
-          >
-            <option value="all">All</option>
-            <option value="management">Management</option>
-            <option value="farmer">Farmer</option>
-            <option value="customer">Customer</option>
-            <option value="lakhpatiDidi">Lakhpati Didi</option>
-          </select>
-        </label>
-        <input
-          type="text"
-          placeholder="Search by name, number or Aadhar"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={styles.searchInput}
-        />
-      </div>
+        <div style={styles.filtersRow}>
+          <label style={styles.filterLabel}>
+            User type:
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              style={styles.filterSelect}
+            >
+              <option value="all">All</option>
+              <option value="management">Management</option>
+              <option value="farmer">Farmer</option>
+              <option value="customer">Customer</option>
+              <option value="lakhpatiDidi">Lakhpati Didi</option>
+            </select>
+          </label>
+          <input
+            type="text"
+            placeholder="Search by name, number or Aadhar"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={styles.searchInput}
+          />
+        </div>
 
-      {error && <div style={styles.error}>{error}</div>}
-      {loading ? (
-        <p style={styles.muted}>Loading users…</p>
-      ) : filteredRows.length === 0 ? (
-        <p style={styles.muted}>No users found.</p>
-      ) : (
-        <div style={styles.tableWrapper}>
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>Type</th>
-                <th style={styles.th}>Name</th>
-                <th style={styles.th}>Contact</th>
-                <th style={styles.th}>State</th>
-                <th style={styles.th}>Created At</th>
-                <th style={styles.th}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredRows.map((row) => (
-                <React.Fragment key={row.id}>
-                  <tr style={styles.tr}>
+        {error && <div style={styles.error}>{error}</div>}
+        {loading ? (
+          <p style={styles.muted}>Loading users…</p>
+        ) : filteredRows.length === 0 ? (
+          <p style={styles.muted}>No users found.</p>
+        ) : (
+          <div style={styles.tableWrapper}>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>Type</th>
+                  <th style={styles.th}>Name</th>
+                  <th style={styles.th}>Contact</th>
+                  <th style={styles.th}>State</th>
+                  <th style={styles.th}>Created At</th>
+                  <th style={styles.th}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredRows.map((row) => (
+                  <tr key={row.id} style={styles.tr}>
                     <td style={styles.td}>{TYPE_LABELS[row.type] || row.type}</td>
                     <td style={styles.td}>{row.name || '-'}</td>
                     <td style={styles.td}>{row.contact || '-'}</td>
@@ -209,77 +212,50 @@ export default function UsersPage() {
                     <td style={styles.td}>{row.createdAt ? String(row.createdAt).slice(0, 10) : '-'}</td>
                     <td style={styles.td}>
                       <button type="button" style={styles.viewBtn} onClick={() => handleView(row)}>
-                        {activeRow && activeRow.id === row.id ? 'Hide' : 'View'}
+                        View
                       </button>
                     </td>
                   </tr>
-                  {activeRow && activeRow.id === row.id && (
-                    <tr>
-                      <td style={styles.detailCell} colSpan={6}>
-                        <ul style={styles.detailList}>
-                          {(() => {
-                            const seenLabels = new Set();
-                            const entries = [];
-                            for (const [key, value] of Object.entries(row.raw)) {
-                              const lower = key.toLowerCase();
-                              if (lower.includes('password')) continue;
-                              // If we have a *_name alongside *_id, hide the *_id
-                              if (key.endsWith('_id')) {
-                                const base = key.replace(/_id$/, '');
-                                if (Object.prototype.hasOwnProperty.call(row.raw, `${base}_name`)) {
-                                  continue;
-                                }
-                              }
-                              // Skip completely empty values
-                              if (
-                                value === null ||
-                                value === undefined ||
-                                (typeof value === 'string' && value.trim() === '')
-                              ) {
-                                continue;
-                              }
-                              const label = niceFieldLabel(key);
-                              if (seenLabels.has(label)) continue;
-                              seenLabels.add(label);
-                              entries.push({ key, value, label });
-                            }
-                            return entries.map(({ key, value, label }) => (
-                              <li key={key} style={styles.detailItem}>
-                                <span style={styles.detailLabel}>{label}</span>
-                                <span style={styles.detailValue}>{formatValue(key, value)}</span>
-                              </li>
-                            ));
-                          })()}
-                        </ul>
-                      </td>
-                    </tr>
-                  )}
-                </React.Fragment>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
 const styles = {
   page: {
+    padding: '1.5rem 2rem',
+    display: 'flex',
+    justifyContent: 'center',
+    background: '#f2f2f5',
+  },
+  card: {
+    width: '100%',
+    maxWidth: 1040,
+    background: '#ffffff',
+    borderRadius: 8,
+    boxShadow: '0 6px 18px rgba(0,0,0,0.08)',
+    padding: '1.25rem 1.5rem 1.5rem',
     display: 'flex',
     flexDirection: 'column',
     gap: '0.75rem',
   },
   title: {
     margin: 0,
-    fontSize: '1.5rem',
+    fontSize: '1.6rem',
     fontWeight: 700,
-    color: '#111827',
+    textAlign: 'center',
+    color: '#8B1538',
   },
   subtitle: {
-    margin: 0,
+    margin: '0.15rem 0 0.75rem',
     fontSize: '0.95rem',
-    color: '#6b7280',
+    textAlign: 'center',
+    color: '#555',
   },
   filtersRow: {
     marginTop: '0.75rem',
@@ -347,29 +323,6 @@ const styles = {
   },
   detailCell: {
     padding: '0.75rem',
-    background: '#f9fafb',
-    borderTop: '1px solid #e5e7eb',
-  },
-  detailList: {
-    listStyle: 'none',
-    padding: 0,
-    margin: 0,
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-    gap: '0.4rem 1.5rem',
-    fontSize: '0.85rem',
-  },
-  detailItem: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    gap: '0.5rem',
-  },
-  detailLabel: {
-    fontWeight: 600,
-    color: '#4b5563',
-  },
-  detailValue: {
-    color: '#111827',
   },
   error: {
     padding: '0.5rem 0.75rem',

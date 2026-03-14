@@ -11,10 +11,12 @@ async function findAll() {
     const [rows] = await pool.execute(
       `SELECT fr.*,
         s.name as state_name,
+        sc.name as state_circle_name,
         sd.name as state_division_name,
         ssd.name as state_sub_division_name,
         r.name as region_name,
         z.name as zone_name,
+        vs.name as vidhan_sabha_name,
         t.name as taluka_name,
         b.name as block_name,
         c.name as circle_name,
@@ -26,10 +28,12 @@ async function findAll() {
         bt.name as business_type_name
        FROM farmer_registrations fr
        LEFT JOIN states s ON fr.state_id = s.id
+       LEFT JOIN state_circles sc ON fr.state_circle_id = sc.id
        LEFT JOIN state_divisions sd ON fr.state_division_id = sd.id
        LEFT JOIN state_sub_divisions ssd ON fr.state_sub_division_id = ssd.id
        LEFT JOIN regions r ON fr.region_id = r.id
        LEFT JOIN zones z ON fr.zone_id = z.id
+       LEFT JOIN vidhan_sabhas vs ON fr.vidhan_sabha_id = vs.id
        LEFT JOIN talukas t ON fr.taluka_id = t.id
        LEFT JOIN blocks b ON fr.block_id = b.id
        LEFT JOIN circles c ON fr.circle_id = c.id
@@ -56,10 +60,12 @@ async function findById(id) {
     const [rows] = await pool.execute(
       `SELECT fr.*,
         s.name as state_name,
+        sc.name as state_circle_name,
         sd.name as state_division_name,
         ssd.name as state_sub_division_name,
         r.name as region_name,
         z.name as zone_name,
+        vs.name as vidhan_sabha_name,
         t.name as taluka_name,
         b.name as block_name,
         c.name as circle_name,
@@ -71,10 +77,12 @@ async function findById(id) {
         bt.name as business_type_name
        FROM farmer_registrations fr
        LEFT JOIN states s ON fr.state_id = s.id
+       LEFT JOIN state_circles sc ON fr.state_circle_id = sc.id
        LEFT JOIN state_divisions sd ON fr.state_division_id = sd.id
        LEFT JOIN state_sub_divisions ssd ON fr.state_sub_division_id = ssd.id
        LEFT JOIN regions r ON fr.region_id = r.id
        LEFT JOIN zones z ON fr.zone_id = z.id
+       LEFT JOIN vidhan_sabhas vs ON fr.vidhan_sabha_id = vs.id
        LEFT JOIN talukas t ON fr.taluka_id = t.id
        LEFT JOIN blocks b ON fr.block_id = b.id
        LEFT JOIN circles c ON fr.circle_id = c.id
@@ -123,10 +131,12 @@ async function create(data) {
 
   const [
     state_id,
+    state_circle_id,
     state_division_id,
     state_sub_division_id,
     region_id,
     zone_id,
+    vidhan_sabha_id,
     taluka_id,
     village_id,
     block_id,
@@ -138,10 +148,12 @@ async function create(data) {
     product_id,
   ] = [
     'state_id',
+    'state_circle_id',
     'state_division_id',
     'state_sub_division_id',
     'region_id',
     'zone_id',
+    'vidhan_sabha_id',
     'taluka_id',
     'village_id',
     'block_id',
@@ -162,10 +174,12 @@ async function create(data) {
     country_id,
     country_division_id,
     state_id,
+    state_circle_id,
     state_division_id,
     state_sub_division_id,
     region_id,
     zone_id,
+    vidhan_sabha_id,
     taluka_id,
     village_id,
     block_id,
@@ -218,7 +232,7 @@ async function create(data) {
       `INSERT INTO farmer_registrations (
         name, contact,
         country_id, country_division_id,
-        state_id, state_division_id, state_sub_division_id, region_id, zone_id,
+        state_id, state_circle_id, state_division_id, state_sub_division_id, region_id, zone_id, vidhan_sabha_id,
         taluka_id, village_id, block_id, circle_id, gram_panchayat_id,
         business_category_id, business_sub_category_id, business_type_id, product_id,
         first_name, father_name, last_name, date_of_birth, blood_group, gender, caste,
@@ -230,7 +244,7 @@ async function create(data) {
       ) VALUES (
         ?, ?,
         ?, ?,
-        ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?,
         ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?,
@@ -266,10 +280,12 @@ async function update(id, data) {
 
   const [
     state_id,
+    state_circle_id,
     state_division_id,
     state_sub_division_id,
     region_id,
     zone_id,
+    vidhan_sabha_id,
     taluka_id,
     village_id,
     block_id,
@@ -281,10 +297,12 @@ async function update(id, data) {
     product_id,
   ] = [
     'state_id',
+    'state_circle_id',
     'state_division_id',
     'state_sub_division_id',
     'region_id',
     'zone_id',
+    'vidhan_sabha_id',
     'taluka_id',
     'village_id',
     'block_id',
@@ -304,7 +322,7 @@ async function update(id, data) {
       `UPDATE farmer_registrations SET
         name = ?, contact = ?,
         country_id = ?, country_division_id = ?,
-        state_id = ?, state_division_id = ?, state_sub_division_id = ?, region_id = ?, zone_id = ?,
+        state_id = ?, state_circle_id = ?, state_division_id = ?, state_sub_division_id = ?, region_id = ?, zone_id = ?, vidhan_sabha_id = ?,
         taluka_id = ?, village_id = ?, block_id = ?, circle_id = ?, gram_panchayat_id = ?,
         business_category_id = ?, business_sub_category_id = ?, business_type_id = ?, product_id = ?,
         first_name = ?, father_name = ?, last_name = ?, date_of_birth = ?, blood_group = ?, gender = ?, caste = ?,
@@ -322,10 +340,12 @@ async function update(id, data) {
         country_id,
         country_division_id,
         state_id,
+        state_circle_id,
         state_division_id,
         state_sub_division_id,
         region_id,
         zone_id,
+        vidhan_sabha_id,
         taluka_id,
         village_id,
         block_id,

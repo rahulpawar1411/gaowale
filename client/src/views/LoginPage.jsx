@@ -19,6 +19,10 @@ export default function LoginPage() {
       setError('Phone and password are required');
       return;
     }
+    if (password.length < 4) {
+      setError('Password must be at least 4 characters long');
+      return;
+    }
     setLoading(true);
     authApi
       .login(phone.trim(), password)

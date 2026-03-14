@@ -5,6 +5,7 @@ export const MAIN_MENU = [
   { path: '/country', label: 'Country', table: 'countries' },
   { path: '/country-division', label: 'Country Division', table: 'country-divisions' },
   { path: '/state', label: 'State', table: 'states' },
+  { path: '/state-circle', label: 'State Circle', table: 'state-circles' },
   { path: '/state-division', label: 'State Division', table: 'state-divisions' },
   { path: '/state-sub-division', label: 'State Sub Division', table: 'state-sub-divisions' },
   { path: '/region', label: 'Region', table: 'regions' },
@@ -33,8 +34,8 @@ export const BUSINESS_MENU = [
 
 export const REGISTRATION_MENU = [
   { path: '/management-registration', label: 'Management Registration', type: 'management' },
-  { path: '/farmer-registration', label: 'Farmer Registration', type: 'farmer' },
   { path: '/lakhpati-didi-registration', label: 'Lakhpati Didi Registration', type: 'lakhpatiDidi' },
+  { path: '/farmer-registration', label: 'Farmer Registration', type: 'farmer' },
   { path: '/customer-registration', label: 'Customer Registration', type: 'customer' },
   { path: '/user-details', label: 'User Details', type: 'userDetails' },
 ];

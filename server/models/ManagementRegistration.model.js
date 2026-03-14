@@ -4,15 +4,18 @@ const { renumberTable } = require('../utils/renumberTable');
 const dbName = process.env.DB_NAME || 'gao0.2';
 
 const ALL_COLUMNS = [
-  'name', 'contact', 'email', 'country_id', 'country_division_id', 'state_id', 'region_id',
+  'name', 'contact', 'email', 'country_id', 'country_division_id', 'state_id', 'state_circle_id', 'region_id',
   'incharge_user_id', 'business_position_id', 'incharge_address', 'incharge_aadhaar', 'officer_department_position_id',
   'target_to_fill_farm', 'target_completed_so_far', 'existing_terms_according_to_target',
-  'state_division_id', 'zone_id', 'vidhan_sabha_id', 'taluka_id', 'block_id', 'circle_id', 'gram_panchayat_id', 'village_id',
+  'state_division_id', 'state_sub_division_id', 'zone_id', 'vidhan_sabha_id', 'taluka_id', 'block_id', 'circle_id', 'gram_panchayat_id', 'village_id',
   'business_category_id', 'business_sub_category_id', 'product_id', 'business_type_id',
   'first_name', 'middle_name', 'last_name', 'date_of_birth', 'blood_group', 'caste', 'education', 'occupation', 'business',
   'mobile_number', 'phone_number', 'whatsapp_number', 'pan_card', 'aadhar_card', 'pincode', 'photo_path', 'voter_id_path', 'password_hash',
   'nominee_name', 'nominee_relation', 'nominee_dob', 'nominee_phone', 'nominee_address',
   'management_net_worth', 'baseline_family_net_worth', 'passport_path', 'birth_certificate_path', 'bank_book_path', 'income_certificate_path',
+  // financial tracking
+  'work_form_received', 'work_form_deposited', 'receipt_path',
+  'business_payment_amount', 'self_contribution_amount', 'total_incentive_amount',
 ];
 
 const SELECT_BASE = `SELECT * FROM management_registrations`;
@@ -22,6 +25,7 @@ async function findAll() {
     const [rows] = await pool.execute(
       `SELECT mr.*,
         s.name as state_name,
+        sc.name as state_circle_name,
         r.name as region_name,
         z.name as zone_name,
         vs.name as vidhan_sabha_name,
@@ -36,6 +40,7 @@ async function findAll() {
         d.name as business_position_name
        FROM management_registrations mr
        LEFT JOIN states s ON mr.state_id = s.id
+       LEFT JOIN state_circles sc ON mr.state_circle_id = sc.id
        LEFT JOIN regions r ON mr.region_id = r.id
        LEFT JOIN zones z ON mr.zone_id = z.id
        LEFT JOIN vidhan_sabhas vs ON mr.vidhan_sabha_id = vs.id
@@ -65,6 +70,7 @@ async function findById(id) {
     const [rows] = await pool.execute(
       `SELECT mr.*,
         s.name as state_name,
+        sc.name as state_circle_name,
         r.name as region_name,
         z.name as zone_name,
         vs.name as vidhan_sabha_name,
@@ -79,6 +85,7 @@ async function findById(id) {
         d.name as business_position_name
        FROM management_registrations mr
        LEFT JOIN states s ON mr.state_id = s.id
+       LEFT JOIN state_circles sc ON mr.state_circle_id = sc.id
        LEFT JOIN regions r ON mr.region_id = r.id
        LEFT JOIN zones z ON mr.zone_id = z.id
        LEFT JOIN vidhan_sabhas vs ON mr.vidhan_sabha_id = vs.id
@@ -156,3 +163,4 @@ async function remove(id) {
 }
 
 module.exports = { findAll, findById, create, update, remove };
+

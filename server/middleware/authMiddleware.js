@@ -10,11 +10,29 @@ const authenticate = (req, res, next) => {
   }
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    req.admin = { id: decoded.id, phone: decoded.phone };
+    // decoded: { id, phone, role, type }
+    req.user = {
+      id: decoded.id,
+      phone: decoded.phone,
+      role: decoded.role || null,
+      type: decoded.type || 'admin',
+      adminId: decoded.adminId || null,
+    };
+    if (req.user.type === 'admin') {
+      req.admin = { id: req.user.id, phone: req.user.phone };
+    }
     next();
   } catch (err) {
     return res.status(401).json({ success: false, message: 'Invalid or expired token' });
   }
 };
 
-module.exports = { authenticate };
+const requireSuperAdmin = (req, res, next) => {
+  const u = req.user;
+  if (!u || u.type !== 'admin' || (u.phone !== '1234567890' && u.role !== 'SUPER_ADMIN')) {
+    return res.status(403).json({ success: false, message: 'Not authorized' });
+  }
+  return next();
+};
+
+module.exports = { authenticate, requireSuperAdmin };

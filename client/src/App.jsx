@@ -1,3 +1,4 @@
+import React from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Layout from './components/Layout';
 import DashboardPage from './views/DashboardPage';
@@ -8,10 +9,13 @@ import FarmerRegistrationPage from './views/FarmerRegistrationPage';
 import CustomerRegistrationPage from './views/CustomerRegistrationPage';
 import LakhpatiDidiRegistrationPage from './views/LakhpatiDidiRegistrationPage';
 import UsersPage from './views/UsersPage';
+import UserDetailPage from './views/UserDetailPage';
 import LoginPage from './views/LoginPage';
+import AuthorizationPage from './views/AuthorizationPage';
 import { MAIN_MENU, BUSINESS_MENU, REGISTRATION_MENU, ALLOTMENT_MENU } from './config/menuConfig';
 import { entityFields } from './config/entityFields';
-import { getToken } from './utils/auth';
+import { getToken, getAdmin } from './utils/auth';
+import { authorizationApi } from './services/api';
 
 // Dedupe by path so each route is registered once (Product/Business Type appear in two sections)
 const MASTER_ROUTES = [...MAIN_MENU];
@@ -32,15 +36,56 @@ BUSINESS_MENU.forEach((m) => {
 function ProtectedApp() {
   const token = getToken();
   const location = useLocation();
+  const admin = getAdmin();
+  const isSubAdmin = admin && admin.type === 'sub-admin';
+
+  const [allowedPaths, setAllowedPaths] = React.useState(null);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    if (!isSubAdmin) {
+      setAllowedPaths(null);
+      return undefined;
+    }
+    async function loadPermissions() {
+      try {
+        const res = await authorizationApi.myPermissions();
+        if (cancelled) return;
+        if (res.success && Array.isArray(res.data)) {
+          setAllowedPaths(res.data);
+        } else {
+          setAllowedPaths([]);
+        }
+      } catch {
+        if (!cancelled) setAllowedPaths([]);
+      }
+    }
+    loadPermissions();
+    return () => {
+      cancelled = true;
+    };
+  }, [isSubAdmin]);
+
   if (!token) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
+
+  const filterByPermissions = (items) => {
+    if (!isSubAdmin || !Array.isArray(allowedPaths)) return items;
+    return items.filter((item) => allowedPaths.includes(item.path));
+  };
+
+  const masterRoutes = filterByPermissions(MASTER_ROUTES);
+  const registrationMenu = filterByPermissions(REGISTRATION_MENU);
+
   return (
-    <Layout>
+    <Layout isSubAdmin={isSubAdmin} allowedPaths={allowedPaths}>
       <Routes>
         <Route path="/" element={<DashboardPage />} />
+        <Route path="/authorization" element={<AuthorizationPage />} />
+        <Route path="/user-details/:type/:id" element={<UserDetailPage />} />
 
-        {MASTER_ROUTES.map(({ path, label, table, addButtonLabel }) => (
+        {masterRoutes.map(({ path, label, table, addButtonLabel }) => (
           <Route
             key={path}
             path={path}
@@ -55,21 +100,21 @@ function ProtectedApp() {
           />
         ))}
 
-        {REGISTRATION_MENU.map(({ path, label, type }) => (
+        {registrationMenu.map(({ path, label, type }) => (
           <Route
             key={path}
             path={path}
             element={
               type === 'management'
                 ? <ManagementRegistrationPage title={label} />
-                : type === 'farmer'
-                  ? <FarmerRegistrationPage title={label} />
-                  : type === 'customer'
-                    ? <CustomerRegistrationPage title={label} />
-                    : type === 'lakhpatiDidi'
-                      ? <LakhpatiDidiRegistrationPage title={label} />
-                      : type === 'userDetails'
-                        ? <UsersPage />
+                : type === 'userDetails'
+                  ? <UsersPage />
+                  : type === 'farmer'
+                    ? <FarmerRegistrationPage title={label} />
+                    : type === 'customer'
+                      ? <CustomerRegistrationPage title={label} />
+                      : type === 'lakhpatiDidi'
+                        ? <LakhpatiDidiRegistrationPage title={label} />
                         : <RegistrationPage type={type} title={label} />
             }
           />

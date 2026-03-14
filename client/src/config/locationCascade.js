@@ -8,6 +8,7 @@ export const LOCATION_ORDER = [
   'country_id',
   'country_division_id',
   'state_id',
+  'state_circle_id',
   'state_division_id',
   'state_sub_division_id',
   'region_id',
@@ -22,9 +23,10 @@ export const LOCATION_ORDER = [
 
 /** When this field changes, clear these dependent fields (and their dependents). */
 export const DEPENDENTS = {
-  country_id: ['country_division_id', 'state_id', 'state_division_id', 'state_sub_division_id', 'region_id', 'zone_id', 'vidhan_sabha_id', 'taluka_id', 'block_id', 'circle_id', 'gram_panchayat_id', 'village_id'],
-  country_division_id: ['state_id', 'state_division_id', 'state_sub_division_id', 'region_id', 'zone_id', 'vidhan_sabha_id', 'taluka_id', 'block_id', 'circle_id', 'gram_panchayat_id', 'village_id'],
-  state_id: ['state_division_id', 'state_sub_division_id', 'region_id', 'zone_id', 'vidhan_sabha_id', 'taluka_id', 'block_id', 'circle_id', 'gram_panchayat_id', 'village_id'],
+  country_id: ['country_division_id', 'state_id', 'state_circle_id', 'state_division_id', 'state_sub_division_id', 'region_id', 'zone_id', 'vidhan_sabha_id', 'taluka_id', 'block_id', 'circle_id', 'gram_panchayat_id', 'village_id'],
+  country_division_id: ['state_id', 'state_circle_id', 'state_division_id', 'state_sub_division_id', 'region_id', 'zone_id', 'vidhan_sabha_id', 'taluka_id', 'block_id', 'circle_id', 'gram_panchayat_id', 'village_id'],
+  state_id: ['state_circle_id', 'state_division_id', 'state_sub_division_id', 'region_id', 'zone_id', 'vidhan_sabha_id', 'taluka_id', 'block_id', 'circle_id', 'gram_panchayat_id', 'village_id'],
+  state_circle_id: ['state_division_id', 'state_sub_division_id', 'region_id', 'zone_id', 'vidhan_sabha_id', 'taluka_id', 'block_id', 'circle_id', 'gram_panchayat_id', 'village_id'],
   state_division_id: ['state_sub_division_id', 'zone_id', 'vidhan_sabha_id', 'taluka_id', 'block_id', 'circle_id', 'gram_panchayat_id', 'village_id'],
   state_sub_division_id: ['zone_id', 'vidhan_sabha_id', 'taluka_id', 'block_id', 'circle_id', 'gram_panchayat_id', 'village_id'],
   region_id: ['zone_id', 'vidhan_sabha_id', 'taluka_id', 'block_id', 'circle_id', 'gram_panchayat_id', 'village_id'],
@@ -45,7 +47,8 @@ const TABLE_FILTER = {
   'countries': [],
   'country-divisions': [{ parent: 'country_id', key: 'country_id' }],
   'states': [{ parent: 'country_id', key: 'country_id' }, { parent: 'country_division_id', key: 'country_division_id' }],
-  'state-divisions': [{ parent: 'state_id', key: 'state_id' }],
+  'state-circles': [{ parent: 'state_id', key: 'state_id' }],
+  'state-divisions': [{ parent: 'state_circle_id', key: 'state_circle_id' }],
   'state-sub-divisions': [{ parent: 'state_division_id', key: 'state_division_id' }],
   'state_sub_divisions': [{ parent: 'state_division_id', key: 'state_division_id' }],
   'regions': [{ parent: 'state_id', key: 'state_id' }],
@@ -94,6 +97,7 @@ export const LOCATION_FIELD_TABLE = {
   country_id: 'countries',
   country_division_id: 'country-divisions',
   state_id: 'states',
+  state_circle_id: 'state-circles',
   state_division_id: 'state-divisions',
   state_sub_division_id: 'state-sub-divisions',
   region_id: 'regions',
@@ -108,6 +112,7 @@ export const LOCATION_FIELD_TABLE = {
 
 /**
  * Returns true if the dropdown for this field should be disabled (parent not selected).
+ * First field (Country) is always enabled; each next field is enabled only after its parent has a value.
  */
 export function isLocationFieldDisabled(fieldName, form) {
   if (fieldName === 'country_id') return false;
@@ -115,8 +120,6 @@ export function isLocationFieldDisabled(fieldName, form) {
   const rules = table ? TABLE_FILTER[table] : [];
   if (!rules || rules.length === 0) return false;
   return rules.some(({ parent }) => {
-    // If this parent field does not exist on this form, do not block the dropdown.
-    if (!Object.prototype.hasOwnProperty.call(form, parent)) return false;
     const v = form[parent];
     return v === '' || v === undefined || v === null;
   });

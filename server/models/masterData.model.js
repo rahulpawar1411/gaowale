@@ -23,6 +23,7 @@ const ALLOWED_TABLES = [
   'countries',
   'country_divisions',
   'states',
+  'state_circles',
   'state_divisions',
   'state_sub_divisions',
   'regions',
@@ -52,7 +53,8 @@ const TABLE_COLUMNS = {
   countries: ['client_id', 'name', 'code', 'continent_id'],
   country_divisions: ['client_id', 'country_id', 'name', 'code'],
   states: ['client_id', 'country_id', 'country_division_id', 'name', 'code'],
-  state_divisions: ['client_id', 'state_id', 'name', 'code'],
+  state_circles: ['client_id', 'state_id', 'name', 'code'],
+  state_divisions: ['client_id', 'state_id', 'state_circle_id', 'name', 'code'],
   state_sub_divisions: ['client_id', 'state_division_id', 'name', 'code'],
   regions: ['client_id', 'state_id', 'state_sub_division_id', 'name', 'code'],
   zones: ['client_id', 'region_id', 'state_id', 'name', 'code'],
@@ -123,13 +125,19 @@ async function resolveId(tableName, idOrClientId) {
 
 async function create(tableName, data) {
   if (!isAllowed(tableName)) return null;
+  let payload = { ...data };
+  // State Division: derive state_id from state_circle_id when not provided (form only has Select State Circle)
+  if (tableName === 'state_divisions' && (payload.state_circle_id || payload.state_circle_id === 0) && (payload.state_id === undefined || payload.state_id === null || payload.state_id === '')) {
+    const [rows] = await pool.execute('SELECT state_id FROM state_circles WHERE id = ?', [Number(payload.state_circle_id)]);
+    if (rows && rows[0]) payload.state_id = rows[0].state_id;
+  }
   const cols = getAllowedColumns(tableName);
   if (!cols || !cols.length) return null;
   const filtered = {};
   cols.forEach((c) => {
     if (c === 'client_id') return; // server assigns 1,2,3... after insert
-    if (data[c] !== undefined) {
-      let v = data[c];
+    if (payload[c] !== undefined) {
+      let v = payload[c];
       if (v === '') v = null;
       if (v != null && c !== 'client_id' && c.endsWith('_id') && typeof v !== 'number') {
         const n = Number(v);
@@ -138,6 +146,11 @@ async function create(tableName, data) {
       filtered[c] = v;
     }
   });
+  // state_divisions requires state_id; if still missing, skip insert or use null if column is nullable
+  if (tableName === 'state_divisions' && (filtered.state_id === undefined || filtered.state_id === null) && filtered.state_circle_id != null) {
+    const [rows] = await pool.execute('SELECT state_id FROM state_circles WHERE id = ?', [Number(filtered.state_circle_id)]);
+    if (rows && rows[0]) filtered.state_id = rows[0].state_id;
+  }
   const keys = Object.keys(filtered);
   if (!keys.length) return null;
   const placeholders = keys.map(() => '?').join(', ');
@@ -157,12 +170,18 @@ async function update(tableName, idOrClientId, data) {
 
 async function updateById(tableName, id, data) {
   if (!isAllowed(tableName)) return null;
+  let payload = { ...data };
+  // State Division: derive state_id from state_circle_id when state_circle_id is provided and state_id is not
+  if (tableName === 'state_divisions' && (payload.state_circle_id !== undefined && payload.state_circle_id !== null && payload.state_circle_id !== '') && (payload.state_id === undefined || payload.state_id === null || payload.state_id === '')) {
+    const [rows] = await pool.execute('SELECT state_id FROM state_circles WHERE id = ?', [Number(payload.state_circle_id)]);
+    if (rows && rows[0]) payload.state_id = rows[0].state_id;
+  }
   const cols = getAllowedColumns(tableName);
   if (!cols || !cols.length) return null;
   const filtered = {};
   cols.forEach((c) => {
-    if (data[c] !== undefined) {
-      let v = data[c];
+    if (payload[c] !== undefined) {
+      let v = payload[c];
       if (v === '') v = null;
       if (v != null && c !== 'client_id' && c.endsWith('_id') && typeof v !== 'number') {
         const n = Number(v);

@@ -10,6 +10,7 @@ async function findAll() {
       c.name as country_name,
       cd.name as country_division_name,
       s.name as state_name,
+      sc.name as state_circle_name,
       sd.name as state_division_name,
       r.name as region_name,
       z.name as zone_name,
@@ -26,6 +27,7 @@ async function findAll() {
      LEFT JOIN countries c ON ld.country_id = c.id
      LEFT JOIN country_divisions cd ON ld.country_division_id = cd.id
      LEFT JOIN states s ON ld.state_id = s.id
+     LEFT JOIN state_circles sc ON ld.state_circle_id = sc.id
      LEFT JOIN state_divisions sd ON ld.state_division_id = sd.id
      LEFT JOIN regions r ON ld.region_id = r.id
      LEFT JOIN zones z ON ld.zone_id = z.id
@@ -49,6 +51,7 @@ async function findById(id) {
       c.name as country_name,
       cd.name as country_division_name,
       s.name as state_name,
+      sc.name as state_circle_name,
       sd.name as state_division_name,
       r.name as region_name,
       z.name as zone_name,
@@ -65,6 +68,7 @@ async function findById(id) {
      LEFT JOIN countries c ON ld.country_id = c.id
      LEFT JOIN country_divisions cd ON ld.country_division_id = cd.id
      LEFT JOIN states s ON ld.state_id = s.id
+     LEFT JOIN state_circles sc ON ld.state_circle_id = sc.id
      LEFT JOIN state_divisions sd ON ld.state_division_id = sd.id
      LEFT JOIN regions r ON ld.region_id = r.id
      LEFT JOIN zones z ON ld.zone_id = z.id
@@ -96,23 +100,26 @@ async function create(data) {
   const [result] = await pool.execute(
     `INSERT INTO lakhpati_didi_registrations (
       name, contact,
-      country_id, country_division_id, state_id, state_division_id, region_id, zone_id, vidhan_sabha_id, taluka_id, circle_id, gram_panchayat_id, village_id,
+      country_id, country_division_id, state_id, state_circle_id, state_division_id, state_sub_division_id, region_id, zone_id, vidhan_sabha_id, taluka_id, block_id, circle_id, gram_panchayat_id, village_id,
       business_category_id, business_type_id, product_id, unit_id,
       first_name, middle_name, last_name, date_of_birth, blood_group, caste, education, occupation, business,
       mobile_number, phone_number, whatsapp_number, pan_card, aadhar_card, pincode, photo_path, password_hash,
       nominee_name, nominee_relation, nominee_dob, nominee_phone, nominee_address
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       name,
       contact,
       data.country_id || null,
       data.country_division_id || null,
       data.state_id || null,
+      data.state_circle_id || null,
       data.state_division_id || null,
+      data.state_sub_division_id || null,
       data.region_id || null,
       data.zone_id || null,
       data.vidhan_sabha_id || null,
       data.taluka_id || null,
+      data.block_id || null,
       data.circle_id || null,
       data.gram_panchayat_id || null,
       data.village_id || null,

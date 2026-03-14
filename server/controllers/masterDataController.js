@@ -8,6 +8,7 @@ const getTableName = (param) => {
     'continent': 'continents',
     'product': 'products',
     'country-divisions': 'country_divisions',
+    'state-circles': 'state_circles',
     'state-divisions': 'state_divisions',
     'state-sub-divisions': 'state_sub_divisions',
     'vidhan-sabhas': 'vidhan_sabhas',
@@ -80,6 +81,10 @@ const create = async (req, res) => {
     if (table === 'business_sub_categories' && (body.business_category_id == null || body.business_category_id === '')) {
       return res.status(400).json({ success: false, message: 'Business Category is required' });
     }
+    // State Circle requires a state
+    if (table === 'state_circles' && (body.state_id == null || body.state_id === '')) {
+      return res.status(400).json({ success: false, message: 'State is required' });
+    }
     const row = await MasterModel.create(table, body);
     if (!row) {
       return res.status(400).json({ success: false, message: 'Invalid or empty data' });
@@ -105,6 +110,9 @@ const update = async (req, res) => {
     }
     if (table === 'business_sub_categories' && (body.business_category_id == null || body.business_category_id === '')) {
       return res.status(400).json({ success: false, message: 'Business Category is required' });
+    }
+    if (table === 'state_circles' && body.state_id !== undefined && (body.state_id == null || body.state_id === '')) {
+      return res.status(400).json({ success: false, message: 'State is required' });
     }
     const row = await MasterModel.update(table, id, body);
     if (!row) {

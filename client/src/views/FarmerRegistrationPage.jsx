@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { masterApi, registrationsApi } from '../services/api';
+import { masterApi, registrationsApi, filesApi } from '../services/api';
 import TextField from '../components/TextField';
 import {
   LOCATION_ORDER,
@@ -13,10 +13,12 @@ const locationFields = [
   { name: 'country_id', label: 'Country', table: 'countries' },
   { name: 'country_division_id', label: 'Country Division', table: 'country-divisions' },
   { name: 'state_id', label: 'State', table: 'states' },
+  { name: 'state_circle_id', label: 'State Circle', table: 'state-circles' },
   { name: 'state_division_id', label: 'District', table: 'state-divisions' },
   { name: 'state_sub_division_id', label: 'Taluka Division', table: 'state-sub-divisions' },
   { name: 'region_id', label: 'Region', table: 'regions' },
   { name: 'zone_id', label: 'Zone', table: 'zones' },
+  { name: 'vidhan_sabha_id', label: 'Vidhan Sabha', table: 'vidhan-sabhas' },
   { name: 'taluka_id', label: 'Taluka', table: 'talukas' },
   { name: 'block_id', label: 'Block', table: 'blocks' },
   { name: 'circle_id', label: 'Panchayat Samiti Circle', table: 'circles' },
@@ -31,41 +33,77 @@ const businessFields = [
   { name: 'business_type_id', label: 'Business Type', table: 'business-types' },
 ];
 
+// Business cascade: Category → Sub-Category → Product → Business Type
+const BUSINESS_DEPENDENTS = {
+  business_category_id: ['business_sub_category_id', 'product_id', 'business_type_id'],
+  business_sub_category_id: ['product_id', 'business_type_id'],
+  product_id: ['business_type_id'],
+};
+
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
 const GENDERS = ['Male', 'Female', 'Other'];
 const EDUCATION_OPTIONS = ['Illiterate', 'Primary', 'Secondary', 'Higher Secondary', 'Graduate', 'Post Graduate', 'Other'];
 const RELATIONS = ['Spouse', 'Father', 'Mother', 'Son', 'Daughter', 'Brother', 'Sister', 'Other'];
 
+// All fields on the form are required except `middle_name` and `phone_number`.
 const REQUIRED_FIELDS = [
+  // Business information
   { name: 'business_category_id', label: 'Business Category' },
   { name: 'business_sub_category_id', label: 'Business Sub-Category' },
   { name: 'product_id', label: 'Products' },
   { name: 'business_type_id', label: 'Business Type' },
+
+  // Geographic information
   { name: 'country_id', label: 'Country' },
   { name: 'country_division_id', label: 'Country Division' },
   { name: 'state_id', label: 'State' },
+  { name: 'state_circle_id', label: 'State Circle' },
   { name: 'state_division_id', label: 'District' },
   { name: 'state_sub_division_id', label: 'Taluka Division' },
   { name: 'region_id', label: 'Region' },
   { name: 'zone_id', label: 'Zone' },
+  { name: 'vidhan_sabha_id', label: 'Vidhan Sabha' },
   { name: 'taluka_id', label: 'Taluka' },
-  { name: 'village_id', label: 'Village' },
   { name: 'block_id', label: 'Block' },
   { name: 'circle_id', label: 'Panchayat Samiti Circle' },
   { name: 'gram_panchayat_id', label: 'Gram Panchayat' },
+  { name: 'village_id', label: 'Village' },
+  { name: 'ward', label: 'Ward / Area' },
+  { name: 'police_station', label: 'Police Station / Inquiry' },
+
+  // Farmer information
   { name: 'first_name', label: 'First Name' },
+  // middle_name is intentionally NOT required
   { name: 'last_name', label: 'Last Name' },
+  { name: 'father_name', label: "Father's Name" },
   { name: 'date_of_birth', label: 'Date of Birth' },
   { name: 'blood_group', label: 'Blood Group' },
   { name: 'gender', label: 'Gender' },
-  { name: 'pan_card_path', label: 'PAN Card' },
-  { name: 'father_name', label: "Father's Name" },
-  { name: 'email', label: 'Email' },
-  { name: 'address', label: 'Address' },
-  { name: 'ration_card_path', label: 'Ration Card' },
+  { name: 'education', label: 'Education' },
   { name: 'whatsapp_number', label: 'WhatsApp Number' },
+  { name: 'mobile_number', label: 'Mobile Number' },
+  { name: 'pan_card_path', label: 'PAN Card' },
+  { name: 'election_card_path', label: 'Election Card' },
+  { name: 'aadhar_card_path', label: 'Aadhaar Card' },
+  { name: 'email', label: 'Email' },
+  { name: 'registration_date', label: 'Date of Registration' },
   { name: 'password', label: 'Password' },
   { name: 'confirm_password', label: 'Confirm Password' },
+  { name: 'ration_card_path', label: 'Ration Card' },
+  { name: 'address', label: 'Address' },
+
+  // Nominee information
+  { name: 'nominee_name', label: 'Nominee Name' },
+  { name: 'nominee_relation', label: 'Nominee Relation' },
+  { name: 'nominee_dob', label: 'Nominee Date of Birth' },
+  { name: 'nominee_phone', label: "Nominee's Mobile Number" },
+  { name: 'nominee_aadhar_path', label: "Nominee's Aadhaar Card" },
+
+  // Bank information
+  { name: 'bank_name', label: 'Bank Name' },
+  { name: 'ifsc_code', label: 'IFSC Code' },
+  { name: 'bank_account_number', label: 'Account Number' },
+  { name: 'pincode', label: 'Pincode' },
 ];
 
 function FieldWithError({ fieldName, fieldErrors, styles, children }) {
@@ -115,6 +153,36 @@ export default function FarmerRegistrationPage({ title }) {
 
   const getOptions = (table) => options[table] || [];
 
+  const getBusinessOptions = (fieldName) => {
+    switch (fieldName) {
+      case 'business_category_id':
+        return getOptions('business-categories');
+      case 'business_sub_category_id': {
+        const all = getOptions('business-sub-categories');
+        const catId = form.business_category_id;
+        if (!catId) return [];
+        const idNum = Number(catId);
+        return all.filter((s) => Number(s.business_category_id) === idNum);
+      }
+      case 'product_id': {
+        const all = getOptions('products');
+        const subId = form.business_sub_category_id;
+        if (!subId) return [];
+        const idNum = Number(subId);
+        return all.filter((p) => Number(p.business_sub_category_id) === idNum);
+      }
+      case 'business_type_id': {
+        const all = getOptions('business-types');
+        const prodId = form.product_id;
+        if (!prodId) return [];
+        const idNum = Number(prodId);
+        return all.filter((t) => Number(t.product_id) === idNum);
+      }
+      default:
+        return [];
+    }
+  };
+
   const handleChange = (name) => (e) => {
     if (fieldErrors[name]) setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
     const v = e.target.value;
@@ -125,17 +193,43 @@ export default function FarmerRegistrationPage({ title }) {
     if (fieldErrors[name]) setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
     const v = e.target.value;
     const value = v ? Number(v) : null;
+
     if (LOCATION_ORDER.includes(name)) {
       setForm((prev) => clearDependentsOnChange(prev, name, value));
-    } else {
-      setForm((prev) => ({ ...prev, [name]: value }));
+      return;
     }
+
+    if (BUSINESS_DEPENDENTS[name]) {
+      setForm((prev) => {
+        const next = { ...prev, [name]: value };
+        BUSINESS_DEPENDENTS[name].forEach((child) => {
+          next[child] = null;
+        });
+        return next;
+      });
+      return;
+    }
+
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleFileChange = (name) => (e) => {
+  const handleFileChange = (name) => async (e) => {
     if (fieldErrors[name]) setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
     const file = e.target.files && e.target.files[0];
-    setForm((prev) => ({ ...prev, [name]: file ? file.name : '' }));
+    if (!file) {
+      setForm((prev) => ({ ...prev, [name]: '' }));
+      return;
+    }
+    try {
+      const res = await filesApi.upload(file);
+      if (res && res.success && res.path) {
+        setForm((prev) => ({ ...prev, [name]: res.path }));
+      } else {
+        setForm((prev) => ({ ...prev, [name]: file.name }));
+      }
+    } catch {
+      setForm((prev) => ({ ...prev, [name]: file.name }));
+    }
   };
 
   const clearForm = () => {
@@ -186,10 +280,12 @@ export default function FarmerRegistrationPage({ title }) {
       country_id: form.country_id || null,
       country_division_id: form.country_division_id || null,
       state_id: form.state_id || null,
+      state_circle_id: form.state_circle_id || null,
       state_division_id: form.state_division_id || null,
       state_sub_division_id: form.state_sub_division_id || null,
       region_id: form.region_id || null,
       zone_id: form.zone_id || null,
+      vidhan_sabha_id: form.vidhan_sabha_id || null,
       taluka_id: form.taluka_id || null,
       village_id: form.village_id || null,
       block_id: form.block_id || null,
@@ -222,34 +318,48 @@ export default function FarmerRegistrationPage({ title }) {
         <h1 style={styles.title}>{title}</h1>
 
         <form onSubmit={handleSubmit} style={styles.form}>
-          <section style={styles.section}>
-            <div style={styles.sectionHeader}>Business Information</div>
+          <fieldset style={styles.fieldset}>
+            <legend style={styles.legend}>Business Information</legend>
             <div style={styles.grid}>
-              {businessFields.map((field) => (
-                <FieldWithError key={field.name} fieldName={field.name} fieldErrors={fieldErrors} styles={styles}>
-                  <div style={styles.fieldWrap}>
-                    <label style={styles.label}>{field.label}</label>
-                    <select
-                      value={form[field.name] != null ? form[field.name] : ''}
-                      onChange={handleNumChange(field.name)}
-                      onKeyDown={focusNextOnTab}
-                      style={styles.select}
-                    >
-                      <option value="">Select {field.label}</option>
-                      {getOptions(field.table).map((opt) => (
-                        <option key={opt.id} value={opt.id}>
-                          {opt.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </FieldWithError>
-              ))}
-            </div>
-          </section>
+              {businessFields.map((field) => {
+                const opts = getBusinessOptions(field.name);
+                const disabled =
+                  (field.name === 'business_sub_category_id' && !form.business_category_id) ||
+                  (field.name === 'product_id' && !form.business_sub_category_id) ||
+                  (field.name === 'business_type_id' && !form.product_id);
 
-          <section style={styles.section}>
-            <div style={styles.sectionHeader}>Geographic Information</div>
+                return (
+                  <FieldWithError
+                    key={field.name}
+                    fieldName={field.name}
+                    fieldErrors={fieldErrors}
+                    styles={styles}
+                  >
+                    <div style={styles.fieldWrap}>
+                      <label style={styles.label}>{field.label}</label>
+                      <select
+                        value={form[field.name] != null ? form[field.name] : ''}
+                        onChange={handleNumChange(field.name)}
+                        onKeyDown={focusNextOnTab}
+                        style={{ ...styles.select, opacity: disabled ? 0.7 : 1 }}
+                        disabled={disabled && field.name !== 'business_category_id'}
+                      >
+                        <option value="">Select {field.label}</option>
+                        {opts.map((opt) => (
+                          <option key={opt.id} value={opt.id}>
+                            {opt.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </FieldWithError>
+                );
+              })}
+            </div>
+          </fieldset>
+
+          <fieldset style={styles.fieldset}>
+            <legend style={styles.legend}>Geographic Information</legend>
             <div style={styles.grid}>
               {locationFields.map((field) => {
                 const isLocation = LOCATION_ORDER.includes(field.name);
@@ -280,10 +390,10 @@ export default function FarmerRegistrationPage({ title }) {
               <TextField label="Ward / Area" name="ward" value={form.ward || ''} onChange={handleChange} placeholder="Select Ward" style={styles.fieldWrap} inputStyle={styles.input} />
               <TextField label="Police Station / Inquiry" name="police_station" value={form.police_station || ''} onChange={handleChange} placeholder="Select Police Station" style={styles.fieldWrap} inputStyle={styles.input} />
             </div>
-          </section>
+          </fieldset>
 
-          <section style={styles.section}>
-            <div style={styles.sectionHeader}>Farmer Information</div>
+          <fieldset style={styles.fieldset}>
+            <legend style={styles.legend}>Farmer Information</legend>
             <div style={styles.grid}>
               <FieldWithError fieldName="first_name" fieldErrors={fieldErrors} styles={styles}>
                 <TextField label="First Name" name="first_name" value={form.first_name || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
@@ -334,10 +444,10 @@ export default function FarmerRegistrationPage({ title }) {
                 </FieldWithError>
               </div>
             </div>
-          </section>
+          </fieldset>
 
-          <section style={styles.section}>
-            <div style={styles.sectionHeader}>Nominee Information</div>
+          <fieldset style={styles.fieldset}>
+            <legend style={styles.legend}>Nominee Information</legend>
             <div style={styles.grid}>
               <TextField label="Nominee Name" name="nominee_name" value={form.nominee_name || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
               <SelectSimple label="Nominee Relation" name="nominee_relation" value={form.nominee_relation || ''} onChange={handleChange} options={RELATIONS} />
@@ -345,17 +455,17 @@ export default function FarmerRegistrationPage({ title }) {
               <TextField label="Nominee's Mobile Number" name="nominee_phone" numericOnly maxLength={10} format="phonePairs" value={form.nominee_phone || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
               <FileField label="Nominee's Aadhaar Card" name="nominee_aadhar_path" value={form.nominee_aadhar_path || ''} onChange={handleFileChange} />
             </div>
-          </section>
+          </fieldset>
 
-          <section style={styles.section}>
-            <div style={styles.sectionHeader}>Bank Information</div>
+          <fieldset style={styles.fieldset}>
+            <legend style={styles.legend}>Bank Information</legend>
             <div style={styles.grid}>
               <TextField label="Bank Name" name="bank_name" value={form.bank_name || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
               <TextField label="IFSC Code" name="ifsc_code" value={form.ifsc_code || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
               <TextField label="Account Number" name="bank_account_number" numericOnly format="groups4" value={form.bank_account_number || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
               <TextField label="Pincode" name="pincode" numericOnly value={form.pincode || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
             </div>
-          </section>
+          </fieldset>
 
           {error && (
             <div role="alert" style={styles.alertError}>
@@ -440,14 +550,14 @@ function FileField({ label, name, value, onChange }) {
 
 const styles = {
   page: {
-    padding: '2rem 0',
+    padding: '1.5rem 2rem',
     display: 'flex',
     justifyContent: 'center',
     background: '#f2f2f5',
   },
   card: {
     width: '100%',
-    maxWidth: 960,
+    maxWidth: 1040,
     background: '#ffffff',
     borderRadius: 8,
     boxShadow: '0 6px 18px rgba(0,0,0,0.08)',

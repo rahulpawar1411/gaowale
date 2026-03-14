@@ -35,6 +35,15 @@ const CREATE_TABLE_STATEMENTS = [
     FOREIGN KEY (country_id) REFERENCES countries(id) ON DELETE CASCADE,
     FOREIGN KEY (country_division_id) REFERENCES country_divisions(id) ON DELETE SET NULL
   )`,
+  `CREATE TABLE IF NOT EXISTS state_circles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    client_id VARCHAR(36) UNIQUE NULL,
+    state_id INT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    code VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (state_id) REFERENCES states(id) ON DELETE CASCADE
+  )`,
   `CREATE TABLE IF NOT EXISTS state_divisions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     state_id INT NOT NULL,
@@ -432,6 +441,23 @@ const CREATE_TABLE_STATEMENTS = [
     password_hash VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )`,
+  `CREATE TABLE IF NOT EXISTS sub_admins (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    admin_id INT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    phone VARCHAR(20) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (admin_id) REFERENCES admins(id) ON DELETE CASCADE
+  )`,
+  `CREATE TABLE IF NOT EXISTS sub_admin_permissions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    sub_admin_id INT NOT NULL,
+    path VARCHAR(191) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uniq_sub_admin_path (sub_admin_id, path),
+    FOREIGN KEY (sub_admin_id) REFERENCES sub_admins(id) ON DELETE CASCADE
+  )`,
 ];
 
 async function initDatabase() {
@@ -475,6 +501,8 @@ async function initDatabase() {
       `ALTER TABLE regions ADD CONSTRAINT fk_regions_state_sub_division FOREIGN KEY (state_sub_division_id) REFERENCES state_sub_divisions(id) ON DELETE SET NULL`,
       `ALTER TABLE talukas ADD COLUMN vidhan_sabha_id INT NULL`,
       `ALTER TABLE talukas ADD CONSTRAINT fk_talukas_vidhan_sabha FOREIGN KEY (vidhan_sabha_id) REFERENCES vidhan_sabhas(id) ON DELETE SET NULL`,
+      `ALTER TABLE state_divisions ADD COLUMN state_circle_id INT NULL`,
+      `ALTER TABLE state_divisions ADD CONSTRAINT fk_state_divisions_state_circle FOREIGN KEY (state_circle_id) REFERENCES state_circles(id) ON DELETE SET NULL`,
       `ALTER TABLE designations ADD COLUMN parent_id INT NULL`,
       `ALTER TABLE designations ADD CONSTRAINT fk_designations_parent FOREIGN KEY (parent_id) REFERENCES designations(id) ON DELETE SET NULL`,
       `ALTER TABLE circles ADD COLUMN block_id INT NULL`,
@@ -499,9 +527,13 @@ async function initDatabase() {
       `ALTER TABLE management_registrations ADD COLUMN target_to_fill_farm DECIMAL(15,2) NULL`,
       `ALTER TABLE management_registrations ADD COLUMN target_completed_so_far DECIMAL(15,2) NULL`,
       `ALTER TABLE management_registrations ADD COLUMN existing_terms_according_to_target VARCHAR(500) NULL`,
+      `ALTER TABLE management_registrations ADD COLUMN state_circle_id INT NULL`,
+      `ALTER TABLE management_registrations ADD CONSTRAINT fk_mgmt_state_circle FOREIGN KEY (state_circle_id) REFERENCES state_circles(id) ON DELETE SET NULL`,
       `ALTER TABLE management_registrations ADD COLUMN country_id INT NULL`,
       `ALTER TABLE management_registrations ADD COLUMN country_division_id INT NULL`,
       `ALTER TABLE management_registrations ADD COLUMN state_division_id INT NULL`,
+      `ALTER TABLE management_registrations ADD COLUMN state_sub_division_id INT NULL`,
+      `ALTER TABLE management_registrations ADD CONSTRAINT fk_mgmt_state_sub_division FOREIGN KEY (state_sub_division_id) REFERENCES state_sub_divisions(id) ON DELETE SET NULL`,
       `ALTER TABLE management_registrations ADD COLUMN zone_id INT NULL`,
       `ALTER TABLE management_registrations ADD COLUMN vidhan_sabha_id INT NULL`,
       `ALTER TABLE management_registrations ADD COLUMN taluka_id INT NULL`,
@@ -542,6 +574,12 @@ async function initDatabase() {
       `ALTER TABLE management_registrations ADD COLUMN birth_certificate_path VARCHAR(255) NULL`,
       `ALTER TABLE management_registrations ADD COLUMN bank_book_path VARCHAR(255) NULL`,
       `ALTER TABLE management_registrations ADD COLUMN income_certificate_path VARCHAR(255) NULL`,
+      `ALTER TABLE management_registrations ADD COLUMN work_form_received VARCHAR(255) NULL`,
+      `ALTER TABLE management_registrations ADD COLUMN work_form_deposited VARCHAR(255) NULL`,
+      `ALTER TABLE management_registrations ADD COLUMN receipt_path VARCHAR(255) NULL`,
+      `ALTER TABLE management_registrations ADD COLUMN business_payment_amount DECIMAL(15,2) NULL`,
+      `ALTER TABLE management_registrations ADD COLUMN self_contribution_amount DECIMAL(15,2) NULL`,
+      `ALTER TABLE management_registrations ADD COLUMN total_incentive_amount DECIMAL(15,2) NULL`,
       `ALTER TABLE management_registrations ADD CONSTRAINT fk_mgmt_officer_designation FOREIGN KEY (officer_department_position_id) REFERENCES designations(id) ON DELETE SET NULL`,
       `ALTER TABLE management_registrations ADD CONSTRAINT fk_mgmt_country FOREIGN KEY (country_id) REFERENCES countries(id) ON DELETE SET NULL`,
       `ALTER TABLE management_registrations ADD CONSTRAINT fk_mgmt_country_division FOREIGN KEY (country_division_id) REFERENCES country_divisions(id) ON DELETE SET NULL`,
@@ -563,6 +601,59 @@ async function initDatabase() {
       `ALTER TABLE customer_registrations ADD COLUMN last_name VARCHAR(100) NULL`,
       `ALTER TABLE customer_registrations ADD COLUMN whatsapp_number VARCHAR(20) NULL`,
       `ALTER TABLE customer_registrations ADD COLUMN password_hash VARCHAR(255) NULL`,
+      // Customer registration – same fields as Lakhpati Didi (safe ADD COLUMN)
+      `ALTER TABLE customer_registrations ADD COLUMN state_circle_id INT NULL`,
+      `ALTER TABLE customer_registrations ADD CONSTRAINT fk_customer_state_circle FOREIGN KEY (state_circle_id) REFERENCES state_circles(id) ON DELETE SET NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN country_id INT NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN country_division_id INT NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN state_division_id INT NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN state_sub_division_id INT NULL`,
+      `ALTER TABLE customer_registrations ADD CONSTRAINT fk_customer_state_sub_division FOREIGN KEY (state_sub_division_id) REFERENCES state_sub_divisions(id) ON DELETE SET NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN region_id INT NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN zone_id INT NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN vidhan_sabha_id INT NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN taluka_id INT NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN block_id INT NULL`,
+      `ALTER TABLE customer_registrations ADD CONSTRAINT fk_customer_block FOREIGN KEY (block_id) REFERENCES blocks(id) ON DELETE SET NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN circle_id INT NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN gram_panchayat_id INT NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN business_category_id INT NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN business_sub_category_id INT NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN product_id INT NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN business_type_id INT NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN unit_id INT NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN middle_name VARCHAR(100) NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN date_of_birth DATE NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN blood_group VARCHAR(20) NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN caste VARCHAR(100) NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN education VARCHAR(100) NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN occupation VARCHAR(100) NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN business VARCHAR(255) NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN mobile_number VARCHAR(20) NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN phone_number VARCHAR(20) NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN pan_card VARCHAR(20) NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN aadhar_card VARCHAR(20) NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN pincode VARCHAR(10) NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN photo_path VARCHAR(255) NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN nominee_name VARCHAR(255) NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN nominee_relation VARCHAR(100) NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN nominee_dob DATE NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN nominee_phone VARCHAR(20) NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN nominee_address TEXT NULL`,
+      `ALTER TABLE customer_registrations ADD CONSTRAINT fk_customer_country FOREIGN KEY (country_id) REFERENCES countries(id) ON DELETE SET NULL`,
+      `ALTER TABLE customer_registrations ADD CONSTRAINT fk_customer_country_division FOREIGN KEY (country_division_id) REFERENCES country_divisions(id) ON DELETE SET NULL`,
+      `ALTER TABLE customer_registrations ADD CONSTRAINT fk_customer_state_division FOREIGN KEY (state_division_id) REFERENCES state_divisions(id) ON DELETE SET NULL`,
+      `ALTER TABLE customer_registrations ADD CONSTRAINT fk_customer_region FOREIGN KEY (region_id) REFERENCES regions(id) ON DELETE SET NULL`,
+      `ALTER TABLE customer_registrations ADD CONSTRAINT fk_customer_zone FOREIGN KEY (zone_id) REFERENCES zones(id) ON DELETE SET NULL`,
+      `ALTER TABLE customer_registrations ADD CONSTRAINT fk_customer_vidhan_sabha FOREIGN KEY (vidhan_sabha_id) REFERENCES vidhan_sabhas(id) ON DELETE SET NULL`,
+      `ALTER TABLE customer_registrations ADD CONSTRAINT fk_customer_taluka FOREIGN KEY (taluka_id) REFERENCES talukas(id) ON DELETE SET NULL`,
+      `ALTER TABLE customer_registrations ADD CONSTRAINT fk_customer_circle FOREIGN KEY (circle_id) REFERENCES circles(id) ON DELETE SET NULL`,
+      `ALTER TABLE customer_registrations ADD CONSTRAINT fk_customer_gram_panchayat FOREIGN KEY (gram_panchayat_id) REFERENCES gram_panchayats(id) ON DELETE SET NULL`,
+      `ALTER TABLE customer_registrations ADD CONSTRAINT fk_customer_business_category FOREIGN KEY (business_category_id) REFERENCES business_categories(id) ON DELETE SET NULL`,
+      `ALTER TABLE customer_registrations ADD CONSTRAINT fk_customer_business_sub_category FOREIGN KEY (business_sub_category_id) REFERENCES business_sub_categories(id) ON DELETE SET NULL`,
+      `ALTER TABLE customer_registrations ADD CONSTRAINT fk_customer_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL`,
+      `ALTER TABLE customer_registrations ADD CONSTRAINT fk_customer_business_type FOREIGN KEY (business_type_id) REFERENCES business_types(id) ON DELETE SET NULL`,
+      `ALTER TABLE customer_registrations ADD CONSTRAINT fk_customer_unit FOREIGN KEY (unit_id) REFERENCES units(id) ON DELETE SET NULL`,
       `ALTER TABLE lakhpati_didi_registrations ADD COLUMN first_name VARCHAR(100) NULL`,
       `ALTER TABLE lakhpati_didi_registrations ADD COLUMN middle_name VARCHAR(100) NULL`,
       `ALTER TABLE lakhpati_didi_registrations ADD COLUMN last_name VARCHAR(100) NULL`,
@@ -586,19 +677,27 @@ async function initDatabase() {
       `ALTER TABLE lakhpati_didi_registrations ADD COLUMN nominee_phone VARCHAR(20) NULL`,
       `ALTER TABLE lakhpati_didi_registrations ADD COLUMN nominee_address TEXT NULL`,
       `ALTER TABLE lakhpati_didi_registrations ADD COLUMN state_division_id INT NULL`,
+      `ALTER TABLE lakhpati_didi_registrations ADD COLUMN state_sub_division_id INT NULL`,
+      `ALTER TABLE lakhpati_didi_registrations ADD CONSTRAINT fk_lakhpati_state_sub_division FOREIGN KEY (state_sub_division_id) REFERENCES state_sub_divisions(id) ON DELETE SET NULL`,
       `ALTER TABLE lakhpati_didi_registrations ADD COLUMN region_id INT NULL`,
       `ALTER TABLE lakhpati_didi_registrations ADD COLUMN taluka_id INT NULL`,
+      `ALTER TABLE lakhpati_didi_registrations ADD COLUMN block_id INT NULL`,
+      `ALTER TABLE lakhpati_didi_registrations ADD CONSTRAINT fk_lakhpati_block FOREIGN KEY (block_id) REFERENCES blocks(id) ON DELETE SET NULL`,
       `ALTER TABLE lakhpati_didi_registrations ADD COLUMN circle_id INT NULL`,
       `ALTER TABLE lakhpati_didi_registrations ADD COLUMN gram_panchayat_id INT NULL`,
       `ALTER TABLE lakhpati_didi_registrations ADD COLUMN business_category_id INT NULL`,
       `ALTER TABLE lakhpati_didi_registrations ADD COLUMN business_type_id INT NULL`,
       `ALTER TABLE lakhpati_didi_registrations ADD COLUMN product_id INT NULL`,
       `ALTER TABLE lakhpati_didi_registrations ADD COLUMN unit_id INT NULL`,
+      `ALTER TABLE lakhpati_didi_registrations ADD COLUMN state_circle_id INT NULL`,
+      `ALTER TABLE lakhpati_didi_registrations ADD CONSTRAINT fk_lakhpati_state_circle FOREIGN KEY (state_circle_id) REFERENCES state_circles(id) ON DELETE SET NULL`,
       `ALTER TABLE lakhpati_didi_registrations ADD COLUMN country_id INT NULL`,
       `ALTER TABLE lakhpati_didi_registrations ADD COLUMN country_division_id INT NULL`,
       `ALTER TABLE lakhpati_didi_registrations ADD CONSTRAINT fk_lakhpati_country FOREIGN KEY (country_id) REFERENCES countries(id) ON DELETE SET NULL`,
       `ALTER TABLE lakhpati_didi_registrations ADD CONSTRAINT fk_lakhpati_country_division FOREIGN KEY (country_division_id) REFERENCES country_divisions(id) ON DELETE SET NULL`,
       `ALTER TABLE farmer_registrations MODIFY COLUMN name VARCHAR(255) NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN state_circle_id INT NULL`,
+      `ALTER TABLE farmer_registrations ADD CONSTRAINT fk_farmer_state_circle FOREIGN KEY (state_circle_id) REFERENCES state_circles(id) ON DELETE SET NULL`,
       `ALTER TABLE farmer_registrations ADD COLUMN country_id INT NULL`,
       `ALTER TABLE farmer_registrations ADD COLUMN country_division_id INT NULL`,
       `ALTER TABLE farmer_registrations ADD COLUMN state_division_id INT NULL`,
@@ -668,7 +767,7 @@ async function initDatabase() {
       `ALTER TABLE farmer_registrations ADD CONSTRAINT fk_farmer_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL`,
     ];
     const masterTables = [
-      'continents', 'countries', 'country_divisions', 'states', 'state_divisions', 'state_sub_divisions',
+      'continents', 'countries', 'country_divisions', 'states', 'state_circles', 'state_divisions', 'state_sub_divisions',
       'regions', 'zones', 'vidhan_sabhas', 'talukas', 'blocks', 'circles', 'gram_panchayats', 'villages',
       'products', 'business_types', 'units', 'types_of_units', 'business_categories', 'business_sub_categories',
       'designations', 'business_positions', 'business_sectors', 'position_allotments',
@@ -682,14 +781,54 @@ async function initDatabase() {
       } catch (e) {
         const ignore = [
           'ER_DUP_FIELDNAME',   // column already exists
-          'ER_DUP_KEYNAME',    // index already exists
-          'ER_FK_DUP_NAME',    // foreign key constraint already exists
-          'ER_DUP_COLUMNNAME', // MariaDB duplicate column
+          'ER_DUP_KEYNAME',     // index already exists
+          'ER_FK_DUP_NAME',     // foreign key constraint already exists (MySQL 1826)
+          'ER_DUP_COLUMNNAME',  // MariaDB duplicate column
+          'ER_DUP_FIELD',       // some servers use this for duplicate column
         ].includes(e.code);
         if (!ignore) {
           console.warn('Migration warning:', e.message);
         }
       }
+    }
+
+    // Safe registration-table migrations: add columns/FKs only if missing (idempotent, no reliance on error codes)
+    async function addColumnIfMissing(table, column, def) {
+      const [rows] = await connection.query(
+        'SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?',
+        [dbName, table, column]
+      );
+      if (rows.length === 0) {
+        await connection.query(`ALTER TABLE \`${table}\` ADD COLUMN \`${column}\` ${def}`);
+        console.log(`Added ${table}.${column}`);
+      }
+    }
+    async function addFkIfMissing(table, constraintName, column, refTable, refColumn = 'id') {
+      const [rows] = await connection.query(
+        `SELECT 1 FROM information_schema.KEY_COLUMN_USAGE
+         WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ? AND REFERENCED_TABLE_SCHEMA = ? AND REFERENCED_TABLE_NAME = ?`,
+        [dbName, table, column, dbName, refTable]
+      );
+      if (rows.length === 0) {
+        await connection.query(
+          `ALTER TABLE \`${table}\` ADD CONSTRAINT \`${constraintName}\` FOREIGN KEY (\`${column}\`) REFERENCES \`${refTable}\`(\`${refColumn}\`) ON DELETE SET NULL`
+        );
+        console.log(`Added FK ${constraintName} on ${table}.${column}`);
+      }
+    }
+    try {
+      await addColumnIfMissing('customer_registrations', 'state_sub_division_id', 'INT NULL');
+      await addFkIfMissing('customer_registrations', 'fk_customer_state_sub_division', 'state_sub_division_id', 'state_sub_divisions');
+      await addColumnIfMissing('customer_registrations', 'block_id', 'INT NULL');
+      await addFkIfMissing('customer_registrations', 'fk_customer_block', 'block_id', 'blocks');
+      await addColumnIfMissing('lakhpati_didi_registrations', 'state_sub_division_id', 'INT NULL');
+      await addFkIfMissing('lakhpati_didi_registrations', 'fk_lakhpati_state_sub_division', 'state_sub_division_id', 'state_sub_divisions');
+      await addColumnIfMissing('lakhpati_didi_registrations', 'block_id', 'INT NULL');
+      await addFkIfMissing('lakhpati_didi_registrations', 'fk_lakhpati_block', 'block_id', 'blocks');
+      await addColumnIfMissing('farmer_registrations', 'vidhan_sabha_id', 'INT NULL');
+      await addFkIfMissing('farmer_registrations', 'fk_farmer_vidhan_sabha', 'vidhan_sabha_id', 'vidhan_sabhas');
+    } catch (e) {
+      console.warn('Safe registration migration:', e.message);
     }
     // Migrate panchayat_samitis -> gram_panchayats (existing DBs)
     try {

@@ -52,7 +52,13 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
           .then((res) => {
             const list = (res.success ? res.data || [] : []).map((row) => ({
               id: row.id,
-              name: row.name || [row.first_name, row.middle_name, row.last_name].filter(Boolean).join(' ').trim() || '—',
+              name:
+                row.name ||
+                [row.first_name, row.middle_name, row.last_name]
+                  .filter(Boolean)
+                  .join(' ')
+                  .trim() ||
+                '—',
             }));
             setOptions((prev) => ({ ...prev, [t]: list }));
           })
@@ -198,6 +204,11 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
               circle = circles.find(
                 (c) => Number(c.id) === Number(gp.circle_id)
               );
+          if (circle) {
+            block = blocks.find(
+              (b) => Number(b.id) === Number(circle.block_id)
+            );
+          }
             }
             if (taluka) {
               vs = vidhanSabhas.find(
@@ -225,6 +236,11 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
               circle = circles.find(
                 (c) => Number(c.id) === Number(gp.circle_id)
               );
+          if (circle) {
+            block = blocks.find(
+              (b) => Number(b.id) === Number(circle.block_id)
+            );
+          }
             }
             if (taluka) {
               vs = vidhanSabhas.find(
@@ -274,14 +290,14 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
         if (field.optionValue && o[field.optionValue] == val) return true;
         return o.id == val;
       });
-      if (!opt) return String(val);
+      if (!opt) return '—';
       if (field.optionsTable === 'unit-types') return opt.type_category || opt.name || String(val);
       return field.optionLabel ? (opt[field.optionLabel] ?? opt.name) : opt.name;
     }
     if (field.type === 'selectFromLevel' && field.optionsTableMap && field.levelField) {
       const levelVal = row[field.levelField];
       const optionsTable = levelVal ? field.optionsTableMap[levelVal] : null;
-      if (!optionsTable || !options[optionsTable]) return val != null ? String(val) : '—';
+      if (!optionsTable || !options[optionsTable]) return '—';
       const list = options[optionsTable];
       const opt = list.find((o) => o.id == val || (o.client_id != null && String(o.client_id) === String(val)));
       return opt ? (opt.name || String(val)) : (val != null ? String(val) : '—');
@@ -506,6 +522,7 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
   if (!table || !title) return null;
 
   const addLabel = addButtonLabel || `Add ${title}`;
+  const isDesignationTable = table === 'designations';
 
   const filteredData =
     table === 'position-allotments'
@@ -514,191 +531,10 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
 
   return (
     <div style={styles.page}>
-      <h1 style={styles.h1}>{title}</h1>
+      <div style={styles.card}>
+        <h1 style={styles.title}>{title}</h1>
 
-      {table === 'position-allotments' && (
-        <div style={styles.filterRow}>
-          <div style={styles.filterGroup}>
-            <label style={styles.filterLabel}>Zone</label>
-            <select
-              value={filters.zone_id || ''}
-              onChange={(e) =>
-                setFilters((prev) => ({ ...prev, zone_id: e.target.value || null }))
-              }
-              style={styles.filterSelect}
-            >
-              <option value="">All</option>
-              {(options.zones || []).map((z) => (
-                <option key={z.id} value={z.id}>
-                  {z.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div style={styles.filterGroup}>
-            <label style={styles.filterLabel}>Vidhan Sabha</label>
-            <select
-              value={filters.vidhan_sabha_id || ''}
-              onChange={(e) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  vidhan_sabha_id: e.target.value || null,
-                }))
-              }
-              style={styles.filterSelect}
-            >
-              <option value="">All</option>
-              {(options['vidhan-sabhas'] || []).map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div style={styles.filterGroup}>
-            <label style={styles.filterLabel}>Taluka</label>
-            <select
-              value={filters.taluka_id || ''}
-              onChange={(e) =>
-                setFilters((prev) => ({ ...prev, taluka_id: e.target.value || null }))
-              }
-              style={styles.filterSelect}
-            >
-              <option value="">All</option>
-              {(options.talukas || []).map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div style={styles.filterGroup}>
-            <label style={styles.filterLabel}>Block</label>
-            <select
-              value={filters.block_id || ''}
-              onChange={(e) =>
-                setFilters((prev) => ({ ...prev, block_id: e.target.value || null }))
-              }
-              style={styles.filterSelect}
-            >
-              <option value="">All</option>
-              {(options.blocks || []).map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div style={styles.filterGroup}>
-            <label style={styles.filterLabel}>Circle</label>
-            <select
-              value={filters.circle_id || ''}
-              onChange={(e) =>
-                setFilters((prev) => ({ ...prev, circle_id: e.target.value || null }))
-              }
-              style={styles.filterSelect}
-            >
-              <option value="">All</option>
-              {(options.circles || []).map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div style={styles.filterGroup}>
-            <label style={styles.filterLabel}>Gram Panchayat</label>
-            <select
-              value={filters.gram_panchayat_id || ''}
-              onChange={(e) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  gram_panchayat_id: e.target.value || null,
-                }))
-              }
-              style={styles.filterSelect}
-            >
-              <option value="">All</option>
-              {(options['gram-panchayats'] || []).map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div style={styles.filterGroup}>
-            <label style={styles.filterLabel}>Village</label>
-            <select
-              value={filters.village_id || ''}
-              onChange={(e) =>
-                setFilters((prev) => ({ ...prev, village_id: e.target.value || null }))
-              }
-              style={styles.filterSelect}
-            >
-              <option value="">All</option>
-              {(options.villages || []).map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div style={styles.filterGroup}>
-            <label style={styles.filterLabel}>Business Position</label>
-            <select
-              value={filters.business_position_id || ''}
-              onChange={(e) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  business_position_id: e.target.value || null,
-                }))
-              }
-              style={styles.filterSelect}
-            >
-              <option value="">All</option>
-              {(options.designations || []).map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div style={styles.filterGroup}>
-            <label style={styles.filterLabel}>Business Sector</label>
-            <select
-              value={filters.business_category_id || ''}
-              onChange={(e) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  business_category_id: e.target.value || null,
-                }))
-              }
-              style={styles.filterSelect}
-            >
-              <option value="">All</option>
-              {(options['business-categories'] || []).map((bc) => (
-                <option key={bc.id} value={bc.id}>
-                  {bc.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div style={styles.filterGroup}>
-            <label style={styles.filterLabel}>User Name</label>
-            <input
-              type="text"
-              value={filters.user_name || ''}
-              onChange={(e) =>
-                setFilters((prev) => ({ ...prev, user_name: e.target.value || '' }))
-              }
-              placeholder="Search user"
-              style={styles.filterSelect}
-            />
-          </div>
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} style={styles.form}>
+        <form onSubmit={handleSubmit} style={styles.form}>
         <div style={styles.formRow}>
           {fields.map((f) => (
             <div key={`${table}-${f.name}`} style={styles.fieldWrap}>
@@ -1026,7 +862,11 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
             </div>
           ))}
           <div style={styles.actions}>
-            <button type="submit" disabled={submitLoading} style={styles.btnPrimary}>
+            <button
+              type="submit"
+              disabled={submitLoading}
+              style={editingId ? { ...styles.btnPrimary, ...styles.btnPrimaryEdit } : styles.btnPrimary}
+            >
               {submitLoading ? 'Saving…' : editingId ? 'Update' : addLabel}
             </button>
             {editingId && (
@@ -1036,9 +876,9 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
             )}
           </div>
         </div>
-      </form>
+        </form>
 
-      {dropdownAlert && (
+        {dropdownAlert && (
         <div style={styles.alertOverlay} onClick={() => setDropdownAlert(null)} role="dialog" aria-modal="true" aria-labelledby="dropdown-alert-title">
           <div style={styles.alertBox} onClick={(e) => e.stopPropagation()}>
             <p id="dropdown-alert-title" style={styles.alertMessage}>{dropdownAlert}</p>
@@ -1047,12 +887,12 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
             </button>
           </div>
         </div>
-      )}
+        )}
 
-      {error && <div style={styles.error}>{error}</div>}
+        {error && <div style={styles.error}>{error}</div>}
 
-      <div style={styles.tableWrap}>
-        <table style={styles.table}>
+        <div style={isDesignationTable ? styles.tableWrapCompact : styles.tableWrap}>
+        <table style={isDesignationTable ? styles.tableCompact : styles.table}>
           <thead>
             <tr>
               <th style={styles.th}>ID</th>
@@ -1063,6 +903,261 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
               ))}
               <th style={styles.th}>Actions</th>
             </tr>
+            {table === 'position-allotments' && (
+              <tr>
+                <th style={styles.thFilter}>
+                  <button
+                    type="button"
+                    style={styles.filterResetBtn}
+                    onClick={() =>
+                      setFilters({
+                        zone_id: null,
+                        vidhan_sabha_id: null,
+                        taluka_id: null,
+                        block_id: null,
+                        circle_id: null,
+                        gram_panchayat_id: null,
+                        village_id: null,
+                        business_position_id: null,
+                        business_category_id: null,
+                        user_name: '',
+                      })
+                    }
+                  >
+                    Reset
+                  </button>
+                </th>
+                {fields.map((f) => {
+                  if (f.name === 'zone_id') {
+                    return (
+                      <th key={`${f.name}-filter`} style={styles.thFilter}>
+                        <select
+                          value={filters.zone_id || ''}
+                          onChange={(e) =>
+                            setFilters((prev) => ({
+                              ...prev,
+                              zone_id: e.target.value || null,
+                            }))
+                          }
+                          style={styles.filterInput}
+                        >
+                          <option value="">All</option>
+                          {(options.zones || []).map((z) => (
+                            <option key={z.id} value={z.id}>
+                              {z.name}
+                            </option>
+                          ))}
+                        </select>
+                      </th>
+                    );
+                  }
+                  if (f.name === 'vidhan_sabha_id') {
+                    return (
+                      <th key={`${f.name}-filter`} style={styles.thFilter}>
+                        <select
+                          value={filters.vidhan_sabha_id || ''}
+                          onChange={(e) =>
+                            setFilters((prev) => ({
+                              ...prev,
+                              vidhan_sabha_id: e.target.value || null,
+                            }))
+                          }
+                          style={styles.filterInput}
+                        >
+                          <option value="">All</option>
+                          {(options['vidhan-sabhas'] || []).map((v) => (
+                            <option key={v.id} value={v.id}>
+                              {v.name}
+                            </option>
+                          ))}
+                        </select>
+                      </th>
+                    );
+                  }
+                  if (f.name === 'taluka_id') {
+                    return (
+                      <th key={`${f.name}-filter`} style={styles.thFilter}>
+                        <select
+                          value={filters.taluka_id || ''}
+                          onChange={(e) =>
+                            setFilters((prev) => ({
+                              ...prev,
+                              taluka_id: e.target.value || null,
+                            }))
+                          }
+                          style={styles.filterInput}
+                        >
+                          <option value="">All</option>
+                          {(options.talukas || []).map((t) => (
+                            <option key={t.id} value={t.id}>
+                              {t.name}
+                            </option>
+                          ))}
+                        </select>
+                      </th>
+                    );
+                  }
+                  if (f.name === 'block_id') {
+                    return (
+                      <th key={`${f.name}-filter`} style={styles.thFilter}>
+                        <select
+                          value={filters.block_id || ''}
+                          onChange={(e) =>
+                            setFilters((prev) => ({
+                              ...prev,
+                              block_id: e.target.value || null,
+                            }))
+                          }
+                          style={styles.filterInput}
+                        >
+                          <option value="">All</option>
+                          {(options.blocks || []).map((b) => (
+                            <option key={b.id} value={b.id}>
+                              {b.name}
+                            </option>
+                          ))}
+                        </select>
+                      </th>
+                    );
+                  }
+                  if (f.name === 'circle_id') {
+                    return (
+                      <th key={`${f.name}-filter`} style={styles.thFilter}>
+                        <select
+                          value={filters.circle_id || ''}
+                          onChange={(e) =>
+                            setFilters((prev) => ({
+                              ...prev,
+                              circle_id: e.target.value || null,
+                            }))
+                          }
+                          style={styles.filterInput}
+                        >
+                          <option value="">All</option>
+                          {(options.circles || []).map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.name}
+                            </option>
+                          ))}
+                        </select>
+                      </th>
+                    );
+                  }
+                  if (f.name === 'gram_panchayat_id') {
+                    return (
+                      <th key={`${f.name}-filter`} style={styles.thFilter}>
+                        <select
+                          value={filters.gram_panchayat_id || ''}
+                          onChange={(e) =>
+                            setFilters((prev) => ({
+                              ...prev,
+                              gram_panchayat_id: e.target.value || null,
+                            }))
+                          }
+                          style={styles.filterInput}
+                        >
+                          <option value="">All</option>
+                          {(options['gram-panchayats'] || []).map((g) => (
+                            <option key={g.id} value={g.id}>
+                              {g.name}
+                            </option>
+                          ))}
+                        </select>
+                      </th>
+                    );
+                  }
+                  if (f.name === 'village_id') {
+                    return (
+                      <th key={`${f.name}-filter`} style={styles.thFilter}>
+                        <select
+                          value={filters.village_id || ''}
+                          onChange={(e) =>
+                            setFilters((prev) => ({
+                              ...prev,
+                              village_id: e.target.value || null,
+                            }))
+                          }
+                          style={styles.filterInput}
+                        >
+                          <option value="">All</option>
+                          {(options.villages || []).map((v) => (
+                            <option key={v.id} value={v.id}>
+                              {v.name}
+                            </option>
+                          ))}
+                        </select>
+                      </th>
+                    );
+                  }
+                  if (f.name === 'business_position_id') {
+                    return (
+                      <th key={`${f.name}-filter`} style={styles.thFilter}>
+                        <select
+                          value={filters.business_position_id || ''}
+                          onChange={(e) =>
+                            setFilters((prev) => ({
+                              ...prev,
+                              business_position_id: e.target.value || null,
+                            }))
+                          }
+                          style={styles.filterInput}
+                        >
+                          <option value="">All</option>
+                          {(options.designations || []).map((d) => (
+                            <option key={d.id} value={d.id}>
+                              {d.name}
+                            </option>
+                          ))}
+                        </select>
+                      </th>
+                    );
+                  }
+                  if (f.name === 'business_category_id') {
+                    return (
+                      <th key={`${f.name}-filter`} style={styles.thFilter}>
+                        <select
+                          value={filters.business_category_id || ''}
+                          onChange={(e) =>
+                            setFilters((prev) => ({
+                              ...prev,
+                              business_category_id: e.target.value || null,
+                            }))
+                          }
+                          style={styles.filterInput}
+                        >
+                          <option value="">All</option>
+                          {(options['business-categories'] || []).map((bc) => (
+                            <option key={bc.id} value={bc.id}>
+                              {bc.name}
+                            </option>
+                          ))}
+                        </select>
+                      </th>
+                    );
+                  }
+                  if (f.name === 'user_name') {
+                    return (
+                      <th key={`${f.name}-filter`} style={styles.thFilter}>
+                        <input
+                          type="text"
+                          value={filters.user_name || ''}
+                          onChange={(e) =>
+                            setFilters((prev) => ({
+                              ...prev,
+                              user_name: e.target.value || '',
+                            }))
+                          }
+                          placeholder="Search user"
+                          style={styles.filterInput}
+                        />
+                      </th>
+                    );
+                  }
+                  return <th key={`${f.name}-filter`} />;
+                })}
+                <th />
+              </tr>
+            )}
           </thead>
           <tbody>
             {loading ? (
@@ -1113,17 +1208,18 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
             )}
           </tbody>
         </table>
-      </div>
-      {table === 'designations' && data.length > 0 && (
-        <div style={styles.hierarchyWrap}>
-          <h2 style={styles.hierarchyTitle}>Designation Hierarchy</h2>
-          <ul style={styles.hierarchyList}>
-            {buildDesignationTree(data).map((node) => (
-              <HierarchyItem key={node.id} node={node} />
-            ))}
-          </ul>
         </div>
-      )}
+        {table === 'designations' && data.length > 0 && (
+          <div style={styles.hierarchyWrap}>
+            <h2 style={styles.hierarchyTitle}>Designation Hierarchy</h2>
+            <ul style={styles.hierarchyList}>
+              {buildDesignationTree(data).map((node) => (
+                <HierarchyItem key={node.id} node={node} />
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -1264,6 +1360,11 @@ function filterPositionAllotments(rows, filters, options) {
           circle =
             circles.find((c) => numOrNull(c.id) === numOrNull(gp.circle_id)) ||
             null;
+          if (circle) {
+            block =
+              blocks.find((b) => numOrNull(b.id) === numOrNull(circle.block_id)) ||
+              null;
+          }
         }
         if (taluka) {
           vs =
@@ -1292,6 +1393,11 @@ function filterPositionAllotments(rows, filters, options) {
           circle =
             circles.find((c) => numOrNull(c.id) === numOrNull(gp.circle_id)) ||
             null;
+          if (circle) {
+            block =
+              blocks.find((b) => numOrNull(b.id) === numOrNull(circle.block_id)) ||
+              null;
+          }
         }
         if (taluka) {
           vs =
@@ -1326,28 +1432,65 @@ function filterPositionAllotments(rows, filters, options) {
 
 function buildDesignationTree(rows) {
   if (!rows || rows.length === 0) return [];
-  const byId = new Map();
-  rows.forEach((r) => {
-    const id = r.id != null ? Number(r.id) : null;
-    if (id == null || Number.isNaN(id)) return;
-    byId.set(id, { ...r, id, children: [] });
+
+  // One node per row
+  const nodes = rows.map((r) => ({ ...r, children: [] }));
+
+  // Lookup by both id and client_id → same node
+  const byKey = new Map();
+  nodes.forEach((node) => {
+    const dbId = node.id != null ? String(node.id) : null;
+    const clientId = node.client_id != null ? String(node.client_id) : null;
+    if (dbId) byKey.set(dbId, node);
+    if (clientId && !byKey.has(clientId)) byKey.set(clientId, node);
   });
+
   const roots = [];
-  byId.forEach((node) => {
-    const parentId = node.parent_id != null && node.parent_id !== '' ? Number(node.parent_id) : null;
-    const parent = parentId != null && !Number.isNaN(parentId) ? byId.get(parentId) : null;
-    if (parent) {
-      parent.children.push(node);
-    } else {
-      roots.push(node);
+
+  const isCyclic = (child, target) => {
+    if (!child || !child.children) return false;
+    for (const c of child.children) {
+      if (c === target || isCyclic(c, target)) return true;
     }
+    return false;
+  };
+
+  // Attach each node to its parent at most once
+  nodes.forEach((node) => {
+    const parentRaw =
+      node.parent_id !== undefined && node.parent_id !== null && node.parent_id !== ''
+        ? String(node.parent_id)
+        : null;
+
+    if (!parentRaw) {
+      roots.push(node);
+      return;
+    }
+
+    const parent = byKey.get(parentRaw) || null;
+    if (!parent || parent === node || isCyclic(node, parent)) {
+      // Missing/invalid parent or cycle → treat as root
+      roots.push(node);
+      return;
+    }
+
+    parent.children.push(node);
   });
-  const sortById = (a, b) => (a.id - b.id);
-  roots.sort(sortById);
-  byId.forEach((node) => {
-    if (node.children && node.children.length > 0) node.children.sort(sortById);
+
+  // Sort by name for stable display
+  const sortByName = (a, b) => {
+    const an = (a.name || '').toString().toLowerCase();
+    const bn = (b.name || '').toString().toLowerCase();
+    return an.localeCompare(bn);
+  };
+
+  const dedupRoots = roots.filter((n, i) => roots.indexOf(n) === i);
+  dedupRoots.sort(sortByName);
+  nodes.forEach((node) => {
+    if (node.children && node.children.length > 0) node.children.sort(sortByName);
   });
-  return roots;
+
+  return dedupRoots;
 }
 
 function HierarchyItem({ node }) {
@@ -1367,12 +1510,29 @@ function HierarchyItem({ node }) {
 }
 
 const styles = {
-  page: { display: 'flex', flexDirection: 'column', gap: '1rem' },
-  h1: {
+  page: {
+    padding: '1.5rem 2rem',
+    display: 'flex',
+    justifyContent: 'center',
+    background: '#f2f2f5',
+  },
+  card: {
+    width: '100%',
+    maxWidth: 1040,
+    background: '#ffffff',
+    borderRadius: 8,
+    boxShadow: '0 6px 18px rgba(0,0,0,0.08)',
+    padding: '1.5rem 2rem 2rem',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1rem',
+  },
+  title: {
     margin: 0,
-    fontSize: '1.75rem',
-    fontFamily: 'Georgia, "Times New Roman", serif',
-    color: '#1a1a1a',
+    fontSize: '1.8rem',
+    fontWeight: 700,
+    textAlign: 'center',
+    color: '#8B1538',
   },
   filterRow: {
     marginTop: '0.5rem',
@@ -1418,6 +1578,9 @@ const styles = {
     color: '#fff',
     fontWeight: 600,
   },
+  btnPrimaryEdit: {
+    background: '#f97316',
+  },
   btnSecondary: {
     padding: '0.5rem 1rem',
     borderRadius: 4,
@@ -1454,7 +1617,16 @@ const styles = {
     border: '1px solid #ddd',
     borderRadius: 4,
   },
+  tableWrapCompact: {
+    overflowX: 'auto',
+    overflowY: 'auto',
+    maxHeight: '40vh',
+    background: '#fff',
+    border: '1px solid #ddd',
+    borderRadius: 4,
+  },
   table: { width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' },
+  tableCompact: { width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem' },
   th: {
     textAlign: 'left',
     padding: '0.3rem 0.4rem',
@@ -1464,10 +1636,30 @@ const styles = {
     background: '#f5f5f5',
     whiteSpace: 'nowrap',
   },
+  thFilter: {
+    padding: '0.2rem 0.35rem',
+    background: '#f9fafb',
+  },
   td: {
     padding: '0.3rem 0.4rem',
     borderBottom: '1px solid #ddd',
     whiteSpace: 'nowrap',
+  },
+  filterInput: {
+    width: '100%',
+    minWidth: 100,
+    padding: '0.2rem 0.3rem',
+    borderRadius: 4,
+    border: '1px solid #ccc',
+    fontSize: '0.75rem',
+  },
+  filterResetBtn: {
+    padding: '0.2rem 0.4rem',
+    fontSize: '0.75rem',
+    borderRadius: 4,
+    border: '1px solid #9ca3af',
+    background: '#f9fafb',
+    cursor: 'pointer',
   },
   alertOverlay: {
     position: 'fixed',

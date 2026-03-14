@@ -12,6 +12,12 @@ export const authApi = {
       body: JSON.stringify({ phone, password }),
     }).then((r) => r.json()),
   me: () => fetch(`${API_BASE}/auth/me`, { headers: getAuthHeaders() }).then((r) => r.json()),
+  verifyAdmin: (phone, password) =>
+    fetch(`${API_BASE}/auth/verify-admin`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ phone, password }),
+    }).then((r) => r.json()),
 };
 
 export const dashboardApi = {
@@ -128,4 +134,48 @@ export const registrationsApi = {
       }).then((r) => r.json()),
     delete: (id) => fetch(`${API_BASE}/registrations/lakhpati-didi/${id}`, { method: 'DELETE', headers: getAuthHeaders() }).then((r) => r.json()),
   },
+};
+
+export const filesApi = {
+  upload: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return fetch(`${API_BASE}/files`, {
+      method: 'POST',
+      headers: getAuthHeaders(), // let browser set Content-Type for multipart
+      body: formData,
+    }).then((r) => r.json());
+  },
+};
+
+export const authorizationApi = {
+  getSubAdmins: () =>
+    fetch(`${API_BASE}/authorization/sub-admins`, {
+      headers: getAuthHeaders(),
+    }).then((r) => r.json()),
+  createSubAdmin: (data) =>
+    fetch(`${API_BASE}/authorization/sub-admins`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify(data),
+    }).then((r) => r.json()),
+  getPermissions: (subAdminId) =>
+    fetch(`${API_BASE}/authorization/sub-admins/${subAdminId}/permissions`, {
+      headers: getAuthHeaders(),
+    }).then((r) => r.json()),
+  updatePermissions: (subAdminId, paths) =>
+    fetch(`${API_BASE}/authorization/sub-admins/${subAdminId}/permissions`, {
+      method: 'PUT',
+      headers: authHeaders(),
+      body: JSON.stringify({ paths }),
+    }).then((r) => r.json()),
+  myPermissions: () =>
+    fetch(`${API_BASE}/authorization/my-permissions`, {
+      headers: getAuthHeaders(),
+    }).then((r) => r.json()),
+  deleteSubAdmin: (id) =>
+    fetch(`${API_BASE}/authorization/sub-admins/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    }).then((r) => r.json()),
 };

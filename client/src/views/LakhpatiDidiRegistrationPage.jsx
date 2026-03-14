@@ -9,58 +9,90 @@ import {
   clearDependentsOnChange,
 } from '../config/locationCascade';
 
+// Geographic: country se village tak – parent dependent (same as Management)
 const locationFieldConfig = [
   { name: 'country_id', label: 'Country', table: 'countries' },
   { name: 'country_division_id', label: 'Country Division', table: 'country-divisions' },
   { name: 'state_id', label: 'State', table: 'states' },
+  { name: 'state_circle_id', label: 'State Circle', table: 'state-circles' },
   { name: 'state_division_id', label: 'State Division', table: 'state-divisions' },
+  { name: 'state_sub_division_id', label: 'State Sub Division', table: 'state-sub-divisions' },
   { name: 'region_id', label: 'Region', table: 'regions' },
   { name: 'zone_id', label: 'Zone', table: 'zones' },
   { name: 'vidhan_sabha_id', label: 'Vidhan Sabha', table: 'vidhan-sabhas' },
   { name: 'taluka_id', label: 'Taluka', table: 'talukas' },
+  { name: 'block_id', label: 'Block', table: 'blocks' },
   { name: 'circle_id', label: 'Circle', table: 'circles' },
   { name: 'gram_panchayat_id', label: 'Panchayat Samiti', table: 'gram-panchayats' },
   { name: 'village_id', label: 'Village', table: 'villages' },
-  { name: 'business_category_id', label: 'Business Category', table: 'business-categories' },
-  { name: 'business_type_id', label: 'Business Type', table: 'business-types' },
-  { name: 'product_id', label: 'Product', table: 'products' },
-  { name: 'unit_id', label: 'Unit', table: 'units' },
 ];
 
+// Separate business information cascade for Lakhpati Didi
+const businessFieldConfig = [
+  { name: 'business_category_id', label: 'Business Category', table: 'business-categories' },
+  { name: 'business_sub_category_id', label: 'Business Sub Category', table: 'business-sub-categories' },
+  { name: 'product_id', label: 'Product', table: 'products' },
+  { name: 'business_type_id', label: 'Business Type', table: 'business-types' },
+];
+
+// All fields on the form are required except `middle_name` and `phone_number`.
 const REQUIRED_FIELDS = [
+  // Geographic & business information
   { name: 'country_id', label: 'Country' },
   { name: 'country_division_id', label: 'Country Division' },
   { name: 'state_id', label: 'State' },
+  { name: 'state_circle_id', label: 'State Circle' },
   { name: 'state_division_id', label: 'State Division' },
+  { name: 'state_sub_division_id', label: 'State Sub Division' },
   { name: 'region_id', label: 'Region' },
   { name: 'zone_id', label: 'Zone' },
   { name: 'vidhan_sabha_id', label: 'Vidhan Sabha' },
   { name: 'taluka_id', label: 'Taluka' },
+  { name: 'block_id', label: 'Block' },
   { name: 'circle_id', label: 'Circle' },
   { name: 'gram_panchayat_id', label: 'Panchayat Samiti' },
   { name: 'village_id', label: 'Village' },
   { name: 'business_category_id', label: 'Business Category' },
-  { name: 'business_type_id', label: 'Business Type' },
+  { name: 'business_sub_category_id', label: 'Business Sub Category' },
   { name: 'product_id', label: 'Product' },
-  { name: 'unit_id', label: 'Unit' },
+  { name: 'business_type_id', label: 'Business Type' },
+
+  // User details
   { name: 'first_name', label: 'First Name' },
+  // middle_name is intentionally NOT required
   { name: 'last_name', label: 'Last Name' },
   { name: 'date_of_birth', label: 'Date of Birth' },
   { name: 'blood_group', label: 'Blood Group' },
   { name: 'caste', label: 'Caste' },
   { name: 'education', label: 'Education' },
   { name: 'occupation', label: 'Occupation' },
+  { name: 'business', label: 'Business' },
   { name: 'mobile_number', label: 'Mobile Number' },
+  // phone_number is intentionally NOT required
+  { name: 'whatsapp_number', label: 'WhatsApp Number' },
   { name: 'pan_card', label: 'PAN Card' },
   { name: 'aadhar_card', label: 'Aadhar Card' },
   { name: 'pincode', label: 'Pincode' },
-  { name: 'nominee_name', label: 'Nominee Name' },
-  { name: 'nominee_relation', label: 'Nominee Relation' },
-  { name: 'nominee_phone', label: 'Nominee Phone Number' },
-  { name: 'nominee_address', label: 'Nominee Address' },
+  { name: 'photo_path', label: 'Photo' },
+
+  // Password
   { name: 'password', label: 'Password' },
   { name: 'confirm_password', label: 'Confirm Password' },
+
+  // Nominee details
+  { name: 'nominee_name', label: 'Nominee Name' },
+  { name: 'nominee_relation', label: 'Nominee Relation' },
+  { name: 'nominee_dob', label: 'Nominee DOB' },
+  { name: 'nominee_phone', label: 'Nominee Phone Number' },
+  { name: 'nominee_address', label: 'Nominee Address' },
 ];
+
+// Business cascade: Category → Sub Category → Product → Business Type
+const BUSINESS_DEPENDENTS = {
+  business_category_id: ['business_sub_category_id', 'product_id', 'business_type_id'],
+  business_sub_category_id: ['product_id', 'business_type_id'],
+  product_id: ['business_type_id'],
+};
 
 function FieldWithError({ fieldName, fieldErrors, styles, children }) {
   return (
@@ -86,7 +118,9 @@ export default function LakhpatiDidiRegistrationPage({ title }) {
   }, [success]);
 
   useEffect(() => {
-    const tables = Array.from(new Set(locationFieldConfig.map((f) => f.table)));
+    const tables = Array.from(
+      new Set([...locationFieldConfig, ...businessFieldConfig].map((f) => f.table))
+    );
     Promise.all(
       tables.map((t) =>
         masterApi
@@ -109,15 +143,57 @@ export default function LakhpatiDidiRegistrationPage({ title }) {
     const value = v ? Number(v) : null;
     if (LOCATION_ORDER.includes(name)) {
       setForm((prev) => clearDependentsOnChange(prev, name, value));
-    } else {
-      setForm((prev) => ({ ...prev, [name]: value }));
+      return;
     }
+
+    if (BUSINESS_DEPENDENTS[name]) {
+      setForm((prev) => {
+        const next = { ...prev, [name]: value };
+        BUSINESS_DEPENDENTS[name].forEach((child) => {
+          next[child] = null;
+        });
+        return next;
+      });
+      return;
+    }
+
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleUserChange = (name) => (e) => {
     if (fieldErrors[name]) setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
     const v = e.target.value;
     setForm((prev) => ({ ...prev, [name]: v }));
+  };
+
+  const getBusinessOptions = (fieldName) => {
+    switch (fieldName) {
+      case 'business_category_id':
+        return getOptions('business-categories');
+      case 'business_sub_category_id': {
+        const all = getOptions('business-sub-categories');
+        const catId = form.business_category_id;
+        if (!catId) return [];
+        const idNum = Number(catId);
+        return all.filter((s) => Number(s.business_category_id) === idNum);
+      }
+      case 'product_id': {
+        const all = getOptions('products');
+        const subId = form.business_sub_category_id;
+        if (!subId) return [];
+        const idNum = Number(subId);
+        return all.filter((p) => Number(p.business_sub_category_id) === idNum);
+      }
+      case 'business_type_id': {
+        const all = getOptions('business-types');
+        const prodId = form.product_id;
+        if (!prodId) return [];
+        const idNum = Number(prodId);
+        return all.filter((t) => Number(t.product_id) === idNum);
+      }
+      default:
+        return [];
+    }
   };
 
   const getValidationError = () => {
@@ -164,18 +240,20 @@ export default function LakhpatiDidiRegistrationPage({ title }) {
       country_id: form.country_id ?? null,
       country_division_id: form.country_division_id ?? null,
       state_id: form.state_id ?? null,
+      state_circle_id: form.state_circle_id ?? null,
       state_division_id: form.state_division_id ?? null,
+      state_sub_division_id: form.state_sub_division_id ?? null,
       region_id: form.region_id ?? null,
       zone_id: form.zone_id ?? null,
       vidhan_sabha_id: form.vidhan_sabha_id ?? null,
       taluka_id: form.taluka_id ?? null,
+      block_id: form.block_id ?? null,
       circle_id: form.circle_id ?? null,
       gram_panchayat_id: form.gram_panchayat_id ?? null,
       village_id: form.village_id ?? null,
       business_category_id: form.business_category_id ?? null,
       business_type_id: form.business_type_id ?? null,
       product_id: form.product_id ?? null,
-      unit_id: form.unit_id ?? null,
       first_name: form.first_name || null,
       middle_name: form.middle_name || null,
       last_name: form.last_name || null,
@@ -217,14 +295,56 @@ export default function LakhpatiDidiRegistrationPage({ title }) {
 
   return (
     <div style={styles.page}>
-      <h1 style={styles.h1}>{title}</h1>
-      <form onSubmit={handleSubmit}>
+      <div style={styles.card}>
+        <h1 style={styles.title}>{title}</h1>
+        <form onSubmit={handleSubmit} style={styles.form}>
+        <fieldset style={styles.fieldset}>
+          <legend style={styles.legend}>Business Information</legend>
+          <div style={styles.userGrid4}>
+            {businessFieldConfig.map((field) => {
+              const opts = getBusinessOptions(field.name);
+              const disabled =
+                (field.name === 'business_sub_category_id' && !form.business_category_id) ||
+                (field.name === 'product_id' && !form.business_sub_category_id) ||
+                (field.name === 'business_type_id' && !form.product_id);
+              return (
+                <FieldWithError
+                  key={field.name}
+                  fieldName={field.name}
+                  fieldErrors={fieldErrors}
+                  styles={styles}
+                >
+                  <div style={styles.fieldWrap}>
+                    <label style={styles.label}>{field.label}</label>
+                    <select
+                      value={form[field.name] != null ? form[field.name] : ''}
+                      onChange={handleChange(field.name)}
+                      onKeyDown={focusNextOnTab}
+                      style={{ ...styles.select, opacity: disabled ? 0.7 : 1 }}
+                      disabled={disabled && field.name !== 'business_category_id'}
+                    >
+                      <option value="">Select {field.label}</option>
+                      {opts.map((opt) => (
+                        <option key={opt.id} value={opt.id}>
+                          {opt.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </FieldWithError>
+              );
+            })}
+          </div>
+        </fieldset>
+
         <fieldset style={styles.fieldset}>
           <legend style={styles.legend}>Geographic Information</legend>
           <div style={styles.grid}>
             {locationFieldConfig.map((field) => {
               const isLocation = LOCATION_FIELD_TABLE[field.name];
-              const opts = isLocation ? getFilteredLocationOptions(LOCATION_FIELD_TABLE[field.name], form, options) : getOptions(field.table);
+              const opts = isLocation
+                ? getFilteredLocationOptions(LOCATION_FIELD_TABLE[field.name], form, options)
+                : getOptions(field.table);
               const disabled = isLocation ? isLocationFieldDisabled(field.name, form) : false;
               return (
                 <div key={field.name} style={styles.fieldWithError}>
@@ -245,7 +365,9 @@ export default function LakhpatiDidiRegistrationPage({ title }) {
                       ))}
                     </select>
                   </div>
-                  {fieldErrors[field.name] && <div style={styles.fieldError}>{fieldErrors[field.name]}</div>}
+                  {fieldErrors[field.name] && (
+                    <div style={styles.fieldError}>{fieldErrors[field.name]}</div>
+                  )}
                 </div>
               );
             })}
@@ -380,7 +502,8 @@ export default function LakhpatiDidiRegistrationPage({ title }) {
             {saving ? 'Submitting…' : 'Submit Registration'}
           </button>
         </div>
-      </form>
+        </form>
+      </div>
     </div>
   );
 }
@@ -428,16 +551,34 @@ function SelectSimple({ label, name, value, onChange, options }) {
 }
 
 const styles = {
-  page: { padding: '1.5rem 2rem', display: 'flex', flexDirection: 'column', gap: '1rem' },
-  h1: {
-    margin: 0,
-    fontSize: '1.75rem',
-    fontFamily: 'Georgia, "Times New Roman", serif',
-    color: '#1a1a1a',
+  page: {
+    padding: '1.5rem 2rem',
+    display: 'flex',
+    justifyContent: 'center',
+    background: '#f2f2f5',
   },
+  card: {
+    width: '100%',
+    maxWidth: 1040,
+    background: '#ffffff',
+    borderRadius: 8,
+    boxShadow: '0 6px 18px rgba(0,0,0,0.08)',
+    padding: '1.5rem 2rem 2rem',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1rem',
+  },
+  title: {
+    margin: 0,
+    fontSize: '1.8rem',
+    fontWeight: 700,
+    textAlign: 'center',
+    color: '#8B1538',
+  },
+  form: { display: 'flex', flexDirection: 'column', gap: '1rem' },
   fieldset: {
     borderRadius: 6,
-    border: '1px solid #ddd',
+    border: '1px solid #e0a0a0',
     padding: '1rem 1.25rem',
     marginBottom: '1rem',
   },

@@ -17,9 +17,13 @@ export const entityFields = {
     { name: 'name', label: 'State', type: 'text', tableHeader: 'State' },
     { name: 'country_division_id', label: 'Select Country Division', type: 'select', optionsTable: 'country-divisions', tableHeader: 'Country Division' },
   ],
+  'state-circles': [
+    { name: 'name', label: 'State Circle', type: 'text', tableHeader: 'State Circle' },
+    { name: 'state_id', label: 'Select State', type: 'select', optionsTable: 'states', tableHeader: 'State' },
+  ],
   'state-divisions': [
     { name: 'name', label: 'State Division', type: 'text', tableHeader: 'State Division' },
-    { name: 'state_id', label: 'Select State', type: 'select', optionsTable: 'states', tableHeader: 'State' },
+    { name: 'state_circle_id', label: 'Select State Circle', type: 'select', optionsTable: 'state-circles', tableHeader: 'State Circle' },
   ],
   'state-sub-divisions': [
     { name: 'name', label: 'State Sub Division', type: 'text', tableHeader: 'State Sub Division' },

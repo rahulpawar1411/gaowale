@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { MAIN_MENU, BUSINESS_MENU, REGISTRATION_MENU, ALLOTMENT_MENU } from '../config/menuConfig';
-import { removeToken } from '../utils/auth';
+import { removeToken, getAdmin } from '../utils/auth';
 
 const LOGO_URL = 'https://www.greatwebsoft.in/gaonmaza/public/images/white-logo.jpeg';
 
-export default function Layout({ children }) {
+export default function Layout({ children, isSubAdmin = false, allowedPaths = null }) {
   const navigate = useNavigate();
   const [userOpen, setUserOpen] = useState(false);
   const [mainMenuOpen, setMainMenuOpen] = useState(true);
@@ -14,6 +14,13 @@ export default function Layout({ children }) {
   const [registrationOpen, setRegistrationOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userWrapRef = useRef(null);
+  const admin = getAdmin();
+  const isSuperAdmin =
+    admin && admin.type === 'admin' && (admin.phone === '1234567890' || admin.role === 'SUPER_ADMIN');
+  const displayName =
+    admin && admin.type === 'sub-admin'
+      ? admin.name || admin.phone || 'Sub Admin'
+      : 'Admin';
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -44,6 +51,21 @@ export default function Layout({ children }) {
     </button>
   );
 
+  const filterByPermissions = (items) => {
+    if (!isSubAdmin || !Array.isArray(allowedPaths)) return items;
+    return items.filter((item) => allowedPaths.includes(item.path));
+  };
+
+  const mainMenuItems = filterByPermissions(MAIN_MENU);
+  const allotmentItems = filterByPermissions(ALLOTMENT_MENU);
+  const businessItems = filterByPermissions(BUSINESS_MENU);
+  const registrationItems = filterByPermissions(
+    REGISTRATION_MENU.filter(({ type }) => type !== 'userDetails')
+  );
+
+  const canSeeUserDetails =
+    !isSubAdmin || (Array.isArray(allowedPaths) && allowedPaths.includes('/user-details'));
+
   return (
     <div style={styles.wrapper}>
       <header style={styles.header}>
@@ -51,6 +73,15 @@ export default function Layout({ children }) {
           <img src={LOGO_URL} alt="Logo" style={styles.logo} />
         </div>
         <div style={styles.headerRight}>
+          {isSuperAdmin && (
+            <button
+              type="button"
+              onClick={() => navigate('/authorization')}
+              style={styles.authBtn}
+            >
+              Authorization
+            </button>
+          )}
           <div style={styles.userWrap} ref={userWrapRef}>
             <button
               type="button"
@@ -60,7 +91,7 @@ export default function Layout({ children }) {
               aria-haspopup="true"
             >
               <span style={styles.userIcon}>👤</span>
-              <span>Admin</span>
+              <span>{displayName}</span>
               <span style={styles.dropdownArrow}>▼</span>
             </button>
             {userOpen && (
@@ -93,7 +124,7 @@ export default function Layout({ children }) {
             {sectionHeader('Main Menu', mainMenuOpen, () => setMainMenuOpen(!mainMenuOpen))}
             {mainMenuOpen && (
               <div style={styles.sectionLinks}>
-                {MAIN_MENU.map(({ path, label }) => (
+                {mainMenuItems.map(({ path, label }) => (
                   <NavLink key={path} to={path} style={linkStyle} className="gov-sidebar-link">
                     {label}
                   </NavLink>
@@ -105,7 +136,7 @@ export default function Layout({ children }) {
             {sectionHeader('Allotment', allotmentOpen, () => setAllotmentOpen(!allotmentOpen))}
             {allotmentOpen && (
               <div style={styles.sectionLinks}>
-                {ALLOTMENT_MENU.map(({ path, label }) => (
+                {allotmentItems.map(({ path, label }) => (
                   <NavLink key={path} to={path} style={linkStyle} className="gov-sidebar-link">
                     {label}
                   </NavLink>
@@ -117,7 +148,7 @@ export default function Layout({ children }) {
             {sectionHeader('Business', businessOpen, () => setBusinessOpen(!businessOpen))}
             {businessOpen && (
               <div style={styles.sectionLinks}>
-                {BUSINESS_MENU.map(({ path, label }) => (
+                {businessItems.map(({ path, label }) => (
                   <NavLink key={path} to={path} style={linkStyle} className="gov-sidebar-link">
                     {label}
                   </NavLink>
@@ -129,7 +160,7 @@ export default function Layout({ children }) {
             {sectionHeader('Registration', registrationOpen, () => setRegistrationOpen(!registrationOpen))}
             {registrationOpen && (
               <div style={styles.sectionLinks}>
-                {REGISTRATION_MENU.filter(({ type }) => type !== 'userDetails').map(({ path, label }) => (
+                {registrationItems.map(({ path, label }) => (
                   <NavLink key={path} to={path} style={linkStyle} className="gov-sidebar-link">
                     {label}
                   </NavLink>
@@ -138,8 +169,8 @@ export default function Layout({ children }) {
             )}
 
             {/* User Details section (same theme as others) */}
-            {sectionHeader('User Details', userMenuOpen, () => setUserMenuOpen(!userMenuOpen))}
-            {userMenuOpen && (
+            {canSeeUserDetails && sectionHeader('User Details', userMenuOpen, () => setUserMenuOpen(!userMenuOpen))}
+            {canSeeUserDetails && userMenuOpen && (
               <div style={styles.sectionLinks}>
                 <NavLink to="/user-details" style={linkStyle} className="gov-sidebar-link">
                   User Details
@@ -181,6 +212,18 @@ const styles = {
     display: 'block',
   },
   headerRight: { display: 'flex', alignItems: 'center' },
+  authBtn: {
+    marginRight: '0.75rem',
+    padding: '0.4rem 0.9rem',
+    borderRadius: 4,
+    border: 'none',
+    background: '#fbbf24',
+    color: '#111827',
+    fontSize: '0.85rem',
+    fontWeight: 600,
+    cursor: 'pointer',
+    boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
+  },
   userWrap: { position: 'relative' },
   userBtn: {
     display: 'flex',
