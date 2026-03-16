@@ -231,7 +231,7 @@ const styles = {
     padding: '1.5rem 2rem',
     display: 'flex',
     justifyContent: 'center',
-    background: '#f2f2f5',
+    background: '#fff4e0',
   },
   card: {
     width: '100%',

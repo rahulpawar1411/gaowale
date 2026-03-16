@@ -1,38 +1,32 @@
 import React, { useEffect, useState } from 'react';
-import { masterApi, registrationsApi } from '../services/api';
+import { masterApi, registrationsApi, filesApi } from '../services/api';
 import TextField from '../components/TextField';
 import {
   LOCATION_ORDER,
   LOCATION_FIELD_TABLE,
+  GEOGRAPHIC_FIELDS,
   getFilteredLocationOptions,
   isLocationFieldDisabled,
   clearDependentsOnChange,
+  getVidhanSabhaTypeOptionsForZone,
 } from '../config/locationCascade';
-
-// Geographic: country se village tak – parent dependent (same as Management)
-const locationFieldConfig = [
-  { name: 'country_id', label: 'Country', table: 'countries' },
-  { name: 'country_division_id', label: 'Country Division', table: 'country-divisions' },
-  { name: 'state_id', label: 'State', table: 'states' },
-  { name: 'state_circle_id', label: 'State Circle', table: 'state-circles' },
-  { name: 'state_division_id', label: 'State Division', table: 'state-divisions' },
-  { name: 'state_sub_division_id', label: 'State Sub Division', table: 'state-sub-divisions' },
-  { name: 'region_id', label: 'Region', table: 'regions' },
-  { name: 'zone_id', label: 'Zone', table: 'zones' },
-  { name: 'vidhan_sabha_id', label: 'Vidhan Sabha', table: 'vidhan-sabhas' },
-  { name: 'taluka_id', label: 'Taluka', table: 'talukas' },
-  { name: 'block_id', label: 'Block', table: 'blocks' },
-  { name: 'circle_id', label: 'Circle', table: 'circles' },
-  { name: 'gram_panchayat_id', label: 'Panchayat Samiti', table: 'gram-panchayats' },
-  { name: 'village_id', label: 'Village', table: 'villages' },
-];
-
 const businessFieldConfig = [
+  { name: 'business_position_id', label: 'Business Position', table: 'designations' },
   { name: 'business_category_id', label: 'Business Category', table: 'business-categories' },
   { name: 'business_sub_category_id', label: 'Business Sub Category', table: 'business-sub-categories' },
   { name: 'product_id', label: 'Product', table: 'products' },
   { name: 'business_type_id', label: 'Business Type', table: 'business-types' },
 ];
+
+const CUSTOMER_BUSINESS_DISABLED_FIELDS = ['business_position_id', 'business_sub_category_id', 'product_id', 'business_type_id'];
+
+const BUSINESS_LABELS_MR = {
+  business_position_id: 'व्यवसाय पद',
+  business_category_id: 'व्यवसाय श्रेणी',
+  business_sub_category_id: 'उप-व्यवसाय श्रेणी',
+  product_id: 'उत्पादन',
+  business_type_id: 'व्यवसाय प्रकार',
+};
 
 // All fields required except middle_name and phone_number (same as Lakhpati Didi)
 const REQUIRED_FIELDS = [
@@ -44,16 +38,14 @@ const REQUIRED_FIELDS = [
   { name: 'state_sub_division_id', label: 'State Sub Division' },
   { name: 'region_id', label: 'Region' },
   { name: 'zone_id', label: 'Zone' },
+  { name: 'vidhan_sabha_type', label: 'Vidhan Sabha types' },
   { name: 'vidhan_sabha_id', label: 'Vidhan Sabha' },
   { name: 'taluka_id', label: 'Taluka' },
   { name: 'block_id', label: 'Block' },
-  { name: 'circle_id', label: 'Circle' },
-  { name: 'gram_panchayat_id', label: 'Panchayat Samiti' },
+  { name: 'circle_id', label: 'Panchayat Samiti Circle' },
+  { name: 'gram_panchayat_id', label: 'Gram Panchayat' },
   { name: 'village_id', label: 'Village' },
   { name: 'business_category_id', label: 'Business Category' },
-  { name: 'business_sub_category_id', label: 'Business Sub Category' },
-  { name: 'product_id', label: 'Product' },
-  { name: 'business_type_id', label: 'Business Type' },
   { name: 'first_name', label: 'First Name' },
   { name: 'last_name', label: 'Last Name' },
   { name: 'date_of_birth', label: 'Date of Birth' },
@@ -77,10 +69,22 @@ const REQUIRED_FIELDS = [
   { name: 'nominee_address', label: 'Nominee Address' },
 ];
 
-const BUSINESS_DEPENDENTS = {
-  business_category_id: ['business_sub_category_id', 'product_id', 'business_type_id'],
-  business_sub_category_id: ['product_id', 'business_type_id'],
-  product_id: ['business_type_id'],
+const GEOGRAPHIC_LABELS_MR = {
+  country_id: 'देश',
+  country_division_id: 'देश विभाग',
+  state_id: 'राज्य',
+  state_circle_id: 'राज्य सर्कल',
+  state_division_id: 'राज्य विभाग',
+  state_sub_division_id: 'राज्य उपविभाग',
+  region_id: 'प्रदेश',
+  zone_id: 'झोन',
+  vidhan_sabha_type: 'विधानसभेचे प्रकार',
+  vidhan_sabha_id: 'विधानसभा',
+  taluka_id: 'तालुका',
+  block_id: 'ब्लॉक',
+  circle_id: 'पंचायत समिती सर्कल',
+  gram_panchayat_id: 'ग्रामपंचायत',
+  village_id: 'गाव',
 };
 
 function FieldWithError({ fieldName, fieldErrors, styles, children }) {
@@ -134,7 +138,7 @@ function focusNextOnTab(e) {
   }
 }
 
-export default function CustomerRegistrationPage({ title }) {
+export default function CustomerRegistrationPage({ title, lang = 'en' }) {
   const [options, setOptions] = useState({});
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
@@ -150,7 +154,7 @@ export default function CustomerRegistrationPage({ title }) {
 
   useEffect(() => {
     const tables = Array.from(
-      new Set([...locationFieldConfig, ...businessFieldConfig].map((f) => f.table))
+      new Set([...GEOGRAPHIC_FIELDS, ...businessFieldConfig].map((f) => f.table).filter(Boolean))
     );
     Promise.all(
       tables.map((t) =>
@@ -171,19 +175,9 @@ export default function CustomerRegistrationPage({ title }) {
   const handleChange = (name) => (e) => {
     if (fieldErrors[name]) setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
     const v = e.target.value;
-    const value = v ? Number(v) : null;
+    const value = name === 'vidhan_sabha_type' ? (v || null) : (v ? Number(v) : null);
     if (LOCATION_ORDER.includes(name)) {
       setForm((prev) => clearDependentsOnChange(prev, name, value));
-      return;
-    }
-    if (BUSINESS_DEPENDENTS[name]) {
-      setForm((prev) => {
-        const next = { ...prev, [name]: value };
-        BUSINESS_DEPENDENTS[name].forEach((child) => {
-          next[child] = null;
-        });
-        return next;
-      });
       return;
     }
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -195,10 +189,31 @@ export default function CustomerRegistrationPage({ title }) {
     setForm((prev) => ({ ...prev, [name]: v }));
   };
 
+  const handlePhotoChange = async (e) => {
+    if (fieldErrors.photo_path) setFieldErrors((prev) => ({ ...prev, photo_path: undefined }));
+    const file = e.target.files && e.target.files[0];
+    if (!file) {
+      setForm((prev) => ({ ...prev, photo_path: '' }));
+      return;
+    }
+    try {
+      const res = await filesApi.upload(file);
+      if (res && res.success && res.path) {
+        setForm((prev) => ({ ...prev, photo_path: res.path }));
+      } else {
+        setForm((prev) => ({ ...prev, photo_path: file.name }));
+      }
+    } catch {
+      setForm((prev) => ({ ...prev, photo_path: file.name }));
+    }
+  };
+
   const getOptions = (table) => options[table] || [];
 
   const getBusinessOptions = (fieldName) => {
     switch (fieldName) {
+      case 'business_position_id':
+        return getOptions('designations');
       case 'business_category_id':
         return getOptions('business-categories');
       case 'business_sub_category_id': {
@@ -229,7 +244,8 @@ export default function CustomerRegistrationPage({ title }) {
 
   const getValidationError = () => {
     const fieldErr = {};
-    for (const { name, label } of REQUIRED_FIELDS) {
+    const requiredFields = REQUIRED_FIELDS;
+    for (const { name, label } of requiredFields) {
       const val = form[name];
       const isEmpty = val === undefined || val === null || val === '' || (typeof val === 'string' && val.trim() === '');
       if (isEmpty) {
@@ -329,17 +345,19 @@ export default function CustomerRegistrationPage({ title }) {
   return (
     <div style={styles.page}>
       <div style={styles.card}>
-        <h1 style={styles.title}>{title}</h1>
+        <h1 style={styles.title}>
+          {lang === 'mr' ? 'ग्राहक नोंदणी' : 'Customer Registration'}
+        </h1>
         <form onSubmit={handleSubmit} style={styles.form}>
           <fieldset style={styles.fieldset}>
-            <legend style={styles.legend}>Business Information</legend>
+            <legend style={styles.legend}>
+              {lang === 'mr' ? 'व्यवसायाची माहिती' : 'Business Information'}
+            </legend>
             <div style={styles.userGrid4}>
               {businessFieldConfig.map((field) => {
                 const opts = getBusinessOptions(field.name);
-                const disabled =
-                  (field.name === 'business_sub_category_id' && !form.business_category_id) ||
-                  (field.name === 'product_id' && !form.business_sub_category_id) ||
-                  (field.name === 'business_type_id' && !form.product_id);
+                const disabled = CUSTOMER_BUSINESS_DISABLED_FIELDS.includes(field.name);
+                const labelMr = BUSINESS_LABELS_MR[field.name] || field.label;
                 return (
                   <FieldWithError
                     key={field.name}
@@ -348,15 +366,21 @@ export default function CustomerRegistrationPage({ title }) {
                     styles={styles}
                   >
                     <div style={styles.fieldWrap}>
-                      <label style={styles.label}>{field.label}</label>
+                      <label style={styles.label}>
+                        {lang === 'mr' ? labelMr : field.label}
+                      </label>
                       <select
                         value={form[field.name] != null ? form[field.name] : ''}
                         onChange={handleChange(field.name)}
                         onKeyDown={focusNextOnTab}
                         style={{ ...styles.select, opacity: disabled ? 0.7 : 1 }}
-                        disabled={disabled && field.name !== 'business_category_id'}
+                        disabled={disabled}
                       >
-                        <option value="">Select {field.label}</option>
+                        <option value="">
+                          {lang === 'mr'
+                            ? `Select ${labelMr}`
+                            : `Select ${field.label}`}
+                        </option>
                         {opts.map((opt) => (
                           <option key={opt.id} value={opt.id}>
                             {opt.name}
@@ -371,9 +395,46 @@ export default function CustomerRegistrationPage({ title }) {
           </fieldset>
 
           <fieldset style={styles.fieldset}>
-            <legend style={styles.legend}>Geographic Information</legend>
+            <legend style={styles.legend}>
+              {lang === 'mr' ? 'भौगोलिक माहिती' : 'Geographic Information'}
+            </legend>
             <div style={styles.grid}>
-              {locationFieldConfig.map((field) => {
+              {GEOGRAPHIC_FIELDS.map((field) => {
+                const labelMr = GEOGRAPHIC_LABELS_MR[field.name] || field.label;
+                if (field.name === 'vidhan_sabha_type') {
+                  const disabled = isLocationFieldDisabled('vidhan_sabha_type', form);
+                  const typeOptions = getVidhanSabhaTypeOptionsForZone(form.zone_id, options['vidhan-sabhas'] || []);
+                  return (
+                    <div key={field.name} style={styles.fieldWithError}>
+                      <div style={styles.fieldWrap}>
+                        <label style={styles.label}>
+                          {lang === 'mr' ? labelMr : field.label}
+                        </label>
+                        <select
+                          value={form.vidhan_sabha_type != null ? form.vidhan_sabha_type : ''}
+                          onChange={handleChange('vidhan_sabha_type')}
+                          onKeyDown={focusNextOnTab}
+                          style={{ ...styles.select, opacity: disabled ? 0.7 : 1 }}
+                          disabled={disabled}
+                        >
+                          <option value="">
+                            {lang === 'mr'
+                              ? 'विधानसभेचा प्रकार निवडा'
+                              : 'Select Vidhan Sabha type'}
+                          </option>
+                          {typeOptions.map((opt) => (
+                            <option key={opt} value={opt}>
+                              {opt}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      {fieldErrors[field.name] && (
+                        <div style={styles.fieldError}>{fieldErrors[field.name]}</div>
+                      )}
+                    </div>
+                  );
+                }
                 const isLocation = LOCATION_FIELD_TABLE[field.name];
                 const opts = isLocation
                   ? getFilteredLocationOptions(LOCATION_FIELD_TABLE[field.name], form, options)
@@ -382,7 +443,9 @@ export default function CustomerRegistrationPage({ title }) {
                 return (
                   <div key={field.name} style={styles.fieldWithError}>
                     <div style={styles.fieldWrap}>
-                      <label style={styles.label}>{field.label}</label>
+                      <label style={styles.label}>
+                        {lang === 'mr' ? labelMr : field.label}
+                      </label>
                       <select
                         value={form[field.name] != null ? form[field.name] : ''}
                         onChange={handleChange(field.name)}
@@ -390,7 +453,11 @@ export default function CustomerRegistrationPage({ title }) {
                         style={{ ...styles.select, opacity: disabled ? 0.7 : 1 }}
                         disabled={disabled}
                       >
-                        <option value="">Select {field.label}</option>
+                        <option value="">
+                          {lang === 'mr'
+                            ? `Select ${labelMr}`
+                            : `Select ${field.label}`}
+                        </option>
                         {opts.map((opt) => (
                           <option key={opt.id} value={opt.id}>
                             {opt.name}
@@ -408,22 +475,53 @@ export default function CustomerRegistrationPage({ title }) {
           </fieldset>
 
           <fieldset style={styles.fieldset}>
-            <legend style={styles.legend}>User Details</legend>
+            <legend style={styles.legend}>
+              {lang === 'mr' ? 'वापरकर्त्याची माहिती' : 'User Details'}
+            </legend>
             <div style={styles.userGrid4}>
               <FieldWithError fieldName="first_name" fieldErrors={fieldErrors} styles={styles}>
-                <TextField label="First Name" name="first_name" value={form.first_name || ''} onChange={handleUserChange} style={styles.fieldWrap} inputStyle={styles.input} />
+                <TextField
+                  label={lang === 'mr' ? 'पहिले नाव' : 'First Name'}
+                  name="first_name"
+                  value={form.first_name || ''}
+                  onChange={handleUserChange}
+                  style={styles.fieldWrap}
+                  inputStyle={styles.input}
+                />
               </FieldWithError>
-              <TextField label="Middle Name" name="middle_name" value={form.middle_name || ''} onChange={handleUserChange} style={styles.fieldWrap} inputStyle={styles.input} />
+              <TextField
+                label={lang === 'mr' ? 'वडिलांचे नाव' : 'Middle Name'}
+                name="middle_name"
+                value={form.middle_name || ''}
+                onChange={handleUserChange}
+                style={styles.fieldWrap}
+                inputStyle={styles.input}
+              />
               <FieldWithError fieldName="last_name" fieldErrors={fieldErrors} styles={styles}>
-                <TextField label="Last Name" name="last_name" value={form.last_name || ''} onChange={handleUserChange} style={styles.fieldWrap} inputStyle={styles.input} />
+                <TextField
+                  label={lang === 'mr' ? 'आडनाव' : 'Last Name'}
+                  name="last_name"
+                  value={form.last_name || ''}
+                  onChange={handleUserChange}
+                  style={styles.fieldWrap}
+                  inputStyle={styles.input}
+                />
               </FieldWithError>
               <FieldWithError fieldName="date_of_birth" fieldErrors={fieldErrors} styles={styles}>
-                <TextField label="Date of Birth" name="date_of_birth" type="date" value={form.date_of_birth || ''} onChange={handleUserChange} style={styles.fieldWrap} inputStyle={styles.input} />
+                <TextField
+                  label={lang === 'mr' ? 'जन्मतारीख' : 'Date of Birth'}
+                  name="date_of_birth"
+                  type="date"
+                  value={form.date_of_birth || ''}
+                  onChange={handleUserChange}
+                  style={styles.fieldWrap}
+                  inputStyle={styles.input}
+                />
               </FieldWithError>
 
               <FieldWithError fieldName="blood_group" fieldErrors={fieldErrors} styles={styles}>
                 <SelectSimple
-                  label="Blood Group"
+                  label={lang === 'mr' ? 'रक्त गट' : 'Blood Group'}
                   name="blood_group"
                   value={form.blood_group || ''}
                   onChange={handleUserChange}
@@ -432,7 +530,7 @@ export default function CustomerRegistrationPage({ title }) {
               </FieldWithError>
               <FieldWithError fieldName="caste" fieldErrors={fieldErrors} styles={styles}>
                 <SelectSimple
-                  label="Caste"
+                  label={lang === 'mr' ? 'जाती' : 'Caste'}
                   name="caste"
                   value={form.caste || ''}
                   onChange={handleUserChange}
@@ -440,11 +538,18 @@ export default function CustomerRegistrationPage({ title }) {
                 />
               </FieldWithError>
               <FieldWithError fieldName="education" fieldErrors={fieldErrors} styles={styles}>
-                <TextField label="Education" name="education" value={form.education || ''} onChange={handleUserChange} style={styles.fieldWrap} inputStyle={styles.input} />
+                <TextField
+                  label={lang === 'mr' ? 'शिक्षण' : 'Education'}
+                  name="education"
+                  value={form.education || ''}
+                  onChange={handleUserChange}
+                  style={styles.fieldWrap}
+                  inputStyle={styles.input}
+                />
               </FieldWithError>
               <FieldWithError fieldName="occupation" fieldErrors={fieldErrors} styles={styles}>
                 <SelectSimple
-                  label="Occupation"
+                  label={lang === 'mr' ? 'व्यवसाय' : 'Occupation'}
                   name="occupation"
                   value={form.occupation || ''}
                   onChange={handleUserChange}
@@ -452,59 +557,161 @@ export default function CustomerRegistrationPage({ title }) {
                 />
               </FieldWithError>
 
-              <TextField label="Business" name="business" value={form.business || ''} onChange={handleUserChange} style={styles.fieldWrap} inputStyle={styles.input} />
+              <TextField
+                label={lang === 'mr' ? 'उद्योग/धंदा' : 'Business'}
+                name="business"
+                value={form.business || ''}
+                onChange={handleUserChange}
+                style={styles.fieldWrap}
+                inputStyle={styles.input}
+              />
               <FieldWithError fieldName="mobile_number" fieldErrors={fieldErrors} styles={styles}>
-                <TextField label="Mobile Number" name="mobile_number" numericOnly maxLength={10} format="phonePairs" value={form.mobile_number || ''} onChange={handleUserChange} style={styles.fieldWrap} inputStyle={styles.input} />
+                <TextField
+                  label={lang === 'mr' ? 'मोबाईल क्रमांक' : 'Mobile Number'}
+                  name="mobile_number"
+                  numericOnly
+                  maxLength={10}
+                  format="phonePairs"
+                  value={form.mobile_number || ''}
+                  onChange={handleUserChange}
+                  style={styles.fieldWrap}
+                  inputStyle={styles.input}
+                />
               </FieldWithError>
-              <TextField label="Phone Number" name="phone_number" numericOnly maxLength={10} format="phonePairs" value={form.phone_number || ''} onChange={handleUserChange} style={styles.fieldWrap} inputStyle={styles.input} />
+              <TextField
+                label={lang === 'mr' ? 'दूरध्वनी क्रमांक' : 'Phone Number'}
+                name="phone_number"
+                numericOnly
+                maxLength={10}
+                format="phonePairs"
+                value={form.phone_number || ''}
+                onChange={handleUserChange}
+                style={styles.fieldWrap}
+                inputStyle={styles.input}
+              />
               <FieldWithError fieldName="whatsapp_number" fieldErrors={fieldErrors} styles={styles}>
-                <TextField label="WhatsApp Number" name="whatsapp_number" numericOnly maxLength={10} format="phonePairs" value={form.whatsapp_number || ''} onChange={handleUserChange} style={styles.fieldWrap} inputStyle={styles.input} />
+                <TextField
+                  label={lang === 'mr' ? 'व्हॉट्सअ‍ॅप क्रमांक' : 'WhatsApp Number'}
+                  name="whatsapp_number"
+                  numericOnly
+                  maxLength={10}
+                  format="phonePairs"
+                  value={form.whatsapp_number || ''}
+                  onChange={handleUserChange}
+                  style={styles.fieldWrap}
+                  inputStyle={styles.input}
+                />
               </FieldWithError>
 
               <FieldWithError fieldName="pan_card" fieldErrors={fieldErrors} styles={styles}>
-                <TextField label="PAN Card" name="pan_card" value={form.pan_card || ''} onChange={handleUserChange} style={styles.fieldWrap} inputStyle={styles.input} />
+                <TextField
+                  label={lang === 'mr' ? 'पॅन कार्ड' : 'PAN Card'}
+                  name="pan_card"
+                  value={form.pan_card || ''}
+                  onChange={handleUserChange}
+                  style={styles.fieldWrap}
+                  inputStyle={styles.input}
+                />
               </FieldWithError>
               <FieldWithError fieldName="aadhar_card" fieldErrors={fieldErrors} styles={styles}>
-                <TextField label="Aadhar Card" name="aadhar_card" numericOnly format="groups4" value={form.aadhar_card || ''} onChange={handleUserChange} style={styles.fieldWrap} inputStyle={styles.input} />
+                <TextField
+                  label={lang === 'mr' ? 'आधार कार्ड' : 'Aadhaar Card'}
+                  name="aadhar_card"
+                  numericOnly
+                  format="groups4"
+                  value={form.aadhar_card || ''}
+                  onChange={handleUserChange}
+                  style={styles.fieldWrap}
+                  inputStyle={styles.input}
+                />
               </FieldWithError>
               <FieldWithError fieldName="pincode" fieldErrors={fieldErrors} styles={styles}>
-                <TextField label="Pincode" name="pincode" numericOnly value={form.pincode || ''} onChange={handleUserChange} style={styles.fieldWrap} inputStyle={styles.input} />
+                <TextField
+                  label={lang === 'mr' ? 'पिनकोड' : 'Pincode'}
+                  name="pincode"
+                  numericOnly
+                  value={form.pincode || ''}
+                  onChange={handleUserChange}
+                  style={styles.fieldWrap}
+                  inputStyle={styles.input}
+                />
               </FieldWithError>
               <FieldWithError fieldName="photo_path" fieldErrors={fieldErrors} styles={styles}>
                 <div style={styles.fieldWrap}>
-                  <label style={styles.label}>Photo</label>
+                  <label style={styles.label}>
+                    {lang === 'mr' ? 'छायाचित्र' : 'Photo'}
+                  </label>
                   <input
                     type="file"
                     name="photo"
+                    accept="image/*,.pdf"
                     key={`file-photo_path-${form.photo_path || 'none'}`}
                     style={styles.input}
-                    onChange={(e) => {
-                      const file = e.target.files && e.target.files[0];
-                      setForm((prev) => ({ ...prev, photo_path: file ? file.name : '' }));
-                    }}
+                    onChange={handlePhotoChange}
                   />
-                  {form.photo_path && <span style={styles.fileName}>{form.photo_path}</span>}
+                  {form.photo_path && (
+                    <span style={styles.fileName}>
+                      {form.photo_path.split('/').pop() || form.photo_path}
+                    </span>
+                  )}
                 </div>
               </FieldWithError>
 
               <FieldWithError fieldName="password" fieldErrors={fieldErrors} styles={styles}>
-                <TextField label="Password" name="password" type="password" value={form.password || ''} onChange={handleUserChange} style={styles.fieldWrap} inputStyle={styles.input} />
+                <TextField
+                  label={lang === 'mr' ? 'संकेतशब्द' : 'Password'}
+                  name="password"
+                  type="password"
+                  value={form.password || ''}
+                  onChange={handleUserChange}
+                  style={styles.fieldWrap}
+                  inputStyle={styles.input}
+                />
               </FieldWithError>
               <FieldWithError fieldName="confirm_password" fieldErrors={fieldErrors} styles={styles}>
-                <TextField label="Confirm Password" name="confirm_password" type="password" value={form.confirm_password || ''} onChange={handleUserChange} style={styles.fieldWrap} inputStyle={styles.input} />
+                <TextField
+                  label={
+                    lang === 'mr'
+                      ? 'संकेतशब्दाची पुष्टी करा'
+                      : 'Confirm Password'
+                  }
+                  name="confirm_password"
+                  type="password"
+                  value={form.confirm_password || ''}
+                  onChange={handleUserChange}
+                  style={styles.fieldWrap}
+                  inputStyle={styles.input}
+                />
               </FieldWithError>
             </div>
           </fieldset>
 
           <fieldset style={styles.fieldset}>
-            <legend style={styles.legend}>Nominee Details</legend>
+            <legend style={styles.legend}>
+              {lang === 'mr' ? 'नामनिर्देशित व्यक्तीची माहिती' : 'Nominee Details'}
+            </legend>
             <div style={styles.userGrid4}>
               <FieldWithError fieldName="nominee_name" fieldErrors={fieldErrors} styles={styles}>
-                <TextField label="Nominee Name" name="nominee_name" value={form.nominee_name || ''} onChange={handleUserChange} style={styles.fieldWrap} inputStyle={styles.input} />
+                <TextField
+                  label={
+                    lang === 'mr'
+                      ? 'नामनिर्देशित व्यक्तीचे नाव'
+                      : 'Nominee Name'
+                  }
+                  name="nominee_name"
+                  value={form.nominee_name || ''}
+                  onChange={handleUserChange}
+                  style={styles.fieldWrap}
+                  inputStyle={styles.input}
+                />
               </FieldWithError>
               <FieldWithError fieldName="nominee_relation" fieldErrors={fieldErrors} styles={styles}>
                 <SelectSimple
-                  label="Nominee Relation"
+                  label={
+                    lang === 'mr'
+                      ? 'नामनिर्देशित व्यक्तीशी नाते'
+                      : 'Nominee Relation'
+                  }
                   name="nominee_relation"
                   value={form.nominee_relation || ''}
                   onChange={handleUserChange}
@@ -512,14 +719,51 @@ export default function CustomerRegistrationPage({ title }) {
                 />
               </FieldWithError>
               <FieldWithError fieldName="nominee_dob" fieldErrors={fieldErrors} styles={styles}>
-                <TextField label="Nominee DOB" name="nominee_dob" type="date" value={form.nominee_dob || ''} onChange={handleUserChange} style={styles.fieldWrap} inputStyle={styles.input} />
+                <TextField
+                  label={
+                    lang === 'mr'
+                      ? 'नामनिर्देशित व्यक्तीची जन्मतारीख'
+                      : 'Nominee DOB'
+                  }
+                  name="nominee_dob"
+                  type="date"
+                  value={form.nominee_dob || ''}
+                  onChange={handleUserChange}
+                  style={styles.fieldWrap}
+                  inputStyle={styles.input}
+                />
               </FieldWithError>
               <FieldWithError fieldName="nominee_phone" fieldErrors={fieldErrors} styles={styles}>
-                <TextField label="Nominee Phone Number" name="nominee_phone" numericOnly maxLength={10} format="phonePairs" value={form.nominee_phone || ''} onChange={handleUserChange} style={styles.fieldWrap} inputStyle={styles.input} />
+                <TextField
+                  label={
+                    lang === 'mr'
+                      ? 'नामनिर्देशित व्यक्तीचा फोन क्रमांक'
+                      : 'Nominee Phone Number'
+                  }
+                  name="nominee_phone"
+                  numericOnly
+                  maxLength={10}
+                  format="phonePairs"
+                  value={form.nominee_phone || ''}
+                  onChange={handleUserChange}
+                  style={styles.fieldWrap}
+                  inputStyle={styles.input}
+                />
               </FieldWithError>
               <div style={{ gridColumn: '1 / span 4' }}>
                 <FieldWithError fieldName="nominee_address" fieldErrors={fieldErrors} styles={styles}>
-                  <TextField label="Nominee Address" name="nominee_address" value={form.nominee_address || ''} onChange={handleUserChange} style={styles.fieldWrap} inputStyle={styles.input} />
+                  <TextField
+                    label={
+                      lang === 'mr'
+                        ? 'नामनिर्देशित व्यक्तीचा पत्ता'
+                        : 'Nominee Address'
+                    }
+                    name="nominee_address"
+                    value={form.nominee_address || ''}
+                    onChange={handleUserChange}
+                    style={styles.fieldWrap}
+                    inputStyle={styles.input}
+                  />
                 </FieldWithError>
               </div>
             </div>
@@ -556,7 +800,7 @@ const styles = {
     padding: '1.5rem 2rem',
     display: 'flex',
     justifyContent: 'center',
-    background: '#f2f2f5',
+    background: '#fff4e0',
   },
   card: {
     width: '100%',
@@ -605,7 +849,8 @@ const styles = {
     color: '#c53030',
     marginTop: 2,
   },
-  label: { fontSize: '0.85rem', fontWeight: 500, color: '#333' },
+  // Make all field labels bold for better emphasis
+  label: { fontSize: '0.85rem', fontWeight: 700, color: '#333' },
   select: {
     padding: '0.4rem 0.55rem',
     borderRadius: 4,

@@ -20,6 +20,7 @@ const SELECT_JOINS = `
   cir.name as circle_name,
   gp.name as gram_panchayat_name,
   v.name as village_name,
+  d.name as business_position_name,
   bc.name as business_category_name,
   bsc.name as business_sub_category_name,
   bt.name as business_type_name,
@@ -42,6 +43,7 @@ const FROM_JOINS = `
   LEFT JOIN circles cir ON cr.circle_id = cir.id
   LEFT JOIN gram_panchayats gp ON cr.gram_panchayat_id = gp.id
   LEFT JOIN villages v ON cr.village_id = v.id
+  LEFT JOIN designations d ON cr.business_position_id = d.id
   LEFT JOIN business_categories bc ON cr.business_category_id = bc.id
   LEFT JOIN business_sub_categories bsc ON cr.business_sub_category_id = bsc.id
   LEFT JOIN business_types bt ON cr.business_type_id = bt.id
@@ -82,11 +84,11 @@ async function create(data) {
     `INSERT INTO customer_registrations (
       name, contact, email,
       country_id, country_division_id, state_id, state_circle_id, state_division_id, state_sub_division_id, region_id, zone_id, vidhan_sabha_id, taluka_id, block_id, circle_id, gram_panchayat_id, village_id,
-      business_category_id, business_sub_category_id, product_id, business_type_id, unit_id,
+      business_position_id, business_category_id, business_sub_category_id, product_id, business_type_id, unit_id,
       first_name, middle_name, last_name, date_of_birth, blood_group, caste, education, occupation, business,
       mobile_number, phone_number, whatsapp_number, pan_card, aadhar_card, pincode, photo_path, password_hash,
       nominee_name, nominee_relation, nominee_dob, nominee_phone, nominee_address
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       name,
       contact,
@@ -105,6 +107,7 @@ async function create(data) {
       data.circle_id || null,
       data.gram_panchayat_id || null,
       data.village_id || null,
+      data.business_position_id || null,
       data.business_category_id || null,
       data.business_sub_category_id || null,
       data.product_id || null,
@@ -165,6 +168,7 @@ async function update(id, data) {
     data.circle_id ?? null,
     data.gram_panchayat_id ?? null,
     data.village_id ?? null,
+    data.business_position_id ?? null,
     data.business_category_id ?? null,
     data.business_sub_category_id ?? null,
     data.product_id ?? null,
@@ -196,7 +200,7 @@ async function update(id, data) {
 
   const setPassword = password_hash !== undefined ? ', password_hash = ?' : '';
   if (password_hash !== undefined) {
-    updates.splice(37, 0, password_hash); // after photo_path, before nominee_name
+    updates.splice(39, 0, password_hash); // after photo_path, before nominee_name
   }
 
   await pool.execute(
@@ -204,7 +208,7 @@ async function update(id, data) {
       name = ?, contact = ?, email = ?,
       country_id = ?, country_division_id = ?, state_id = ?, state_circle_id = ?, state_division_id = ?, state_sub_division_id = ?, region_id = ?, zone_id = ?,
       vidhan_sabha_id = ?, taluka_id = ?, block_id = ?, circle_id = ?, gram_panchayat_id = ?, village_id = ?,
-      business_category_id = ?, business_sub_category_id = ?, product_id = ?, business_type_id = ?, unit_id = ?,
+      business_position_id = ?, business_category_id = ?, business_sub_category_id = ?, product_id = ?, business_type_id = ?, unit_id = ?,
       first_name = ?, middle_name = ?, last_name = ?, date_of_birth = ?, blood_group = ?, caste = ?, education = ?, occupation = ?, business = ?,
       mobile_number = ?, phone_number = ?, whatsapp_number = ?, pan_card = ?, aadhar_card = ?, pincode = ?, photo_path = ?${setPassword},
       nominee_name = ?, nominee_relation = ?, nominee_dob = ?, nominee_phone = ?, nominee_address = ?

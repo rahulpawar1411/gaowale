@@ -58,7 +58,7 @@ const TABLE_COLUMNS = {
   state_sub_divisions: ['client_id', 'state_division_id', 'name', 'code'],
   regions: ['client_id', 'state_id', 'state_sub_division_id', 'name', 'code'],
   zones: ['client_id', 'region_id', 'state_id', 'name', 'code'],
-  vidhan_sabhas: ['client_id', 'state_id', 'zone_id', 'name', 'code'],
+  vidhan_sabhas: ['client_id', 'state_id', 'zone_id', 'name', 'code', 'vidhan_sabha_type'],
   talukas: ['client_id', 'state_id', 'vidhan_sabha_id', 'name', 'code'],
   blocks: ['client_id', 'taluka_id', 'name', 'code'],
   circles: ['client_id', 'block_id', 'taluka_id', 'state_id', 'name', 'code'],

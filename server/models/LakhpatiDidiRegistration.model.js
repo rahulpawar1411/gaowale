@@ -19,11 +19,13 @@ async function findAll() {
       cir.name as circle_name,
       gp.name as gram_panchayat_name,
       v.name as village_name,
+      d.name as business_position_name,
       bc.name as business_category_name,
       bt.name as business_type_name,
       p.name as product_name,
       u.name as unit_name
      FROM lakhpati_didi_registrations ld
+     LEFT JOIN designations d ON ld.business_position_id = d.id
      LEFT JOIN countries c ON ld.country_id = c.id
      LEFT JOIN country_divisions cd ON ld.country_division_id = cd.id
      LEFT JOIN states s ON ld.state_id = s.id
@@ -60,11 +62,13 @@ async function findById(id) {
       cir.name as circle_name,
       gp.name as gram_panchayat_name,
       v.name as village_name,
+      d.name as business_position_name,
       bc.name as business_category_name,
       bt.name as business_type_name,
       p.name as product_name,
       u.name as unit_name
      FROM lakhpati_didi_registrations ld
+     LEFT JOIN designations d ON ld.business_position_id = d.id
      LEFT JOIN countries c ON ld.country_id = c.id
      LEFT JOIN country_divisions cd ON ld.country_division_id = cd.id
      LEFT JOIN states s ON ld.state_id = s.id
@@ -101,11 +105,11 @@ async function create(data) {
     `INSERT INTO lakhpati_didi_registrations (
       name, contact,
       country_id, country_division_id, state_id, state_circle_id, state_division_id, state_sub_division_id, region_id, zone_id, vidhan_sabha_id, taluka_id, block_id, circle_id, gram_panchayat_id, village_id,
-      business_category_id, business_type_id, product_id, unit_id,
+      business_position_id, business_category_id, business_type_id, product_id, unit_id,
       first_name, middle_name, last_name, date_of_birth, blood_group, caste, education, occupation, business,
       mobile_number, phone_number, whatsapp_number, pan_card, aadhar_card, pincode, photo_path, password_hash,
       nominee_name, nominee_relation, nominee_dob, nominee_phone, nominee_address
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       name,
       contact,
@@ -123,6 +127,7 @@ async function create(data) {
       data.circle_id || null,
       data.gram_panchayat_id || null,
       data.village_id || null,
+      data.business_position_id || null,
       data.business_category_id || null,
       data.business_type_id || null,
       data.product_id || null,
@@ -154,9 +159,6 @@ async function create(data) {
   return findById(result.insertId);
 }
 
-// Note: update() currently only updates the main registration row (list view).
-// If you later add an edit form for Lakhpati Didi, we can extend this to
-// update locations/users/nominees as well.
 async function update(id, data) {
   const name = (data.name || '').trim() || null;
   const contact = data.contact || null;
@@ -165,11 +167,24 @@ async function update(id, data) {
   const vidhan_sabha_id = data.vidhan_sabha_id || null;
   const village_id = data.village_id || null;
 
+  let password_hash = undefined;
+  if (data.password && String(data.password).trim()) {
+    // For now, store the raw value into password_hash (same pattern as other models).
+    password_hash = String(data.password).trim();
+  }
+
+  const params = [name, contact, state_id, zone_id, vidhan_sabha_id, village_id];
+  const setPasswordSql = password_hash !== undefined ? ', password_hash = ?' : '';
+  if (password_hash !== undefined) {
+    params.push(password_hash);
+  }
+  params.push(id);
+
   await pool.execute(
     `UPDATE lakhpati_didi_registrations
-     SET name = ?, contact = ?, state_id = ?, zone_id = ?, vidhan_sabha_id = ?, village_id = ?
+     SET name = ?, contact = ?, state_id = ?, zone_id = ?, vidhan_sabha_id = ?, village_id = ?${setPasswordSql}
      WHERE id = ?`,
-    [name, contact, state_id, zone_id, vidhan_sabha_id, village_id, id]
+    params
   );
   return findById(id);
 }

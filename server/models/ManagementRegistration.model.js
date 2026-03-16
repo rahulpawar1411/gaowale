@@ -1,5 +1,6 @@
 const { pool } = require('../config/database');
 const { renumberTable } = require('../utils/renumberTable');
+const bcrypt = require('bcrypt');
 
 const dbName = process.env.DB_NAME || 'gao0.2';
 
@@ -119,6 +120,13 @@ function pick(data) {
       out[key] = v === '' ? null : v;
     }
   }
+  // Allow callers to pass `password` and map it into `password_hash`
+  if (!Object.prototype.hasOwnProperty.call(out, 'password_hash') && data.password != null) {
+    const v = String(data.password).trim();
+    if (v !== '') {
+      out.password_hash = v;
+    }
+  }
   return out;
 }
 
@@ -143,6 +151,13 @@ async function create(data) {
 }
 
 async function update(id, data) {
+  // If a raw password is provided, hash it into password_hash
+  if (data.password && String(data.password).trim()) {
+    const hashed = await bcrypt.hash(String(data.password).trim(), 10);
+    data.password_hash = hashed;
+    delete data.password;
+  }
+
   const row = pick(data);
   const keys = Object.keys(row);
   if (keys.length === 0) return findById(id);

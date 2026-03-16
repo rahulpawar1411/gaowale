@@ -8,7 +8,7 @@ const REGISTRATION_APIS = {
   lakhpatiDidi: registrationsApi.lakhpatiDidi,
 };
 
-export default function RegistrationPage({ type, title }) {
+export default function RegistrationPage({ type, title, lang = 'en' }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -28,7 +28,26 @@ export default function RegistrationPage({ type, title }) {
       .finally(() => setLoading(false));
   }, [type]);
 
-  if (!type || !title) return null;
+  if (!type) return null;
+
+  const heading =
+    type === 'management'
+      ? lang === 'mr'
+        ? 'व्यवस्थापन नोंदणी यादी'
+        : 'Management Registration List'
+      : type === 'farmer'
+        ? lang === 'mr'
+          ? 'शेतकरी नोंदणी यादी'
+          : 'Farmer Registration List'
+        : type === 'customer'
+          ? lang === 'mr'
+            ? 'ग्राहक नोंदणी यादी'
+            : 'Customer Registration List'
+          : type === 'lakhpatiDidi'
+            ? lang === 'mr'
+              ? 'लखपती दीदी नोंदणी यादी'
+              : 'Lakhpati Didi Registration List'
+            : title || '';
 
   const renderTable = () => {
     if (!data.length) return <p style={styles.muted}>No records.</p>;
@@ -63,7 +82,7 @@ export default function RegistrationPage({ type, title }) {
 
   return (
     <div style={styles.page}>
-      <h1 style={styles.h1}>{title}</h1>
+      <h1 style={styles.h1}>{heading}</h1>
       {error && <div style={styles.error}>{error}</div>}
       {loading ? <p style={styles.muted}>Loading…</p> : renderTable()}
     </div>

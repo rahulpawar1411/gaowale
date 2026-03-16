@@ -16,6 +16,7 @@ import { MAIN_MENU, BUSINESS_MENU, REGISTRATION_MENU, ALLOTMENT_MENU } from './c
 import { entityFields } from './config/entityFields';
 import { getToken, getAdmin } from './utils/auth';
 import { authorizationApi } from './services/api';
+import PublicRegistrationApp from './public-registration/PublicRegistrationApp';
 
 // Dedupe by path so each route is registered once (Product/Business Type appear in two sections)
 const MASTER_ROUTES = [...MAIN_MENU];
@@ -40,6 +41,7 @@ function ProtectedApp() {
   const isSubAdmin = admin && admin.type === 'sub-admin';
 
   const [allowedPaths, setAllowedPaths] = React.useState(null);
+  const [language, setLanguage] = React.useState('en'); // 'en' | 'mr'
 
   React.useEffect(() => {
     let cancelled = false;
@@ -79,7 +81,12 @@ function ProtectedApp() {
   const registrationMenu = filterByPermissions(REGISTRATION_MENU);
 
   return (
-    <Layout isSubAdmin={isSubAdmin} allowedPaths={allowedPaths}>
+    <Layout
+      isSubAdmin={isSubAdmin}
+      allowedPaths={allowedPaths}
+      lang={language}
+      onChangeLanguage={setLanguage}
+    >
       <Routes>
         <Route path="/" element={<DashboardPage />} />
         <Route path="/authorization" element={<AuthorizationPage />} />
@@ -95,6 +102,7 @@ function ProtectedApp() {
                 title={label}
                 fields={entityFields[table] || []}
                 addButtonLabel={addButtonLabel}
+                lang={language}
               />
             }
           />
@@ -106,16 +114,16 @@ function ProtectedApp() {
             path={path}
             element={
               type === 'management'
-                ? <ManagementRegistrationPage title={label} />
+                ? <ManagementRegistrationPage title={label} lang={language} />
                 : type === 'userDetails'
                   ? <UsersPage />
                   : type === 'farmer'
-                    ? <FarmerRegistrationPage title={label} />
+                    ? <FarmerRegistrationPage title={label} lang={language} />
                     : type === 'customer'
-                      ? <CustomerRegistrationPage title={label} />
+                      ? <CustomerRegistrationPage title={label} lang={language} />
                       : type === 'lakhpatiDidi'
-                        ? <LakhpatiDidiRegistrationPage title={label} />
-                        : <RegistrationPage type={type} title={label} />
+                        ? <LakhpatiDidiRegistrationPage title={label} lang={language} />
+                        : <RegistrationPage type={type} title={label} lang={language} />
             }
           />
         ))}
@@ -128,6 +136,7 @@ function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/public-registration/*" element={<PublicRegistrationApp />} />
       <Route path="/*" element={<ProtectedApp />} />
     </Routes>
   );

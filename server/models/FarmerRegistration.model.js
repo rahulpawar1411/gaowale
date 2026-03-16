@@ -22,11 +22,13 @@ async function findAll() {
         c.name as circle_name,
         gp.name as gram_panchayat_name,
         v.name as village_name,
+        d.name as business_position_name,
         bc.name as business_category_name,
         bsc.name as business_sub_category_name,
         p.name as product_name,
         bt.name as business_type_name
        FROM farmer_registrations fr
+       LEFT JOIN designations d ON fr.business_position_id = d.id
        LEFT JOIN states s ON fr.state_id = s.id
        LEFT JOIN state_circles sc ON fr.state_circle_id = sc.id
        LEFT JOIN state_divisions sd ON fr.state_division_id = sd.id
@@ -71,11 +73,13 @@ async function findById(id) {
         c.name as circle_name,
         gp.name as gram_panchayat_name,
         v.name as village_name,
+        d.name as business_position_name,
         bc.name as business_category_name,
         bsc.name as business_sub_category_name,
         p.name as product_name,
         bt.name as business_type_name
        FROM farmer_registrations fr
+       LEFT JOIN designations d ON fr.business_position_id = d.id
        LEFT JOIN states s ON fr.state_id = s.id
        LEFT JOIN state_circles sc ON fr.state_circle_id = sc.id
        LEFT JOIN state_divisions sd ON fr.state_division_id = sd.id
@@ -142,6 +146,7 @@ async function create(data) {
     block_id,
     circle_id,
     gram_panchayat_id,
+    business_position_id,
     business_category_id,
     business_sub_category_id,
     business_type_id,
@@ -159,6 +164,7 @@ async function create(data) {
     'block_id',
     'circle_id',
     'gram_panchayat_id',
+    'business_position_id',
     'business_category_id',
     'business_sub_category_id',
     'business_type_id',
@@ -185,6 +191,7 @@ async function create(data) {
     block_id,
     circle_id,
     gram_panchayat_id,
+    business_position_id,
     business_category_id,
     business_sub_category_id,
     business_type_id,
@@ -234,7 +241,7 @@ async function create(data) {
         country_id, country_division_id,
         state_id, state_circle_id, state_division_id, state_sub_division_id, region_id, zone_id, vidhan_sabha_id,
         taluka_id, village_id, block_id, circle_id, gram_panchayat_id,
-        business_category_id, business_sub_category_id, business_type_id, product_id,
+        business_position_id, business_category_id, business_sub_category_id, business_type_id, product_id,
         first_name, father_name, last_name, date_of_birth, blood_group, gender, caste,
         photo_path, education, ration_card_path, election_card_path, address, mobile_number, whatsapp_number,
         pan_card_path, bank_account_number, aadhar_card_path, registration_date, registration_type, farm_area,
@@ -246,7 +253,7 @@ async function create(data) {
         ?, ?,
         ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?,
-        ?, ?, ?, ?,
+        ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?,
@@ -291,6 +298,7 @@ async function update(id, data) {
     block_id,
     circle_id,
     gram_panchayat_id,
+    business_position_id,
     business_category_id,
     business_sub_category_id,
     business_type_id,
@@ -308,6 +316,7 @@ async function update(id, data) {
     'block_id',
     'circle_id',
     'gram_panchayat_id',
+    'business_position_id',
     'business_category_id',
     'business_sub_category_id',
     'business_type_id',
@@ -324,7 +333,7 @@ async function update(id, data) {
         country_id = ?, country_division_id = ?,
         state_id = ?, state_circle_id = ?, state_division_id = ?, state_sub_division_id = ?, region_id = ?, zone_id = ?, vidhan_sabha_id = ?,
         taluka_id = ?, village_id = ?, block_id = ?, circle_id = ?, gram_panchayat_id = ?,
-        business_category_id = ?, business_sub_category_id = ?, business_type_id = ?, product_id = ?,
+        business_position_id = ?, business_category_id = ?, business_sub_category_id = ?, business_type_id = ?, product_id = ?,
         first_name = ?, father_name = ?, last_name = ?, date_of_birth = ?, blood_group = ?, gender = ?, caste = ?,
         photo_path = ?, education = ?, ration_card_path = ?, election_card_path = ?, address = ?, mobile_number = ?, whatsapp_number = ?,
         pan_card_path = ?, bank_account_number = ?, aadhar_card_path = ?, registration_date = ?, registration_type = ?, farm_area = ?,
@@ -351,6 +360,7 @@ async function update(id, data) {
         block_id,
         circle_id,
         gram_panchayat_id,
+        business_position_id,
         business_category_id,
         business_sub_category_id,
         business_type_id,

@@ -5,7 +5,13 @@ import { removeToken, getAdmin } from '../utils/auth';
 
 const LOGO_URL = 'https://www.greatwebsoft.in/gaonmaza/public/images/white-logo.jpeg';
 
-export default function Layout({ children, isSubAdmin = false, allowedPaths = null }) {
+export default function Layout({
+  children,
+  isSubAdmin = false,
+  allowedPaths = null,
+  lang = 'en',
+  onChangeLanguage,
+}) {
   const navigate = useNavigate();
   const [userOpen, setUserOpen] = useState(false);
   const [mainMenuOpen, setMainMenuOpen] = useState(true);
@@ -73,6 +79,28 @@ export default function Layout({ children, isSubAdmin = false, allowedPaths = nu
           <img src={LOGO_URL} alt="Logo" style={styles.logo} />
         </div>
         <div style={styles.headerRight}>
+          <div style={styles.langSwitch}>
+            <button
+              type="button"
+              onClick={() => onChangeLanguage && onChangeLanguage('en')}
+              style={{
+                ...styles.langButton,
+                ...(lang === 'en' ? styles.langButtonActive : {}),
+              }}
+            >
+              English
+            </button>
+            <button
+              type="button"
+              onClick={() => onChangeLanguage && onChangeLanguage('mr')}
+              style={{
+                ...styles.langButton,
+                ...(lang === 'mr' ? styles.langButtonActive : {}),
+              }}
+            >
+              मराठी
+            </button>
+          </div>
           {isSuperAdmin && (
             <button
               type="button"
@@ -192,49 +220,70 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     overflow: 'hidden',
-    background: '#f0f0f2',
+    background: '#fff4e0',
   },
   header: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: '0.5rem 1.5rem',
-    background: '#8B1538',
-    minHeight: 56,
-    boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
+    padding: '0.6rem 1.75rem',
+    background: 'linear-gradient(90deg, #3d0715 0%, #8b1538 45%, #b52330 100%)',
+    minHeight: 72,
+    boxShadow: '0 4px 10px rgba(0,0,0,0.35)',
   },
   headerLeft: { display: 'flex', alignItems: 'center' },
   logo: {
-    height: 42,
+    height: 64,
     width: 'auto',
-    maxWidth: 180,
+    maxWidth: 260,
     objectFit: 'contain',
     display: 'block',
   },
-  headerRight: { display: 'flex', alignItems: 'center' },
+  headerRight: { display: 'flex', alignItems: 'center', gap: '0.75rem' },
+  langSwitch: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.4rem',
+    marginRight: '0.5rem',
+  },
+  langButton: {
+    padding: '0.25rem 0.75rem',
+    borderRadius: 999,
+    border: '1px solid rgba(255,255,255,0.6)',
+    background: 'transparent',
+    color: '#fff7ec',
+    fontSize: '0.8rem',
+    cursor: 'pointer',
+  },
+  langButtonActive: {
+    background: '#ffe6c7',
+    color: '#3d0715',
+    borderColor: '#ffe6c7',
+  },
   authBtn: {
     marginRight: '0.75rem',
-    padding: '0.4rem 0.9rem',
-    borderRadius: 4,
+    padding: '0.45rem 1rem',
+    borderRadius: 999,
     border: 'none',
-    background: '#fbbf24',
-    color: '#111827',
+    background: 'linear-gradient(135deg, #ffb347, #ff7a1a)',
+    color: '#2b0b15',
     fontSize: '0.85rem',
-    fontWeight: 600,
+    fontWeight: 700,
     cursor: 'pointer',
-    boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
+    boxShadow: '0 3px 8px rgba(0,0,0,0.25)',
   },
   userWrap: { position: 'relative' },
   userBtn: {
     display: 'flex',
     alignItems: 'center',
     gap: '0.5rem',
-    padding: '0.4rem 0.75rem',
-    background: 'transparent',
-    border: '1px solid rgba(255,255,255,0.4)',
-    borderRadius: 4,
-    color: '#fff',
-    fontSize: '0.9rem',
+    padding: '0.45rem 0.9rem',
+    background: 'rgba(0,0,0,0.28)',
+    border: '1px solid rgba(255,255,255,0.5)',
+    borderRadius: 999,
+    color: 'rgba(255,245,235,0.95)',
+    fontSize: '0.92rem',
+    boxShadow: '0 2px 6px rgba(0,0,0,0.35)',
   },
   userIcon: { fontSize: '1.1rem' },
   dropdownArrow: { fontSize: '0.65rem', marginLeft: '0.25rem' },
@@ -267,16 +316,17 @@ const styles = {
     display: 'flex',
     minHeight: 0,
     overflow: 'hidden',
+    background: '#fff4e0',
   },
   sidebar: {
-    width: 240,
+    width: 250,
     flexShrink: 0,
     display: 'flex',
     flexDirection: 'column',
     minHeight: 0,
     overflow: 'hidden',
-    background: '#4a4a4e',
-    boxShadow: '2px 0 4px rgba(0,0,0,0.08)',
+    background: 'linear-gradient(180deg, #2a0d17 0%, #3b121f 40%, #000000 100%)',
+    boxShadow: '4px 0 12px rgba(0,0,0,0.45)',
   },
   sidebarNav: {
     padding: '0.5rem 0',
@@ -292,11 +342,11 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '100%',
-    padding: '0.6rem 1rem',
+    padding: '0.8rem 1.1rem',
     border: 'none',
-    background: 'rgba(0,0,0,0.2)',
-    color: '#fff',
-    fontSize: '0.95rem',
+    background: 'linear-gradient(90deg, rgba(255,122,26,0.18), rgba(0,0,0,0))',
+    color: '#ffe6c7',
+    fontSize: '1.02rem',
     fontWeight: 600,
     cursor: 'pointer',
     textAlign: 'left',
@@ -306,24 +356,26 @@ const styles = {
   sidebarItem: {
     display: 'block',
     width: '100%',
-    padding: '0.5rem 1rem 0.5rem 1.25rem',
+    padding: '0.65rem 1.1rem 0.65rem 1.4rem',
     border: 'none',
     background: 'none',
     textAlign: 'left',
-    fontSize: '0.9rem',
-    color: 'rgba(255,255,255,0.9)',
+    fontSize: '0.98rem',
+    color: 'rgba(255,245,230,0.9)',
     cursor: 'pointer',
     textDecoration: 'none',
+    transition: 'background 0.18s ease, color 0.18s ease, padding-left 0.18s ease',
   },
   sidebarItemActive: {
-    background: 'rgba(255,255,255,0.15)',
-    color: '#fff',
+    background: 'linear-gradient(90deg, rgba(255,193,7,0.35), rgba(255,122,26,0.45))',
+    color: '#2b0b15',
   },
   main: {
     flex: 1,
     minHeight: 0,
-    padding: '1.5rem 2rem',
+    padding: '1rem 1.25rem',
     overflow: 'auto',
-    background: '#f0f0f2',
+    background: '#fff4e0',
+    fontSize: '1rem',
   },
 };

@@ -88,8 +88,8 @@ export default function TextField({
   const safeValue = displayValue != null ? String(displayValue) : '';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, ...style }}>
-      {label && <label style={{ fontSize: '0.85rem', fontWeight: 500, color: '#333' }}>{label}</label>}
+  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, ...style }}>
+      {label && <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#333' }}>{label}</label>}
       <input
         type={inputType}
         name={name}
@@ -98,7 +98,7 @@ export default function TextField({
         onKeyDown={handleInputKeyDown}
         placeholder={placeholder}
         inputMode={inputMode}
-        style={inputStyle}
+        style={{ padding: 0, ...inputStyle }}
       />
     </div>
   );

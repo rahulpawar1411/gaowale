@@ -1,7 +1,294 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { masterApi, registrationsApi } from '../services/api';
 
-export default function MasterCrudPage({ table, title, fields = [], addButtonLabel }) {
+const BUSINESS_LABELS_MR = {
+  'business-categories': {
+    name: 'व्यवसाय श्रेणी',
+    vidhan_sabha_id: 'विधानसभा निवडा',
+  },
+  'business-sub-categories': {
+    name: 'उप-व्यवसाय श्रेणी',
+    business_category_id: 'व्यवसाय श्रेणी निवडा',
+  },
+  products: {
+    name: 'उत्पादन',
+    business_sub_category_id: 'उप-व्यवसाय श्रेणी निवडा',
+  },
+  'business-types': {
+    name: 'व्यवसाय प्रकार',
+    product_id: 'उत्पादन निवडा',
+  },
+};
+
+const BUSINESS_HEADERS_MR = {
+  'business-categories': {
+    name: 'व्यवसाय श्रेणी',
+    vidhan_sabha_id: 'विधानसभा',
+  },
+  'business-sub-categories': {
+    name: 'उप-व्यवसाय श्रेणी',
+    business_category_id: 'व्यवसाय श्रेणी',
+  },
+  products: {
+    name: 'उत्पादन',
+    business_sub_category_id: 'उप-व्यवसाय श्रेणी',
+  },
+  'business-types': {
+    name: 'व्यवसाय प्रकार',
+    product_id: 'उत्पादन',
+  },
+};
+
+const TITLES_MR = {
+  // Main menu
+  continents: 'खण्ड',
+  countries: 'देश',
+  'country-divisions': 'देश विभाग',
+  states: 'राज्य',
+  'state-circles': 'राज्य सर्कल',
+  'state-divisions': 'राज्य विभाग',
+  'state-sub-divisions': 'राज्य उपविभाग',
+  regions: 'प्रदेश',
+  zones: 'झोन',
+  'vidhan-sabhas': 'विधानसभा',
+  talukas: 'तालुके',
+  blocks: 'ब्लॉक',
+  circles: 'पंचायत समिती सर्कल',
+  'gram-panchayats': 'ग्रामपंचायत',
+  villages: 'गाव',
+  'unit-types': 'एककाचे प्रकार',
+  units: 'युनिट',
+
+  // Business menu
+  'business-categories': 'व्यवसाय श्रेणी',
+  'business-sub-categories': 'उप-व्यवसाय श्रेणी',
+  products: 'उत्पादन',
+  'business-types': 'व्यवसाय प्रकार',
+
+  // Allotment menu
+  designations: 'पदनाम',
+  'position-allotments': 'पद वाटप',
+};
+
+const DESIGNATION_LABELS_MR = {
+  name: 'पदनाम',
+  parent_id: 'पालक नाही (सर्वोच्च स्तर)',
+};
+
+const DESIGNATION_HEADERS_MR = {
+  name: 'पदनाम',
+  parent_id: 'पालक',
+};
+
+const POSITION_ALLOTMENT_LABELS_MR = {
+  zone_id: 'झोन',
+  vidhan_sabha_id: 'विधानसभा',
+  taluka_id: 'तालुका',
+  block_id: 'ब्लॉक',
+  circle_id: 'पंचायत समिती सर्कल',
+  gram_panchayat_id: 'ग्रामपंचायत',
+  village_id: 'गाव',
+  business_position_id: 'व्यवसाय पद',
+  business_category_id: 'व्यवसाय क्षेत्र',
+  user_name: 'वापरकर्त्याचे नाव',
+};
+
+const POSITION_ALLOTMENT_HEADERS_MR = {
+  zone_id: 'झोन',
+  vidhan_sabha_id: 'विधानसभा',
+  taluka_id: 'तालुका',
+  block_id: 'ब्लॉक',
+  circle_id: 'पंचायत समिती सर्कल',
+  gram_panchayat_id: 'ग्रामपंचायत',
+  village_id: 'गाव',
+  business_position_id: 'व्यवसाय पद',
+  business_category_id: 'व्यवसाय क्षेत्र',
+  user_name: 'वापरकर्त्याचे नाव',
+};
+
+// Main menu masters (geographic + units) – Marathi labels
+const MAIN_MASTER_LABELS_MR = {
+  continents: {
+    name: 'खंड',
+  },
+  countries: {
+    name: 'देश',
+    continent_id: 'खंड निवडा',
+  },
+  'country-divisions': {
+    name: 'देश विभाग',
+    country_id: 'देश निवडा',
+  },
+  states: {
+    name: 'राज्य',
+    country_division_id: 'देश विभाग निवडा',
+  },
+  'state-circles': {
+    name: 'राज्य सर्कल',
+    state_id: 'राज्य निवडा',
+  },
+  'state-divisions': {
+    name: 'राज्य विभाग',
+    state_circle_id: 'राज्य सर्कल निवडा',
+  },
+  'state-sub-divisions': {
+    name: 'राज्य उपविभाग',
+    state_division_id: 'राज्य विभाग निवडा',
+  },
+  regions: {
+    name: 'प्रदेश',
+    state_sub_division_id: 'राज्य उपविभाग निवडा',
+  },
+  zones: {
+    name: 'झोन',
+    region_id: 'प्रदेश निवडा',
+  },
+  'vidhan-sabhas': {
+    name: 'विधानसभा',
+    vidhan_sabha_type: 'विधानसभेचे प्रकार',
+    zone_id: 'झोन निवडा',
+  },
+  talukas: {
+    name: 'तालुका',
+    vidhan_sabha_id: 'विधानसभा निवडा',
+  },
+  blocks: {
+    name: 'ब्लॉक',
+    taluka_id: 'तालुका निवडा',
+  },
+  circles: {
+    name: 'पंचायत समिती सर्कल',
+    block_id: 'ब्लॉक निवडा',
+  },
+  'gram-panchayats': {
+    name: 'ग्रामपंचायत',
+    circle_id: 'पंचायत समिती सर्कल निवडा',
+  },
+  villages: {
+    name: 'गाव',
+    gram_panchayat_id: 'ग्रामपंचायत निवडा',
+  },
+  units: {
+    name: 'युनिट',
+    village_id: 'गाव निवडा',
+    unit_type_id: 'युनिटचा प्रकार निवडा',
+    status: 'स्थिती',
+  },
+  'unit-types': {
+    type_category: 'प्रकार',
+  },
+};
+
+const MAIN_MASTER_HEADERS_MR = {
+  continents: {
+    name: 'खंड',
+  },
+  countries: {
+    name: 'देश',
+    continent_id: 'खंड',
+  },
+  'country-divisions': {
+    name: 'देश विभाग',
+    country_id: 'देश',
+  },
+  states: {
+    name: 'राज्य',
+    country_division_id: 'देश विभाग',
+  },
+  'state-circles': {
+    name: 'राज्य सर्कल',
+    state_id: 'राज्य',
+  },
+  'state-divisions': {
+    name: 'राज्य विभाग',
+    state_circle_id: 'राज्य सर्कल',
+  },
+  'state-sub-divisions': {
+    name: 'राज्य उपविभाग',
+    state_division_id: 'राज्य विभाग',
+  },
+  regions: {
+    name: 'प्रदेश',
+    state_sub_division_id: 'राज्य उपविभाग',
+  },
+  zones: {
+    name: 'झोन',
+    region_id: 'प्रदेश',
+  },
+  'vidhan-sabhas': {
+    name: 'विधानसभा',
+    vidhan_sabha_type: 'विधानसभेचे प्रकार',
+    zone_id: 'झोन',
+  },
+  talukas: {
+    name: 'तालुका',
+    vidhan_sabha_id: 'विधानसभा',
+  },
+  blocks: {
+    name: 'ब्लॉक',
+    taluka_id: 'तालुका',
+  },
+  circles: {
+    name: 'पंचायत समिती सर्कल',
+    block_id: 'ब्लॉक',
+  },
+  'gram-panchayats': {
+    name: 'ग्रामपंचायत',
+    circle_id: 'पंचायत समिती सर्कल',
+  },
+  villages: {
+    name: 'गाव',
+    gram_panchayat_id: 'ग्रामपंचायत',
+  },
+  units: {
+    name: 'युनिट',
+    village_id: 'गाव',
+    unit_type_id: 'युनिटचा प्रकार',
+    status: 'स्थिती',
+  },
+  'unit-types': {
+    type_category: 'प्रकार',
+  },
+};
+
+function getFieldLabel(table, field, lang) {
+  if (lang === 'mr') {
+    if (table === 'designations' && DESIGNATION_LABELS_MR[field.name]) {
+      return DESIGNATION_LABELS_MR[field.name];
+    }
+    if (table === 'position-allotments' && POSITION_ALLOTMENT_LABELS_MR[field.name]) {
+      return POSITION_ALLOTMENT_LABELS_MR[field.name];
+    }
+    if (BUSINESS_LABELS_MR[table]?.[field.name]) {
+      return BUSINESS_LABELS_MR[table][field.name];
+    }
+    if (MAIN_MASTER_LABELS_MR[table]?.[field.name]) {
+      return MAIN_MASTER_LABELS_MR[table][field.name];
+    }
+  }
+  return field.label;
+}
+
+function getHeaderLabel(table, field, lang) {
+  if (lang === 'mr') {
+    if (table === 'designations' && DESIGNATION_HEADERS_MR[field.name]) {
+      return DESIGNATION_HEADERS_MR[field.name];
+    }
+    if (table === 'position-allotments' && POSITION_ALLOTMENT_HEADERS_MR[field.name]) {
+      return POSITION_ALLOTMENT_HEADERS_MR[field.name];
+    }
+    if (BUSINESS_HEADERS_MR[table]?.[field.name]) {
+      return BUSINESS_HEADERS_MR[table][field.name];
+    }
+    if (MAIN_MASTER_HEADERS_MR[table]?.[field.name]) {
+      return MAIN_MASTER_HEADERS_MR[table][field.name];
+    }
+  }
+  const base = field.tableHeader || field.label;
+  return base;
+}
+
+export default function MasterCrudPage({ table, title, fields = [], addButtonLabel, lang = 'en' }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -47,11 +334,15 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
     });
     tables.forEach((t) => {
       if (t === 'management-registrations') {
-        registrationsApi.management
-          .getAll()
-          .then((res) => {
-            const list = (res.success ? res.data || [] : []).map((row) => ({
-              id: row.id,
+        // For Position Allotment "User Name" dropdown:
+        // combine Management + Lakhpati Didi users, and keep their business_category_id
+        Promise.all([
+          registrationsApi.management.getAll(),
+          registrationsApi.lakhpatiDidi.getAll(),
+        ])
+          .then(([mgmtRes, ldRes]) => {
+            const mgmtList = (mgmtRes.success ? mgmtRes.data || [] : []).map((row) => ({
+              id: `M-${row.id}`,
               name:
                 row.name ||
                 [row.first_name, row.middle_name, row.last_name]
@@ -59,7 +350,22 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
                   .join(' ')
                   .trim() ||
                 '—',
+              business_category_id: row.business_category_id || null,
+              source: 'management',
             }));
+            const ldList = (ldRes.success ? ldRes.data || [] : []).map((row) => ({
+              id: `L-${row.id}`,
+              name:
+                row.name ||
+                [row.first_name, row.middle_name, row.last_name]
+                  .filter(Boolean)
+                  .join(' ')
+                  .trim() ||
+                '—',
+              business_category_id: row.business_category_id || null,
+              source: 'lakhpatiDidi',
+            }));
+            const list = [...mgmtList, ...ldList];
             setOptions((prev) => ({ ...prev, [t]: list }));
           })
           .catch(() => setOptions((prev) => ({ ...prev, [t]: [] })));
@@ -529,16 +835,18 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
       ? filterPositionAllotments(data, filters, options)
       : data;
 
+  const heading = lang === 'mr' && TITLES_MR[table] ? TITLES_MR[table] : title;
+
   return (
     <div style={styles.page}>
       <div style={styles.card}>
-        <h1 style={styles.title}>{title}</h1>
+        <h1 style={styles.title}>{heading}</h1>
 
         <form onSubmit={handleSubmit} style={styles.form}>
         <div style={styles.formRow}>
           {fields.map((f) => (
             <div key={`${table}-${f.name}`} style={styles.fieldWrap}>
-              <label style={styles.label}>{f.label}</label>
+              <label style={styles.label}>{getFieldLabel(table, f, lang)}</label>
               {f.type === 'combobox' ? (
                 (() => {
                   const dbOpts = options[f.optionsTable] || [];
@@ -554,7 +862,7 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
                         list={listId}
                         value={form[f.name] != null ? form[f.name] : ''}
                         onChange={(e) => setForm((prev) => ({ ...prev, [f.name]: e.target.value }))}
-                        placeholder={`Select or type ${f.label.toLowerCase()}`}
+                        placeholder={`Select or type ${getFieldLabel(table, f, lang).toLowerCase()}`}
                         style={styles.input}
                       />
                       <datalist id={listId}>
@@ -598,7 +906,7 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
                           name={otherKey}
                           value={form[otherKey] != null ? form[otherKey] : ''}
                           onChange={(e) => setForm((prev) => ({ ...prev, [otherKey]: e.target.value }))}
-                          placeholder={`Enter ${f.label.toLowerCase()}`}
+                          placeholder={`Enter ${getFieldLabel(table, f, lang).toLowerCase()}`}
                           style={{ ...styles.input, marginTop: 6 }}
                         />
                       )}
@@ -660,6 +968,19 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
                       }
                     }
                   }
+                  // Special user filter for Position Allotment:
+                  // When Business Sector (business_category_id) is selected,
+                  // only show users (from Management + Lakhpati Didi) that have the same business_category_id.
+                  if (table === 'position-allotments' && f.name === 'user_name') {
+                    const catId = form.business_category_id != null ? Number(form.business_category_id) : null;
+                    if (catId != null && !Number.isNaN(catId)) {
+                      dbOpts = dbOpts.filter((u) => {
+                        const uCat = u.business_category_id != null ? Number(u.business_category_id) : null;
+                        return uCat === catId;
+                      });
+                    }
+                  }
+
                   const staticList = f.optionStatic || [];
                   const staticOpts = staticList
                     .map((s) =>
@@ -853,7 +1174,7 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
                         }
                         setForm((prev) => ({ ...prev, [f.name]: v }));
                       }}
-                      placeholder={f.label}
+                      placeholder={getFieldLabel(table, f, lang)}
                       style={styles.input}
                     />
                   );
@@ -891,14 +1212,14 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
 
         {error && <div style={styles.error}>{error}</div>}
 
-        <div style={isDesignationTable ? styles.tableWrapCompact : styles.tableWrap}>
-        <table style={isDesignationTable ? styles.tableCompact : styles.table}>
+        <div style={table === 'position-allotments' ? styles.tableWrapPositionAllotment : (isDesignationTable ? styles.tableWrapCompact : styles.tableWrap)}>
+        <table style={table === 'position-allotments' ? styles.tablePositionAllotment : (isDesignationTable ? styles.tableCompact : styles.table)}>
           <thead>
             <tr>
               <th style={styles.th}>ID</th>
               {fields.map((f) => (
                 <th key={f.name} style={styles.th}>
-                  {f.tableHeader || f.label}
+                  {getHeaderLabel(table, f, lang)}
                 </th>
               ))}
               <th style={styles.th}>Actions</th>
@@ -1514,7 +1835,7 @@ const styles = {
     padding: '1.5rem 2rem',
     display: 'flex',
     justifyContent: 'center',
-    background: '#f2f2f5',
+    background: '#fff4e0',
   },
   card: {
     width: '100%',
@@ -1557,7 +1878,7 @@ const styles = {
   form: { marginBottom: '0.5rem' },
   formRow: { display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: '1rem' },
   fieldWrap: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
-  label: { fontSize: '0.9rem', fontWeight: 500, color: '#333' },
+  label: { fontSize: '0.9rem', fontWeight: 600, color: '#333' },
   radioGroup: { display: 'flex', flexWrap: 'wrap', gap: '0.5rem 1rem', alignItems: 'center' },
   radioLabel: { display: 'flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer', fontSize: '0.9rem', color: '#333' },
   radioInput: { margin: 0, cursor: 'pointer' },
@@ -1616,6 +1937,21 @@ const styles = {
     background: '#fff',
     border: '1px solid #ddd',
     borderRadius: 4,
+  },
+  tableWrapPositionAllotment: {
+    overflowX: 'auto',
+    overflowY: 'auto',
+    maxHeight: '60vh',
+    background: '#fff',
+    border: '1px solid #ddd',
+    borderRadius: 4,
+    width: '100%',
+  },
+  tablePositionAllotment: {
+    width: 'max-content',
+    minWidth: 1100,
+    borderCollapse: 'collapse',
+    fontSize: '0.8rem',
   },
   tableWrapCompact: {
     overflowX: 'auto',

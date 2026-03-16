@@ -5,6 +5,10 @@ const farmerController = require('../controllers/farmerRegistrationController');
 const customerController = require('../controllers/customerRegistrationController');
 const lakhpatiDidiController = require('../controllers/lakhpatiDidiRegistrationController');
 
+// Each registration type has its own DB table and stores only in that table:
+// Management → management_registrations  |  Farmer → farmer_registrations
+// Customer   → customer_registrations    |  Lakhpati Didi → lakhpati_didi_registrations
+
 router.get('/management', managementController.getAll);
 router.get('/management/:id', managementController.getById);
 router.post('/management', managementController.create);

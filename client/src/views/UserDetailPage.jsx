@@ -49,6 +49,7 @@ function isFileField(key, value) {
   if (value == null) return false;
   const lowerKey = key.toLowerCase();
   if (
+    lowerKey === 'photo' ||
     lowerKey.includes('path') ||
     lowerKey.endsWith('_file') ||
     lowerKey.includes('receipt') ||
@@ -195,7 +196,25 @@ export default function UserDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [preview, setPreview] = useState(null);
+  const [previewLoadError, setPreviewLoadError] = useState(false);
   const [masters, setMasters] = useState({});
+  const [showPasswordEditor, setShowPasswordEditor] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordError, setPasswordError] = useState(null);
+  const [passwordSuccess, setPasswordSuccess] = useState(null);
+  const [hasPassword, setHasPassword] = useState(false);
+
+  const fileBaseUrl =
+    typeof import.meta.env?.VITE_API_ORIGIN === 'string' && import.meta.env.VITE_API_ORIGIN
+      ? import.meta.env.VITE_API_ORIGIN.replace(/\/$/, '')
+      : window.location.origin;
+  const previewSrc = preview
+    ? preview.url.startsWith('http')
+      ? preview.url
+      : `${fileBaseUrl}${preview.url}`
+    : '';
 
   useEffect(() => {
     let cancelled = false;
@@ -258,7 +277,70 @@ export default function UserDetailPage() {
     });
   }, [data, masters]);
 
+  useEffect(() => {
+    // If we have already marked password as set in this session, don't override it.
+    if (hasPassword) return;
+    if (!data) {
+      setHasPassword(false);
+      return;
+    }
+    // For existing records that already had password in DB, infer once.
+    const direct =
+      data.password_hash ||
+      data.passwordHash ||
+      data.password ||
+      null;
+    if (direct) {
+      setHasPassword(true);
+    } else {
+      setHasPassword(false);
+    }
+  }, [data, hasPassword]);
+
   const typeLabel = TYPE_LABELS[type] || type;
+
+  async function handlePasswordSave(e) {
+    e.preventDefault();
+    setPasswordError(null);
+    setPasswordSuccess(null);
+    if (!newPassword.trim()) {
+      setPasswordError('Password is required.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Password and Confirm Password do not match.');
+      return;
+    }
+    let api;
+    if (type === 'management') api = registrationsApi.management;
+    else if (type === 'farmer') api = registrationsApi.farmer;
+    else if (type === 'customer') api = registrationsApi.customer;
+    else if (type === 'lakhpatiDidi') api = registrationsApi.lakhpatiDidi;
+    else {
+      setPasswordError('Unknown user type.');
+      return;
+    }
+    try {
+      setPasswordSaving(true);
+      const res = await api.update(id, { password: newPassword });
+      if (!res || !res.success) {
+        setPasswordError(res?.message || 'Failed to update password.');
+        return;
+      }
+      if (res.data) {
+        setData(res.data);
+      }
+      setHasPassword(true);
+      setPasswordSuccess('Password updated successfully.');
+      setNewPassword('');
+      setConfirmPassword('');
+      setShowPasswordEditor(false);
+    } catch (err) {
+      setPasswordError(err.message || 'Failed to update password.');
+    } finally {
+      setPasswordSaving(false);
+    }
+  }
 
   const detailEntries = [];
   const fileEntries = [];
@@ -288,6 +370,7 @@ export default function UserDetailPage() {
     ]);
 
     const seenLabels = new Set();
+    const seenFileKeys = new Set();
     Object.entries(data).forEach(([key, value]) => {
       const lower = key.toLowerCase();
       if (lower.includes('password')) return;
@@ -311,19 +394,55 @@ export default function UserDetailPage() {
       const entry = { key, value, label };
       if (isFileField(key, value)) {
         fileEntries.push(entry);
+        seenFileKeys.add(key.toLowerCase());
       } else {
         detailEntries.push(entry);
       }
     });
+    // Ensure photo_path always appears in Files for Customer & Lakhpati Didi (API may use photo_path or photoPath)
+    const photoPathKey = Object.keys(data).find(
+      (k) => k.toLowerCase() === 'photo_path' || k.toLowerCase() === 'photopath'
+    );
+    const photoPathValue = photoPathKey ? data[photoPathKey] : null;
+    if (
+      (type === 'customer' || type === 'lakhpatiDidi') &&
+      photoPathValue != null &&
+      String(photoPathValue).trim() !== '' &&
+      !seenFileKeys.has('photo_path') &&
+      !seenFileKeys.has('photopath')
+    ) {
+      fileEntries.push({
+        key: photoPathKey || 'photo_path',
+        value: photoPathValue,
+        label: 'Photo',
+      });
+    }
   }
 
   return (
     <div style={styles.page}>
       <div style={styles.card}>
-        <button type="button" style={styles.backBtn} onClick={() => navigate('/user-details')}>
-          ← Back to User List
-        </button>
-        <h1 style={styles.title}>{typeLabel} User Details</h1>
+        <div style={styles.headerRow}>
+          <button type="button" style={styles.backBtn} onClick={() => navigate('/user-details')}>
+            ← Back to User List
+          </button>
+          <h1 style={styles.title}>{typeLabel} User Details</h1>
+          {data && !hasPassword && (
+            <button
+              type="button"
+              style={styles.editPasswordBtn}
+              onClick={() => {
+                setShowPasswordEditor((prev) => !prev);
+                setPasswordError(null);
+                setPasswordSuccess(null);
+                setNewPassword('');
+                setConfirmPassword('');
+              }}
+            >
+              {showPasswordEditor ? 'Cancel Password Edit' : 'Set Password'}
+            </button>
+          )}
+        </div>
         {error && <div style={styles.error}>{error}</div>}
         {loading ? (
           <p style={styles.muted}>Loading details…</p>
@@ -339,6 +458,55 @@ export default function UserDetailPage() {
                   <span style={styles.profileValue}>{profile.mobile || '—'}</span>
                 </div>
               </div>
+            )}
+            {data && (
+              <div style={styles.section}>
+                <div style={styles.sectionHeader}>Account</div>
+                <ul style={styles.detailList}>
+                  <li style={styles.detailItem}>
+                    <span style={styles.detailLabel}>Password</span>
+                    <span style={styles.detailValue}>
+                      {hasPassword ? 'Set (locked – cannot change again)' : 'Not set'}
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            )}
+            {showPasswordEditor && (
+              <form onSubmit={handlePasswordSave} style={styles.passwordCard}>
+                <div style={styles.passwordHeader}>Set / Change User Password</div>
+                {passwordError && <div style={styles.passwordError}>{passwordError}</div>}
+                {passwordSuccess && <div style={styles.passwordSuccess}>{passwordSuccess}</div>}
+                <div style={styles.passwordGrid}>
+                  <div style={styles.fieldWrap}>
+                    <label style={styles.fieldLabel}>New Password</label>
+                    <input
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      style={styles.passwordInput}
+                    />
+                  </div>
+                  <div style={styles.fieldWrap}>
+                    <label style={styles.fieldLabel}>Confirm Password</label>
+                    <input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      style={styles.passwordInput}
+                    />
+                  </div>
+                </div>
+                <div style={styles.passwordActions}>
+                  <button
+                    type="submit"
+                    disabled={passwordSaving}
+                    style={styles.passwordSaveBtn}
+                  >
+                    {passwordSaving ? 'Saving…' : 'Save Password'}
+                  </button>
+                </div>
+              </form>
             )}
             {(() => {
               const sections = {
@@ -382,12 +550,13 @@ export default function UserDetailPage() {
                 ));
             })()}
 
-            {false && fileEntries.length > 0 && (
+            {fileEntries.length > 0 && (
               <div style={styles.filesSection}>
                 <div style={styles.filesHeading}>Files &amp; Documents</div>
                 <div style={styles.fileGrid}>
                   {fileEntries.map(({ key, value, label }) => {
                     const url = getFileUrl(value);
+                    const fullUrl = url && (url.startsWith('http') ? url : `${fileBaseUrl}${url}`);
                     const fileName =
                       url && typeof url === 'string'
                         ? url.split('/').slice(-1)[0]
@@ -402,12 +571,12 @@ export default function UserDetailPage() {
                           <button
                             type="button"
                             style={styles.viewBtn}
-                            onClick={() => setPreview({ url, label })}
+                            onClick={() => { setPreviewLoadError(false); setPreview({ url: fullUrl || url, label }); }}
                           >
                             Preview
                           </button>
                           <a
-                            href={url}
+                            href={fullUrl || url}
                             download={fileName}
                             style={styles.downloadBtn}
                           >
@@ -426,7 +595,7 @@ export default function UserDetailPage() {
       {preview && (
         <div
           style={styles.previewOverlay}
-          onClick={() => setPreview(null)}
+          onClick={() => { setPreview(null); setPreviewLoadError(false); }}
           role="dialog"
           aria-modal="true"
         >
@@ -439,24 +608,52 @@ export default function UserDetailPage() {
               <button
                 type="button"
                 style={styles.previewClose}
-                onClick={() => setPreview(null)}
+                onClick={() => { setPreview(null); setPreviewLoadError(false); }}
               >
                 ✕
               </button>
             </div>
             <div style={styles.previewBody}>
-              {isImageValue(preview.url) ? (
+              {previewLoadError || !previewSrc ? (
+                <div style={styles.previewErrorWrap}>
+                  <p style={styles.previewErrorText}>
+                    {previewSrc ? 'Preview could not be loaded.' : 'Invalid file path.'}
+                  </p>
+                  <a
+                    href={previewSrc || preview.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={styles.previewOpenLink}
+                  >
+                    Open in new tab
+                  </a>
+                </div>
+              ) : isImageValue(preview.url) ? (
                 <img
-                  src={preview.url}
+                  key={preview.url}
+                  src={previewSrc}
                   alt={preview.label || 'Preview'}
                   style={styles.previewImage}
+                  onError={() => setPreviewLoadError(true)}
                 />
               ) : (
-                <iframe
-                  src={preview.url}
-                  title={preview.label || 'Preview'}
-                  style={styles.previewFrame}
-                />
+                <>
+                  <iframe
+                    key={preview.url}
+                    src={previewSrc}
+                    title={preview.label || 'Preview'}
+                    style={styles.previewFrame}
+                    onError={() => setPreviewLoadError(true)}
+                  />
+                  <a
+                    href={previewSrc}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={styles.previewOpenLink}
+                  >
+                    Open in new tab
+                  </a>
+                </>
               )}
             </div>
           </div>
@@ -471,10 +668,16 @@ const styles = {
     padding: '1.5rem 2rem',
     display: 'flex',
     justifyContent: 'center',
-    background: '#f2f2f5',
+     background: '#fff4e0',
+  },
+  headerRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '0.75rem',
+    marginBottom: '0.75rem',
   },
   backBtn: {
-    alignSelf: 'flex-start',
     padding: '0.35rem 0.85rem',
     borderRadius: 999,
     border: 'none',
@@ -495,6 +698,18 @@ const styles = {
     fontWeight: 700,
     textAlign: 'center',
     color: '#8B1538',
+  },
+  editPasswordBtn: {
+    padding: '0.35rem 0.85rem',
+    borderRadius: 999,
+    border: '1px solid #2563eb',
+    background: '#eff6ff',
+    color: '#1d4ed8',
+    fontSize: '0.8rem',
+    fontWeight: 600,
+    cursor: 'pointer',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.12)',
+    whiteSpace: 'nowrap',
   },
   card: {
     width: '100%',
@@ -529,6 +744,74 @@ const styles = {
   },
   profileValue: {
     color: '#111827',
+  },
+  passwordCard: {
+    marginBottom: '0.75rem',
+    padding: '0.75rem 0.9rem',
+    borderRadius: 6,
+    border: '1px solid #bfdbfe',
+    background: '#eff6ff',
+  },
+  passwordHeader: {
+    fontSize: '0.95rem',
+    fontWeight: 600,
+    color: '#1d4ed8',
+    marginBottom: '0.5rem',
+  },
+  passwordGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+    gap: '0.5rem 1rem',
+    marginBottom: '0.5rem',
+  },
+  fieldWrap: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 4,
+  },
+  fieldLabel: {
+    fontSize: '0.85rem',
+    fontWeight: 600,
+    color: '#374151',
+  },
+  passwordInput: {
+    padding: '0.35rem 0.55rem',
+    borderRadius: 4,
+    border: '1px solid #93c5fd',
+    fontSize: '0.85rem',
+  },
+  passwordActions: {
+    marginTop: '0.25rem',
+    display: 'flex',
+    justifyContent: 'flex-end',
+  },
+  passwordSaveBtn: {
+    padding: '0.35rem 0.9rem',
+    borderRadius: 4,
+    border: 'none',
+    background: '#1d4ed8',
+    color: '#fff',
+    fontSize: '0.85rem',
+    fontWeight: 600,
+    cursor: 'pointer',
+  },
+  passwordError: {
+    marginBottom: '0.4rem',
+    padding: '0.35rem 0.55rem',
+    borderRadius: 4,
+    background: '#fef2f2',
+    border: '1px solid #fecaca',
+    color: '#b91c1c',
+    fontSize: '0.85rem',
+  },
+  passwordSuccess: {
+    marginBottom: '0.4rem',
+    padding: '0.35rem 0.55rem',
+    borderRadius: 4,
+    background: '#ecfdf3',
+    border: '1px solid #bbf7d0',
+    color: '#166534',
+    fontSize: '0.85rem',
   },
   detailList: {
     listStyle: 'none',
@@ -672,10 +955,22 @@ const styles = {
   },
   previewBody: {
     flex: 1,
+    position: 'relative',
     background: '#111827',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  previewErrorWrap: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '1rem',
+  },
+  previewErrorText: {
+    margin: 0,
+    color: '#e5e7eb',
+    fontSize: '0.95rem',
   },
   previewImage: {
     width: '100%',
@@ -690,6 +985,20 @@ const styles = {
     height: '100%',
     border: 'none',
     background: '#111827',
+  },
+  previewOpenLink: {
+    position: 'absolute',
+    bottom: 12,
+    left: '50%',
+    transform: 'translateX(-50%)',
+    padding: '0.4rem 0.8rem',
+    borderRadius: 4,
+    background: '#1a5fb4',
+    color: '#fff',
+    fontSize: '0.85rem',
+    textDecoration: 'none',
+    fontWeight: 500,
+    boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
   },
   downloadLink: {
     marginTop: 4,

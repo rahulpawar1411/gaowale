@@ -4,40 +4,28 @@ import TextField from '../components/TextField';
 import {
   LOCATION_ORDER,
   LOCATION_FIELD_TABLE,
+  GEOGRAPHIC_FIELDS,
   getFilteredLocationOptions,
   isLocationFieldDisabled,
   clearDependentsOnChange,
+  getVidhanSabhaTypeOptionsForZone,
 } from '../config/locationCascade';
-
-const locationFields = [
-  { name: 'country_id', label: 'Country', table: 'countries' },
-  { name: 'country_division_id', label: 'Country Division', table: 'country-divisions' },
-  { name: 'state_id', label: 'State', table: 'states' },
-  { name: 'state_circle_id', label: 'State Circle', table: 'state-circles' },
-  { name: 'state_division_id', label: 'District', table: 'state-divisions' },
-  { name: 'state_sub_division_id', label: 'Taluka Division', table: 'state-sub-divisions' },
-  { name: 'region_id', label: 'Region', table: 'regions' },
-  { name: 'zone_id', label: 'Zone', table: 'zones' },
-  { name: 'vidhan_sabha_id', label: 'Vidhan Sabha', table: 'vidhan-sabhas' },
-  { name: 'taluka_id', label: 'Taluka', table: 'talukas' },
-  { name: 'block_id', label: 'Block', table: 'blocks' },
-  { name: 'circle_id', label: 'Panchayat Samiti Circle', table: 'circles' },
-  { name: 'gram_panchayat_id', label: 'Gram Panchayat', table: 'gram-panchayats' },
-  { name: 'village_id', label: 'Village', table: 'villages' },
-];
-
-const businessFields = [
+// Farmer: only Business Category enabled; Position, Sub-Category, Product, Business Type disabled.
+const businessFieldConfig = [
+  { name: 'business_position_id', label: 'Business Position', table: 'designations' },
   { name: 'business_category_id', label: 'Business Category', table: 'business-categories' },
   { name: 'business_sub_category_id', label: 'Business Sub-Category', table: 'business-sub-categories' },
   { name: 'product_id', label: 'Products', table: 'products' },
   { name: 'business_type_id', label: 'Business Type', table: 'business-types' },
 ];
 
-// Business cascade: Category → Sub-Category → Product → Business Type
-const BUSINESS_DEPENDENTS = {
-  business_category_id: ['business_sub_category_id', 'product_id', 'business_type_id'],
-  business_sub_category_id: ['product_id', 'business_type_id'],
-  product_id: ['business_type_id'],
+const FARMER_BUSINESS_DISABLED_FIELDS = ['business_position_id', 'business_sub_category_id', 'product_id', 'business_type_id'];
+const BUSINESS_LABELS_MR = {
+  business_position_id: 'व्यवसाय पद',
+  business_category_id: 'व्यवसाय श्रेणी',
+  business_sub_category_id: 'उप-व्यवसाय श्रेणी',
+  product_id: 'उत्पादन',
+  business_type_id: 'व्यवसाय प्रकार',
 };
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
@@ -47,21 +35,19 @@ const RELATIONS = ['Spouse', 'Father', 'Mother', 'Son', 'Daughter', 'Brother', '
 
 // All fields on the form are required except `middle_name` and `phone_number`.
 const REQUIRED_FIELDS = [
-  // Business information
+  // Business information (Farmer: only Business Category required)
   { name: 'business_category_id', label: 'Business Category' },
-  { name: 'business_sub_category_id', label: 'Business Sub-Category' },
-  { name: 'product_id', label: 'Products' },
-  { name: 'business_type_id', label: 'Business Type' },
 
   // Geographic information
   { name: 'country_id', label: 'Country' },
   { name: 'country_division_id', label: 'Country Division' },
   { name: 'state_id', label: 'State' },
   { name: 'state_circle_id', label: 'State Circle' },
-  { name: 'state_division_id', label: 'District' },
-  { name: 'state_sub_division_id', label: 'Taluka Division' },
+  { name: 'state_division_id', label: 'State Division' },
+  { name: 'state_sub_division_id', label: 'State Sub Division' },
   { name: 'region_id', label: 'Region' },
   { name: 'zone_id', label: 'Zone' },
+  { name: 'vidhan_sabha_type', label: 'Vidhan Sabha types' },
   { name: 'vidhan_sabha_id', label: 'Vidhan Sabha' },
   { name: 'taluka_id', label: 'Taluka' },
   { name: 'block_id', label: 'Block' },
@@ -106,6 +92,63 @@ const REQUIRED_FIELDS = [
   { name: 'pincode', label: 'Pincode' },
 ];
 
+const GEO_LABELS_MR = {
+  country_id: 'देश',
+  country_division_id: 'देश विभाग',
+  state_id: 'राज्य',
+  state_circle_id: 'राज्य सर्कल',
+  state_division_id: 'राज्य विभाग',
+  state_sub_division_id: 'राज्य उपविभाग',
+  region_id: 'प्रदेश',
+  zone_id: 'झोन',
+  vidhan_sabha_type: 'विधानसभेचे प्रकार',
+  vidhan_sabha_id: 'विधानसभा',
+  taluka_id: 'तालुका',
+  block_id: 'ब्लॉक',
+  circle_id: 'पंचायत समिती सर्कल',
+  gram_panchayat_id: 'ग्रामपंचायत',
+  village_id: 'गाव',
+  ward: 'वॉर्ड / क्षेत्र',
+  police_station: 'पोलीस स्टेशन / चौकशी',
+};
+
+const FARMER_LABELS_MR = {
+  first_name: 'पहिले नाव',
+  middle_name: 'वडिलांचे नाव',
+  last_name: 'आडनाव',
+  father_name: 'वडिलांचे पूर्ण नाव',
+  date_of_birth: 'जन्मतारीख',
+  blood_group: 'रक्त गट',
+  gender: 'लिंग',
+  education: 'शिक्षण',
+  whatsapp_number: 'व्हॉट्सअ‍ॅप क्रमांक',
+  mobile_number: 'मोबाईल क्रमांक',
+  pan_card_path: 'पॅन कार्ड',
+  election_card_path: 'मतदार ओळखपत्र',
+  aadhar_card_path: 'आधार कार्ड',
+  email: 'ई-मेल',
+  registration_date: 'नोंदणीची तारीख',
+  password: 'संकेतशब्द',
+  confirm_password: 'संकेतशब्दाची पुष्टी करा',
+  ration_card_path: 'रेशन कार्ड',
+  address: 'पत्ता',
+};
+
+const NOMINEE_LABELS_MR = {
+  nominee_name: 'नामनिर्देशित व्यक्तीचे नाव',
+  nominee_relation: 'नामनिर्देशित व्यक्तीशी नाते',
+  nominee_dob: 'नामनिर्देशित व्यक्तीची जन्मतारीख',
+  nominee_phone: 'नामनिर्देशित व्यक्तीचा मोबाईल क्रमांक',
+  nominee_aadhar_path: 'नामनिर्देशित व्यक्तीचा आधार कार्ड',
+};
+
+const BANK_LABELS_MR = {
+  bank_name: 'बँकेचे नाव',
+  ifsc_code: 'IFSC कोड',
+  bank_account_number: 'खाते क्रमांक',
+  pincode: 'पिनकोड',
+};
+
 function FieldWithError({ fieldName, fieldErrors, styles, children }) {
   return (
     <div style={styles.fieldWithError}>
@@ -115,7 +158,7 @@ function FieldWithError({ fieldName, fieldErrors, styles, children }) {
   );
 }
 
-export default function FarmerRegistrationPage({ title }) {
+export default function FarmerRegistrationPage({ title, lang = 'en' }) {
   const [options, setOptions] = useState({});
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
@@ -130,8 +173,8 @@ export default function FarmerRegistrationPage({ title }) {
   }, [success]);
 
   const tables = [
-    ...locationFields.map((f) => f.table),
-    ...businessFields.map((f) => f.table),
+    ...GEOGRAPHIC_FIELDS.map((f) => f.table).filter(Boolean),
+    ...businessFieldConfig.map((f) => f.table),
   ];
 
   useEffect(() => {
@@ -155,6 +198,8 @@ export default function FarmerRegistrationPage({ title }) {
 
   const getBusinessOptions = (fieldName) => {
     switch (fieldName) {
+      case 'business_position_id':
+        return getOptions('designations');
       case 'business_category_id':
         return getOptions('business-categories');
       case 'business_sub_category_id': {
@@ -192,24 +237,12 @@ export default function FarmerRegistrationPage({ title }) {
   const handleNumChange = (name) => (e) => {
     if (fieldErrors[name]) setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
     const v = e.target.value;
-    const value = v ? Number(v) : null;
+    const value = name === 'vidhan_sabha_type' ? (v || null) : (v ? Number(v) : null);
 
     if (LOCATION_ORDER.includes(name)) {
       setForm((prev) => clearDependentsOnChange(prev, name, value));
       return;
     }
-
-    if (BUSINESS_DEPENDENTS[name]) {
-      setForm((prev) => {
-        const next = { ...prev, [name]: value };
-        BUSINESS_DEPENDENTS[name].forEach((child) => {
-          next[child] = null;
-        });
-        return next;
-      });
-      return;
-    }
-
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -241,11 +274,20 @@ export default function FarmerRegistrationPage({ title }) {
 
   const getValidationError = () => {
     const fieldErr = {};
-    for (const { name, label } of REQUIRED_FIELDS) {
+    const requiredFields = REQUIRED_FIELDS;
+    for (const { name, label } of requiredFields) {
       const val = form[name];
       const isEmpty = val === undefined || val === null || val === '' || (typeof val === 'string' && val.trim() === '');
       if (isEmpty) {
         fieldErr[name] = `${label} is required`;
+      }
+    }
+    // Email format validation (only if provided)
+    if (form.email) {
+      const email = String(form.email).trim();
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        fieldErr.email = 'Please enter a valid Email address.';
       }
     }
     if (Object.keys(fieldErr).length > 0) {
@@ -291,10 +333,11 @@ export default function FarmerRegistrationPage({ title }) {
       block_id: form.block_id || null,
       circle_id: form.circle_id || null,
       gram_panchayat_id: form.gram_panchayat_id || null,
+      business_position_id: form.business_position_id || null,
       business_category_id: form.business_category_id || null,
       business_sub_category_id: form.business_sub_category_id || null,
-      business_type_id: form.business_type_id || null,
       product_id: form.product_id || null,
+      business_type_id: form.business_type_id || null,
       password: form.password || undefined,
     };
     registrationsApi.farmer
@@ -315,19 +358,20 @@ export default function FarmerRegistrationPage({ title }) {
   return (
     <div style={styles.page}>
       <div style={styles.card}>
-        <h1 style={styles.title}>{title}</h1>
+        <h1 style={styles.title}>
+          {lang === 'mr' ? 'शेतकरी नोंदणी' : 'Farmer Registration'}
+        </h1>
 
         <form onSubmit={handleSubmit} style={styles.form}>
           <fieldset style={styles.fieldset}>
-            <legend style={styles.legend}>Business Information</legend>
+            <legend style={styles.legend}>
+              {lang === 'mr' ? 'व्यवसायाची माहिती' : 'Business Information'}
+            </legend>
             <div style={styles.grid}>
-              {businessFields.map((field) => {
+              {businessFieldConfig.map((field) => {
                 const opts = getBusinessOptions(field.name);
-                const disabled =
-                  (field.name === 'business_sub_category_id' && !form.business_category_id) ||
-                  (field.name === 'product_id' && !form.business_sub_category_id) ||
-                  (field.name === 'business_type_id' && !form.product_id);
-
+                const disabled = FARMER_BUSINESS_DISABLED_FIELDS.includes(field.name);
+                const labelMr = BUSINESS_LABELS_MR[field.name] || field.label;
                 return (
                   <FieldWithError
                     key={field.name}
@@ -336,39 +380,9 @@ export default function FarmerRegistrationPage({ title }) {
                     styles={styles}
                   >
                     <div style={styles.fieldWrap}>
-                      <label style={styles.label}>{field.label}</label>
-                      <select
-                        value={form[field.name] != null ? form[field.name] : ''}
-                        onChange={handleNumChange(field.name)}
-                        onKeyDown={focusNextOnTab}
-                        style={{ ...styles.select, opacity: disabled ? 0.7 : 1 }}
-                        disabled={disabled && field.name !== 'business_category_id'}
-                      >
-                        <option value="">Select {field.label}</option>
-                        {opts.map((opt) => (
-                          <option key={opt.id} value={opt.id}>
-                            {opt.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </FieldWithError>
-                );
-              })}
-            </div>
-          </fieldset>
-
-          <fieldset style={styles.fieldset}>
-            <legend style={styles.legend}>Geographic Information</legend>
-            <div style={styles.grid}>
-              {locationFields.map((field) => {
-                const isLocation = LOCATION_ORDER.includes(field.name);
-                const opts = isLocation ? getFilteredLocationOptions(LOCATION_FIELD_TABLE[field.name] || field.table, form, options) : getOptions(field.table);
-                const disabled = isLocation ? isLocationFieldDisabled(field.name, form) : false;
-                return (
-                  <FieldWithError key={field.name} fieldName={field.name} fieldErrors={fieldErrors} styles={styles}>
-                    <div style={styles.fieldWrap}>
-                      <label style={styles.label}>{field.label}</label>
+                      <label style={styles.label}>
+                        {lang === 'mr' ? labelMr : field.label}
+                      </label>
                       <select
                         value={form[field.name] != null ? form[field.name] : ''}
                         onChange={handleNumChange(field.name)}
@@ -376,7 +390,83 @@ export default function FarmerRegistrationPage({ title }) {
                         style={{ ...styles.select, opacity: disabled ? 0.7 : 1 }}
                         disabled={disabled}
                       >
-                        <option value="">Select {field.label}</option>
+                        <option value="">
+                          {lang === 'mr'
+                            ? `Select ${labelMr}`
+                            : `Select ${field.label}`}
+                        </option>
+                        {(opts || []).map((opt) => (
+                          <option key={opt.id} value={opt.id}>
+                            {opt.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </FieldWithError>
+                );
+              })}
+            </div>
+          </fieldset>
+
+          <fieldset style={styles.fieldset}>
+            <legend style={styles.legend}>
+              {lang === 'mr' ? 'भौगोलिक माहिती' : 'Geographic Information'}
+            </legend>
+            <div style={styles.grid}>
+              {GEOGRAPHIC_FIELDS.map((field) => {
+                const labelMr = GEO_LABELS_MR[field.name] || field.label;
+                if (field.name === 'vidhan_sabha_type') {
+                  const disabled = isLocationFieldDisabled('vidhan_sabha_type', form);
+                  const typeOptions = getVidhanSabhaTypeOptionsForZone(form.zone_id, options['vidhan-sabhas'] || []);
+                  return (
+                    <FieldWithError key={field.name} fieldName={field.name} fieldErrors={fieldErrors} styles={styles}>
+                      <div style={styles.fieldWrap}>
+                        <label style={styles.label}>
+                          {lang === 'mr' ? labelMr : field.label}
+                        </label>
+                        <select
+                          value={form.vidhan_sabha_type != null ? form.vidhan_sabha_type : ''}
+                          onChange={handleNumChange('vidhan_sabha_type')}
+                          onKeyDown={focusNextOnTab}
+                          style={{ ...styles.select, opacity: disabled ? 0.7 : 1 }}
+                          disabled={disabled}
+                        >
+                          <option value="">
+                            {lang === 'mr'
+                              ? 'विधानसभेचा प्रकार निवडा'
+                              : 'Select Vidhan Sabha type'}
+                          </option>
+                          {typeOptions.map((opt) => (
+                            <option key={opt} value={opt}>
+                              {opt}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </FieldWithError>
+                  );
+                }
+                const isLocation = LOCATION_ORDER.includes(field.name);
+                const opts = isLocation ? getFilteredLocationOptions(LOCATION_FIELD_TABLE[field.name] || field.table, form, options) : getOptions(field.table);
+                const disabled = isLocation ? isLocationFieldDisabled(field.name, form) : false;
+                return (
+                  <FieldWithError key={field.name} fieldName={field.name} fieldErrors={fieldErrors} styles={styles}>
+                    <div style={styles.fieldWrap}>
+                      <label style={styles.label}>
+                        {lang === 'mr' ? labelMr : field.label}
+                      </label>
+                      <select
+                        value={form[field.name] != null ? form[field.name] : ''}
+                        onChange={handleNumChange(field.name)}
+                        onKeyDown={focusNextOnTab}
+                        style={{ ...styles.select, opacity: disabled ? 0.7 : 1 }}
+                        disabled={disabled}
+                      >
+                        <option value="">
+                          {lang === 'mr'
+                            ? `Select ${labelMr}`
+                            : `Select ${field.label}`}
+                        </option>
                         {opts.map((opt) => (
                           <option key={opt.id} value={opt.id}>
                             {opt.name}
@@ -387,83 +477,408 @@ export default function FarmerRegistrationPage({ title }) {
                   </FieldWithError>
                 );
               })}
-              <TextField label="Ward / Area" name="ward" value={form.ward || ''} onChange={handleChange} placeholder="Select Ward" style={styles.fieldWrap} inputStyle={styles.input} />
-              <TextField label="Police Station / Inquiry" name="police_station" value={form.police_station || ''} onChange={handleChange} placeholder="Select Police Station" style={styles.fieldWrap} inputStyle={styles.input} />
+              <TextField
+                label={lang === 'mr' ? GEO_LABELS_MR.ward : 'Ward / Area'}
+                name="ward"
+                value={form.ward || ''}
+                onChange={handleChange}
+                placeholder={lang === 'mr' ? 'वॉर्ड निवडा' : 'Select Ward'}
+                style={styles.fieldWrap}
+                inputStyle={styles.input}
+              />
+              <TextField
+                label={
+                  lang === 'mr'
+                    ? GEO_LABELS_MR.police_station
+                    : 'Police Station / Inquiry'
+                }
+                name="police_station"
+                value={form.police_station || ''}
+                onChange={handleChange}
+                placeholder={
+                  lang === 'mr' ? 'पोलीस स्टेशन निवडा' : 'Select Police Station'
+                }
+                style={styles.fieldWrap}
+                inputStyle={styles.input}
+              />
             </div>
           </fieldset>
 
           <fieldset style={styles.fieldset}>
-            <legend style={styles.legend}>Farmer Information</legend>
+            <legend style={styles.legend}>
+              {lang === 'mr' ? 'शेतकरी माहिती' : 'Farmer Information'}
+            </legend>
             <div style={styles.grid}>
               <FieldWithError fieldName="first_name" fieldErrors={fieldErrors} styles={styles}>
-                <TextField label="First Name" name="first_name" value={form.first_name || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
+                <TextField
+                  label={lang === 'mr' ? FARMER_LABELS_MR.first_name : 'First Name'}
+                  name="first_name"
+                  value={form.first_name || ''}
+                  onChange={handleChange}
+                  style={styles.fieldWrap}
+                  inputStyle={styles.input}
+                />
               </FieldWithError>
-              <TextField label="Middle Name" name="middle_name" value={form.middle_name || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
+              <TextField
+                label={lang === 'mr' ? FARMER_LABELS_MR.middle_name : 'Middle Name'}
+                name="middle_name"
+                value={form.middle_name || ''}
+                onChange={handleChange}
+                style={styles.fieldWrap}
+                inputStyle={styles.input}
+              />
               <FieldWithError fieldName="last_name" fieldErrors={fieldErrors} styles={styles}>
-                <TextField label="Last Name" name="last_name" value={form.last_name || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
+                <TextField
+                  label={lang === 'mr' ? FARMER_LABELS_MR.last_name : 'Last Name'}
+                  name="last_name"
+                  value={form.last_name || ''}
+                  onChange={handleChange}
+                  style={styles.fieldWrap}
+                  inputStyle={styles.input}
+                />
               </FieldWithError>
               <FieldWithError fieldName="father_name" fieldErrors={fieldErrors} styles={styles}>
-                <TextField label="Father's Name" name="father_name" value={form.father_name || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
+                <TextField
+                  label={
+                    lang === 'mr'
+                      ? FARMER_LABELS_MR.father_name
+                      : "Father's Name"
+                  }
+                  name="father_name"
+                  value={form.father_name || ''}
+                  onChange={handleChange}
+                  style={styles.fieldWrap}
+                  inputStyle={styles.input}
+                />
               </FieldWithError>
               <FieldWithError fieldName="date_of_birth" fieldErrors={fieldErrors} styles={styles}>
-                <TextField label="Date of Birth" name="date_of_birth" type="date" value={form.date_of_birth || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
+                <TextField
+                  label={
+                    lang === 'mr'
+                      ? FARMER_LABELS_MR.date_of_birth
+                      : 'Date of Birth'
+                  }
+                  name="date_of_birth"
+                  type="date"
+                  value={form.date_of_birth || ''}
+                  onChange={handleChange}
+                  style={styles.fieldWrap}
+                  inputStyle={styles.input}
+                />
               </FieldWithError>
               <FieldWithError fieldName="blood_group" fieldErrors={fieldErrors} styles={styles}>
-                <SelectSimple label="Blood Group" name="blood_group" value={form.blood_group || ''} onChange={handleChange} options={BLOOD_GROUPS} />
+                <SelectSimple
+                  label={
+                    lang === 'mr'
+                      ? FARMER_LABELS_MR.blood_group
+                      : 'Blood Group'
+                  }
+                  name="blood_group"
+                  value={form.blood_group || ''}
+                  onChange={handleChange}
+                  options={BLOOD_GROUPS}
+                />
               </FieldWithError>
               <FieldWithError fieldName="gender" fieldErrors={fieldErrors} styles={styles}>
-                <SelectSimple label="Gender" name="gender" value={form.gender || ''} onChange={handleChange} options={GENDERS} />
+                <SelectSimple
+                  label={lang === 'mr' ? FARMER_LABELS_MR.gender : 'Gender'}
+                  name="gender"
+                  value={form.gender || ''}
+                  onChange={handleChange}
+                  options={GENDERS}
+                />
               </FieldWithError>
-              <FileField label="Upload Photo" name="photo_path" value={form.photo_path || ''} onChange={handleFileChange} />
-              <SelectSimple label="Education" name="education" value={form.education || ''} onChange={handleChange} options={EDUCATION_OPTIONS} />
+              <FileField
+                label={
+                  lang === 'mr'
+                    ? 'छायाचित्र अपलोड करा'
+                    : 'Upload Photo'
+                }
+                name="photo_path"
+                value={form.photo_path || ''}
+                onChange={handleFileChange}
+              />
+              <SelectSimple
+                label={
+                  lang === 'mr'
+                    ? FARMER_LABELS_MR.education
+                    : 'Education'
+                }
+                name="education"
+                value={form.education || ''}
+                onChange={handleChange}
+                options={EDUCATION_OPTIONS}
+              />
               <FieldWithError fieldName="whatsapp_number" fieldErrors={fieldErrors} styles={styles}>
-                <TextField label="WhatsApp Number" name="whatsapp_number" numericOnly maxLength={10} format="phonePairs" value={form.whatsapp_number || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
+                <TextField
+                  label={
+                    lang === 'mr'
+                      ? FARMER_LABELS_MR.whatsapp_number
+                      : 'WhatsApp Number'
+                  }
+                  name="whatsapp_number"
+                  numericOnly
+                  maxLength={10}
+                  format="phonePairs"
+                  value={form.whatsapp_number || ''}
+                  onChange={handleChange}
+                  style={styles.fieldWrap}
+                  inputStyle={styles.input}
+                />
               </FieldWithError>
-              <TextField label="Mobile Number" name="mobile_number" numericOnly maxLength={10} format="phonePairs" value={form.mobile_number || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
+              <TextField
+                label={
+                  lang === 'mr'
+                    ? FARMER_LABELS_MR.mobile_number
+                    : 'Mobile Number'
+                }
+                name="mobile_number"
+                numericOnly
+                maxLength={10}
+                format="phonePairs"
+                value={form.mobile_number || ''}
+                onChange={handleChange}
+                style={styles.fieldWrap}
+                inputStyle={styles.input}
+              />
               <FieldWithError fieldName="pan_card_path" fieldErrors={fieldErrors} styles={styles}>
-                <FileField label="PAN Card" name="pan_card_path" value={form.pan_card_path || ''} onChange={handleFileChange} />
+                <FileField
+                  label={
+                    lang === 'mr'
+                      ? FARMER_LABELS_MR.pan_card_path
+                      : 'PAN Card'
+                  }
+                  name="pan_card_path"
+                  value={form.pan_card_path || ''}
+                  onChange={handleFileChange}
+                />
               </FieldWithError>
-              <FileField label="Election Card" name="election_card_path" value={form.election_card_path || ''} onChange={handleFileChange} />
-              <FileField label="Aadhaar Card" name="aadhar_card_path" value={form.aadhar_card_path || ''} onChange={handleFileChange} />
+              <FileField
+                label={
+                  lang === 'mr'
+                    ? FARMER_LABELS_MR.election_card_path
+                    : 'Election Card'
+                }
+                name="election_card_path"
+                value={form.election_card_path || ''}
+                onChange={handleFileChange}
+              />
+              <FileField
+                label={
+                  lang === 'mr'
+                    ? FARMER_LABELS_MR.aadhar_card_path
+                    : 'Aadhaar Card'
+                }
+                name="aadhar_card_path"
+                value={form.aadhar_card_path || ''}
+                onChange={handleFileChange}
+              />
               <FieldWithError fieldName="email" fieldErrors={fieldErrors} styles={styles}>
-                <TextField label="Email" name="email" type="email" value={form.email || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
+                <TextField
+                  label={lang === 'mr' ? FARMER_LABELS_MR.email : 'Email'}
+                  name="email"
+                  type="email"
+                  value={form.email || ''}
+                  onChange={handleChange}
+                  style={styles.fieldWrap}
+                  inputStyle={styles.input}
+                />
               </FieldWithError>
-              <TextField label="Date of Registration" name="registration_date" type="date" value={form.registration_date || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
+              <TextField
+                label={
+                  lang === 'mr'
+                    ? FARMER_LABELS_MR.registration_date
+                    : 'Date of Registration'
+                }
+                name="registration_date"
+                type="date"
+                value={form.registration_date || ''}
+                onChange={handleChange}
+                style={styles.fieldWrap}
+                inputStyle={styles.input}
+              />
               <FieldWithError fieldName="password" fieldErrors={fieldErrors} styles={styles}>
-                <TextField label="Password" name="password" type="password" value={form.password || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
+                <TextField
+                  label={lang === 'mr' ? FARMER_LABELS_MR.password : 'Password'}
+                  name="password"
+                  type="password"
+                  value={form.password || ''}
+                  onChange={handleChange}
+                  style={styles.fieldWrap}
+                  inputStyle={styles.input}
+                />
               </FieldWithError>
               <FieldWithError fieldName="confirm_password" fieldErrors={fieldErrors} styles={styles}>
-                <TextField label="Confirm Password" name="confirm_password" type="password" value={form.confirm_password || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
+                <TextField
+                  label={
+                    lang === 'mr'
+                      ? FARMER_LABELS_MR.confirm_password
+                      : 'Confirm Password'
+                  }
+                  name="confirm_password"
+                  type="password"
+                  value={form.confirm_password || ''}
+                  onChange={handleChange}
+                  style={styles.fieldWrap}
+                  inputStyle={styles.input}
+                />
               </FieldWithError>
               <FieldWithError fieldName="ration_card_path" fieldErrors={fieldErrors} styles={styles}>
-                <FileField label="Ration Card" name="ration_card_path" value={form.ration_card_path || ''} onChange={handleFileChange} />
+                <FileField
+                  label={
+                    lang === 'mr'
+                      ? FARMER_LABELS_MR.ration_card_path
+                      : 'Ration Card'
+                  }
+                  name="ration_card_path"
+                  value={form.ration_card_path || ''}
+                  onChange={handleFileChange}
+                />
               </FieldWithError>
               <div style={{ gridColumn: '1 / -1' }}>
                 <FieldWithError fieldName="address" fieldErrors={fieldErrors} styles={styles}>
-                  <TextField label="Address" name="address" value={form.address || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
+                  <TextField
+                    label={
+                      lang === 'mr'
+                        ? FARMER_LABELS_MR.address
+                        : 'Address'
+                    }
+                    name="address"
+                    value={form.address || ''}
+                    onChange={handleChange}
+                    style={styles.fieldWrap}
+                    inputStyle={styles.input}
+                  />
                 </FieldWithError>
               </div>
             </div>
           </fieldset>
 
           <fieldset style={styles.fieldset}>
-            <legend style={styles.legend}>Nominee Information</legend>
+            <legend style={styles.legend}>
+              {lang === 'mr' ? 'नामनिर्देशित माहिती' : 'Nominee Information'}
+            </legend>
             <div style={styles.grid}>
-              <TextField label="Nominee Name" name="nominee_name" value={form.nominee_name || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
-              <SelectSimple label="Nominee Relation" name="nominee_relation" value={form.nominee_relation || ''} onChange={handleChange} options={RELATIONS} />
-              <TextField label="Date of Birth" name="nominee_dob" type="date" value={form.nominee_dob || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
-              <TextField label="Nominee's Mobile Number" name="nominee_phone" numericOnly maxLength={10} format="phonePairs" value={form.nominee_phone || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
-              <FileField label="Nominee's Aadhaar Card" name="nominee_aadhar_path" value={form.nominee_aadhar_path || ''} onChange={handleFileChange} />
+              <TextField
+                label={
+                  lang === 'mr'
+                    ? NOMINEE_LABELS_MR.nominee_name
+                    : 'Nominee Name'
+                }
+                name="nominee_name"
+                value={form.nominee_name || ''}
+                onChange={handleChange}
+                style={styles.fieldWrap}
+                inputStyle={styles.input}
+              />
+              <SelectSimple
+                label={
+                  lang === 'mr'
+                    ? NOMINEE_LABELS_MR.nominee_relation
+                    : 'Nominee Relation'
+                }
+                name="nominee_relation"
+                value={form.nominee_relation || ''}
+                onChange={handleChange}
+                options={RELATIONS}
+              />
+              <TextField
+                label={
+                  lang === 'mr'
+                    ? NOMINEE_LABELS_MR.nominee_dob
+                    : 'Date of Birth'
+                }
+                name="nominee_dob"
+                type="date"
+                value={form.nominee_dob || ''}
+                onChange={handleChange}
+                style={styles.fieldWrap}
+                inputStyle={styles.input}
+              />
+              <TextField
+                label={
+                  lang === 'mr'
+                    ? NOMINEE_LABELS_MR.nominee_phone
+                    : "Nominee's Mobile Number"
+                }
+                name="nominee_phone"
+                numericOnly
+                maxLength={10}
+                format="phonePairs"
+                value={form.nominee_phone || ''}
+                onChange={handleChange}
+                style={styles.fieldWrap}
+                inputStyle={styles.input}
+              />
+              <FileField
+                label={
+                  lang === 'mr'
+                    ? NOMINEE_LABELS_MR.nominee_aadhar_path
+                    : "Nominee's Aadhaar Card"
+                }
+                name="nominee_aadhar_path"
+                value={form.nominee_aadhar_path || ''}
+                onChange={handleFileChange}
+              />
             </div>
           </fieldset>
 
           <fieldset style={styles.fieldset}>
-            <legend style={styles.legend}>Bank Information</legend>
+            <legend style={styles.legend}>
+              {lang === 'mr' ? 'बँक माहिती' : 'Bank Information'}
+            </legend>
             <div style={styles.grid}>
-              <TextField label="Bank Name" name="bank_name" value={form.bank_name || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
-              <TextField label="IFSC Code" name="ifsc_code" value={form.ifsc_code || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
-              <TextField label="Account Number" name="bank_account_number" numericOnly format="groups4" value={form.bank_account_number || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
-              <TextField label="Pincode" name="pincode" numericOnly value={form.pincode || ''} onChange={handleChange} style={styles.fieldWrap} inputStyle={styles.input} />
+              <TextField
+                label={
+                  lang === 'mr'
+                    ? BANK_LABELS_MR.bank_name
+                    : 'Bank Name'
+                }
+                name="bank_name"
+                value={form.bank_name || ''}
+                onChange={handleChange}
+                style={styles.fieldWrap}
+                inputStyle={styles.input}
+              />
+              <TextField
+                label={
+                  lang === 'mr'
+                    ? BANK_LABELS_MR.ifsc_code
+                    : 'IFSC Code'
+                }
+                name="ifsc_code"
+                value={form.ifsc_code || ''}
+                onChange={handleChange}
+                style={styles.fieldWrap}
+                inputStyle={styles.input}
+              />
+              <TextField
+                label={
+                  lang === 'mr'
+                    ? BANK_LABELS_MR.bank_account_number
+                    : 'Account Number'
+                }
+                name="bank_account_number"
+                numericOnly
+                format="groups4"
+                value={form.bank_account_number || ''}
+                onChange={handleChange}
+                style={styles.fieldWrap}
+                inputStyle={styles.input}
+              />
+              <TextField
+                label={
+                  lang === 'mr'
+                    ? BANK_LABELS_MR.pincode
+                    : 'Pincode'
+                }
+                name="pincode"
+                numericOnly
+                value={form.pincode || ''}
+                onChange={handleChange}
+                style={styles.fieldWrap}
+                inputStyle={styles.input}
+              />
             </div>
           </fieldset>
 
@@ -553,7 +968,7 @@ const styles = {
     padding: '1.5rem 2rem',
     display: 'flex',
     justifyContent: 'center',
-    background: '#f2f2f5',
+    background: '#fff4e0',
   },
   card: {
     width: '100%',
@@ -602,7 +1017,7 @@ const styles = {
   fieldWrap: { display: 'flex', flexDirection: 'column', gap: 4 },
   fieldWithError: { display: 'flex', flexDirection: 'column', gap: 2 },
   fieldError: { fontSize: '0.8rem', color: '#c53030', marginTop: 2 },
-  label: { fontSize: '0.85rem', fontWeight: 500, color: '#333' },
+  label: { fontSize: '0.85rem', fontWeight: 700, color: '#333' },
   input: {
     padding: '0.45rem 0.6rem',
     borderRadius: 4,

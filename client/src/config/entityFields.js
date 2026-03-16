@@ -39,6 +39,7 @@ export const entityFields = {
   ],
   'vidhan-sabhas': [
     { name: 'name', label: 'Vidhan Sabha', type: 'text', tableHeader: 'Vidhan Sabha' },
+    { name: 'vidhan_sabha_type', label: 'Vidhan Sabha types', type: 'select', optionStatic: ['Ruler', 'Arbun'], tableHeader: 'Vidhan Sabha types', optionPlaceholder: 'Select Vidhan Sabha type' },
     { name: 'zone_id', label: 'Select Zone', type: 'select', optionsTable: 'zones', tableHeader: 'Zone' },
   ],
   talukas: [
@@ -63,11 +64,23 @@ export const entityFields = {
   ],
   products: [
     { name: 'name', label: 'Product', type: 'text', tableHeader: 'Product' },
-    { name: 'business_sub_category_id', label: 'Business Sub Category', type: 'select', optionsTable: 'business-sub-categories', tableHeader: 'Business Sub Category' },
+    {
+      name: 'business_sub_category_id',
+      label: 'Business Sub Category',
+      type: 'select',
+      optionsTable: 'business-sub-categories',
+      tableHeader: 'Business Sub Category',
+    },
   ],
   'business-types': [
     { name: 'name', label: 'Business Type', type: 'text', tableHeader: 'Business Type' },
-    { name: 'product_id', label: 'Select Product', type: 'select', optionsTable: 'products', tableHeader: 'Product' },
+    {
+      name: 'product_id',
+      label: 'Select Product',
+      type: 'select',
+      optionsTable: 'products',
+      tableHeader: 'Product',
+    },
   ],
   units: [
     { name: 'name', label: 'Unit', type: 'text', tableHeader: 'Unit' },
@@ -80,11 +93,23 @@ export const entityFields = {
   ],
   'business-categories': [
     { name: 'name', label: 'Business Category', type: 'text', tableHeader: 'Business Category' },
-    { name: 'vidhan_sabha_id', label: 'Select Vidhansabha', type: 'select', optionsTable: 'vidhan-sabhas', tableHeader: 'Vidhansabha' },
+    {
+      name: 'vidhan_sabha_id',
+      label: 'Select Vidhansabha',
+      type: 'select',
+      optionsTable: 'vidhan-sabhas',
+      tableHeader: 'Vidhansabha',
+    },
   ],
   'business-sub-categories': [
     { name: 'name', label: 'Business Sub Category', type: 'text', tableHeader: 'Business Sub Category' },
-    { name: 'business_category_id', label: 'Select Business Category', type: 'select', optionsTable: 'business-categories', tableHeader: 'Business Category' },
+    {
+      name: 'business_category_id',
+      label: 'Select Business Category',
+      type: 'select',
+      optionsTable: 'business-categories',
+      tableHeader: 'Business Category',
+    },
   ],
   designations: [
     { name: 'name', label: 'Designation', type: 'text', tableHeader: 'Designation' },
@@ -99,8 +124,7 @@ export const entityFields = {
     { name: 'code', label: 'Code', type: 'text', tableHeader: 'Code' },
   ],
   'position-allotments': [
-    // Level + area are derived from the most specific selected location (Zone → … → Village)
-    { name: 'level_type', label: 'Level (auto from selection)', type: 'text', tableHeader: 'Level' },
+    // User appears last; level is still auto-calculated internally from location
     { name: 'zone_id', label: 'Zone', type: 'select', optionsTable: 'zones', tableHeader: 'Zone', optionPlaceholder: 'Select Zone' },
     { name: 'vidhan_sabha_id', label: 'Vidhan Sabha', type: 'select', optionsTable: 'vidhan-sabhas', tableHeader: 'Vidhan Sabha', optionPlaceholder: 'Select Vidhan Sabha' },
     { name: 'taluka_id', label: 'Taluka', type: 'select', optionsTable: 'talukas', tableHeader: 'Taluka', optionPlaceholder: 'Select Taluka' },

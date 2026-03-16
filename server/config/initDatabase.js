@@ -86,6 +86,7 @@ const CREATE_TABLE_STATEMENTS = [
     zone_id INT,
     name VARCHAR(255) NOT NULL,
     code VARCHAR(50),
+    vidhan_sabha_type VARCHAR(50) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (state_id) REFERENCES states(id) ON DELETE CASCADE,
     FOREIGN KEY (zone_id) REFERENCES zones(id) ON DELETE SET NULL
@@ -233,9 +234,14 @@ const CREATE_TABLE_STATEMENTS = [
     email VARCHAR(255),
     state_id INT,
     region_id INT,
+    business_position_id INT NULL,
+    target_to_fill_farm DECIMAL(15,2) NULL,
+    target_completed_so_far DECIMAL(15,2) NULL,
+    existing_terms_according_to_target DECIMAL(15,2) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (state_id) REFERENCES states(id) ON DELETE SET NULL,
-    FOREIGN KEY (region_id) REFERENCES regions(id) ON DELETE SET NULL
+    FOREIGN KEY (region_id) REFERENCES regions(id) ON DELETE SET NULL,
+    FOREIGN KEY (business_position_id) REFERENCES designations(id) ON DELETE SET NULL
   )`,
   `CREATE TABLE IF NOT EXISTS farmer_registrations (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -501,6 +507,7 @@ async function initDatabase() {
       `ALTER TABLE regions ADD CONSTRAINT fk_regions_state_sub_division FOREIGN KEY (state_sub_division_id) REFERENCES state_sub_divisions(id) ON DELETE SET NULL`,
       `ALTER TABLE talukas ADD COLUMN vidhan_sabha_id INT NULL`,
       `ALTER TABLE talukas ADD CONSTRAINT fk_talukas_vidhan_sabha FOREIGN KEY (vidhan_sabha_id) REFERENCES vidhan_sabhas(id) ON DELETE SET NULL`,
+      `ALTER TABLE vidhan_sabhas ADD COLUMN vidhan_sabha_type VARCHAR(50) NULL`,
       `ALTER TABLE state_divisions ADD COLUMN state_circle_id INT NULL`,
       `ALTER TABLE state_divisions ADD CONSTRAINT fk_state_divisions_state_circle FOREIGN KEY (state_circle_id) REFERENCES state_circles(id) ON DELETE SET NULL`,
       `ALTER TABLE designations ADD COLUMN parent_id INT NULL`,
@@ -526,7 +533,7 @@ async function initDatabase() {
       `ALTER TABLE management_registrations ADD COLUMN officer_department_position_id INT NULL`,
       `ALTER TABLE management_registrations ADD COLUMN target_to_fill_farm DECIMAL(15,2) NULL`,
       `ALTER TABLE management_registrations ADD COLUMN target_completed_so_far DECIMAL(15,2) NULL`,
-      `ALTER TABLE management_registrations ADD COLUMN existing_terms_according_to_target VARCHAR(500) NULL`,
+      `ALTER TABLE management_registrations ADD COLUMN existing_terms_according_to_target DECIMAL(15,2) NULL`,
       `ALTER TABLE management_registrations ADD COLUMN state_circle_id INT NULL`,
       `ALTER TABLE management_registrations ADD CONSTRAINT fk_mgmt_state_circle FOREIGN KEY (state_circle_id) REFERENCES state_circles(id) ON DELETE SET NULL`,
       `ALTER TABLE management_registrations ADD COLUMN country_id INT NULL`,
@@ -654,6 +661,8 @@ async function initDatabase() {
       `ALTER TABLE customer_registrations ADD CONSTRAINT fk_customer_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL`,
       `ALTER TABLE customer_registrations ADD CONSTRAINT fk_customer_business_type FOREIGN KEY (business_type_id) REFERENCES business_types(id) ON DELETE SET NULL`,
       `ALTER TABLE customer_registrations ADD CONSTRAINT fk_customer_unit FOREIGN KEY (unit_id) REFERENCES units(id) ON DELETE SET NULL`,
+      `ALTER TABLE customer_registrations ADD COLUMN business_position_id INT NULL`,
+      `ALTER TABLE customer_registrations ADD CONSTRAINT fk_customer_business_position FOREIGN KEY (business_position_id) REFERENCES designations(id) ON DELETE SET NULL`,
       `ALTER TABLE lakhpati_didi_registrations ADD COLUMN first_name VARCHAR(100) NULL`,
       `ALTER TABLE lakhpati_didi_registrations ADD COLUMN middle_name VARCHAR(100) NULL`,
       `ALTER TABLE lakhpati_didi_registrations ADD COLUMN last_name VARCHAR(100) NULL`,
@@ -695,6 +704,8 @@ async function initDatabase() {
       `ALTER TABLE lakhpati_didi_registrations ADD COLUMN country_division_id INT NULL`,
       `ALTER TABLE lakhpati_didi_registrations ADD CONSTRAINT fk_lakhpati_country FOREIGN KEY (country_id) REFERENCES countries(id) ON DELETE SET NULL`,
       `ALTER TABLE lakhpati_didi_registrations ADD CONSTRAINT fk_lakhpati_country_division FOREIGN KEY (country_division_id) REFERENCES country_divisions(id) ON DELETE SET NULL`,
+      `ALTER TABLE lakhpati_didi_registrations ADD COLUMN business_position_id INT NULL`,
+      `ALTER TABLE lakhpati_didi_registrations ADD CONSTRAINT fk_lakhpati_business_position FOREIGN KEY (business_position_id) REFERENCES designations(id) ON DELETE SET NULL`,
       `ALTER TABLE farmer_registrations MODIFY COLUMN name VARCHAR(255) NULL`,
       `ALTER TABLE farmer_registrations ADD COLUMN state_circle_id INT NULL`,
       `ALTER TABLE farmer_registrations ADD CONSTRAINT fk_farmer_state_circle FOREIGN KEY (state_circle_id) REFERENCES state_circles(id) ON DELETE SET NULL`,
@@ -707,6 +718,8 @@ async function initDatabase() {
       `ALTER TABLE farmer_registrations ADD COLUMN block_id INT NULL`,
       `ALTER TABLE farmer_registrations ADD COLUMN circle_id INT NULL`,
       `ALTER TABLE farmer_registrations ADD COLUMN gram_panchayat_id INT NULL`,
+      `ALTER TABLE farmer_registrations ADD COLUMN business_position_id INT NULL`,
+      `ALTER TABLE farmer_registrations ADD CONSTRAINT fk_farmer_business_position FOREIGN KEY (business_position_id) REFERENCES designations(id) ON DELETE SET NULL`,
       `ALTER TABLE farmer_registrations ADD COLUMN business_category_id INT NULL`,
       `ALTER TABLE farmer_registrations ADD COLUMN business_sub_category_id INT NULL`,
       `ALTER TABLE farmer_registrations ADD COLUMN business_type_id INT NULL`,
@@ -816,17 +829,54 @@ async function initDatabase() {
         console.log(`Added FK ${constraintName} on ${table}.${column}`);
       }
     }
+    async function dropColumnIfExists(table, column) {
+      const [rows] = await connection.query(
+        'SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?',
+        [dbName, table, column]
+      );
+      if (rows.length > 0) {
+        await connection.query(`ALTER TABLE \`${table}\` DROP COLUMN \`${column}\``);
+        console.log(`Dropped ${table}.${column}`);
+      }
+    }
+    try {
+      await dropColumnIfExists('designations', 'designation_type');
+    } catch (e) {
+      console.warn('Drop designations.designation_type:', e.message);
+    }
     try {
       await addColumnIfMissing('customer_registrations', 'state_sub_division_id', 'INT NULL');
       await addFkIfMissing('customer_registrations', 'fk_customer_state_sub_division', 'state_sub_division_id', 'state_sub_divisions');
       await addColumnIfMissing('customer_registrations', 'block_id', 'INT NULL');
       await addFkIfMissing('customer_registrations', 'fk_customer_block', 'block_id', 'blocks');
+      await addColumnIfMissing('customer_registrations', 'photo_path', 'VARCHAR(255) NULL');
       await addColumnIfMissing('lakhpati_didi_registrations', 'state_sub_division_id', 'INT NULL');
       await addFkIfMissing('lakhpati_didi_registrations', 'fk_lakhpati_state_sub_division', 'state_sub_division_id', 'state_sub_divisions');
       await addColumnIfMissing('lakhpati_didi_registrations', 'block_id', 'INT NULL');
       await addFkIfMissing('lakhpati_didi_registrations', 'fk_lakhpati_block', 'block_id', 'blocks');
+      await addColumnIfMissing('lakhpati_didi_registrations', 'photo_path', 'VARCHAR(255) NULL');
       await addColumnIfMissing('farmer_registrations', 'vidhan_sabha_id', 'INT NULL');
       await addFkIfMissing('farmer_registrations', 'fk_farmer_vidhan_sabha', 'vidhan_sabha_id', 'vidhan_sabhas');
+      // Ensure all registration tables have business columns + FKs (safe idempotent add; no drop)
+      const businessColumns = [
+        { column: 'business_position_id', def: 'INT NULL', refTable: 'designations', fkSuffix: 'business_position' },
+        { column: 'business_category_id', def: 'INT NULL', refTable: 'business_categories', fkSuffix: 'business_category' },
+        { column: 'business_sub_category_id', def: 'INT NULL', refTable: 'business_sub_categories', fkSuffix: 'business_sub_category' },
+        { column: 'product_id', def: 'INT NULL', refTable: 'products', fkSuffix: 'product' },
+        { column: 'business_type_id', def: 'INT NULL', refTable: 'business_types', fkSuffix: 'business_type' },
+      ];
+      const tablePrefixes = {
+        farmer_registrations: 'fk_farmer',
+        customer_registrations: 'fk_customer',
+        lakhpati_didi_registrations: 'fk_lakhpati',
+        management_registrations: 'fk_mgmt',
+      };
+      for (const [table, prefix] of Object.entries(tablePrefixes)) {
+        for (const { column, def, refTable, fkSuffix } of businessColumns) {
+          await addColumnIfMissing(table, column, def);
+          await addFkIfMissing(table, `${prefix}_${fkSuffix}`, column, refTable);
+        }
+      }
     } catch (e) {
       console.warn('Safe registration migration:', e.message);
     }
@@ -880,6 +930,19 @@ async function initDatabase() {
       }
     } catch (e) {
       console.warn('Migration management_registrations net worth columns:', e.message);
+    }
+    // Migrate management_registrations: existing_terms_according_to_target VARCHAR -> DECIMAL (align with form numeric field)
+    try {
+      const [cols] = await connection.query(
+        "SELECT COLUMN_NAME, DATA_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'management_registrations' AND COLUMN_NAME = 'existing_terms_according_to_target'",
+        [dbName]
+      );
+      if (cols.length > 0 && cols[0].DATA_TYPE.toLowerCase() === 'varchar') {
+        await connection.query('ALTER TABLE management_registrations MODIFY COLUMN existing_terms_according_to_target DECIMAL(15,2) NULL');
+        console.log('Migrated management_registrations.existing_terms_according_to_target to DECIMAL(15,2).');
+      }
+    } catch (e) {
+      console.warn('Migration management_registrations existing_terms_according_to_target:', e.message);
     }
     // Ensure villages has gram_panchayat_id (for DBs where villages still has panchayat_samiti_id)
     try {
