@@ -342,6 +342,38 @@ export default function UserDetailPage() {
     }
   }
 
+  async function handleDeleteUser() {
+    if (!data) return;
+    // Basic browser confirm; prevents accidental deletion
+    // eslint-disable-next-line no-alert
+    const ok = window.confirm('Are you sure you want to delete this user? This action cannot be undone.');
+    if (!ok) return;
+
+    let api;
+    if (type === 'management') api = registrationsApi.management;
+    else if (type === 'farmer') api = registrationsApi.farmer;
+    else if (type === 'customer') api = registrationsApi.customer;
+    else if (type === 'lakhpatiDidi') api = registrationsApi.lakhpatiDidi;
+    else {
+      setError('Unknown user type – cannot delete.');
+      return;
+    }
+    try {
+      setError(null);
+      setLoading(true);
+      const res = await api.delete(id);
+      if (!res || !res.success) {
+        setError(res?.message || 'Failed to delete user.');
+        setLoading(false);
+        return;
+      }
+      navigate('/user-details');
+    } catch (err) {
+      setError(err.message || 'Failed to delete user.');
+      setLoading(false);
+    }
+  }
+
   const detailEntries = [];
   const fileEntries = [];
   let profile = null;
@@ -589,6 +621,16 @@ export default function UserDetailPage() {
                 </div>
               </div>
             )}
+            <div style={styles.footerActions}>
+              <button
+                type="button"
+                onClick={handleDeleteUser}
+                style={styles.deleteBtn}
+                disabled={loading}
+              >
+                Delete User
+              </button>
+            </div>
           </>
         )}
       </div>
@@ -1019,6 +1061,23 @@ const styles = {
   muted: {
     marginTop: '0.5rem',
     color: '#6b7280',
+  },
+  footerActions: {
+    marginTop: '1rem',
+    paddingTop: '0.75rem',
+    borderTop: '1px solid #e5e7eb',
+    display: 'flex',
+    justifyContent: 'flex-end',
+  },
+  deleteBtn: {
+    padding: '0.4rem 0.9rem',
+    borderRadius: 4,
+    border: '1px solid #dc2626',
+    background: '#fef2f2',
+    color: '#b91c1c',
+    fontSize: '0.85rem',
+    fontWeight: 600,
+    cursor: 'pointer',
   },
 };
 
