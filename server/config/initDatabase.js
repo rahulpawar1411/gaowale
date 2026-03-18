@@ -1,7 +1,7 @@
 const mysql = require('mysql2/promise');
-require('dotenv').config();
+const { env } = require('./env');
 
-const dbName = process.env.DB_NAME || 'gao0.2';
+const dbName = env.DB_NAME;
 
 const CREATE_TABLE_STATEMENTS = [
   `CREATE TABLE IF NOT EXISTS continents (
@@ -226,6 +226,75 @@ const CREATE_TABLE_STATEMENTS = [
     FOREIGN KEY (business_position_id) REFERENCES designations(id) ON DELETE SET NULL,
     FOREIGN KEY (business_sector_id) REFERENCES business_sectors(id) ON DELETE SET NULL,
     FOREIGN KEY (business_category_id) REFERENCES business_categories(id) ON DELETE SET NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS business_unit_allotments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    client_id VARCHAR(36) UNIQUE NULL,
+    business_category_id INT NULL,
+    business_sub_category_id INT NULL,
+    product_id INT NULL,
+    business_type_id INT NULL,
+    unit_type_id INT NULL,
+    business_cluster_name VARCHAR(255) NULL,
+    unit_company_name VARCHAR(255) NULL,
+    beneficiary_name VARCHAR(255) NULL,
+    aadhar_card_number VARCHAR(20) NULL,
+    pan_card_number VARCHAR(20) NULL,
+    shg_membership_certificate VARCHAR(10) NULL,
+    shg_membership_certificate_file VARCHAR(255) NULL,
+    small_landholder_certificate VARCHAR(10) NULL,
+    small_landholder_certificate_file VARCHAR(255) NULL,
+    caste_certificate_scst VARCHAR(10) NULL,
+    caste_certificate_scst_file VARCHAR(255) NULL,
+    special_category_certificate VARCHAR(10) NULL,
+    special_category_certificate_file VARCHAR(255) NULL,
+    udid_disability_certificate VARCHAR(10) NULL,
+    udid_disability_certificate_file VARCHAR(255) NULL,
+    training_certificate_file VARCHAR(255) NULL,
+    educational_marks_sheet_file VARCHAR(255) NULL,
+    school_leaving_certificate_file VARCHAR(255) NULL,
+    birth_certificate_file VARCHAR(255) NULL,
+    domicile_nationality_certificate_file VARCHAR(255) NULL,
+    cibil_report_score VARCHAR(50) NULL,
+    bank_name VARCHAR(255) NULL,
+    bank_branch_city VARCHAR(255) NULL,
+    bank_branch_taluka VARCHAR(255) NULL,
+    bank_branch_district VARCHAR(255) NULL,
+    bank_branch_state VARCHAR(255) NULL,
+    bank_branch_manager_name VARCHAR(255) NULL,
+    bank_branch_manager_mobile VARCHAR(20) NULL,
+    bank_branch_ifsc_code VARCHAR(20) NULL,
+    bank_current_account_cancelled_cheque_file VARCHAR(255) NULL,
+    bank_saving_account_passbook_first_page_file VARCHAR(255) NULL,
+    land_plot_finalized_30_years VARCHAR(10) NULL,
+    land_plot_finalized_30_years_file VARCHAR(255) NULL,
+    land_owner_name VARCHAR(255) NULL,
+    land_owner_mobile VARCHAR(20) NULL,
+    land_address_gis TEXT NULL,
+    land_current_location VARCHAR(255) NULL,
+    land_gis_map_file VARCHAR(255) NULL,
+    land_7_12_8a_papers_file VARCHAR(255) NULL,
+    land_other_rights_j_certificate_file VARCHAR(255) NULL,
+    udyami_certificate VARCHAR(10) NULL,
+    udyami_certificate_file VARCHAR(255) NULL,
+    shop_act_gumasta_license_file VARCHAR(255) NULL,
+    fssai_certificate_file VARCHAR(255) NULL,
+    gst_certificate_file VARCHAR(255) NULL,
+    pf_esic_tan_certificate_file VARCHAR(255) NULL,
+    factory_license_file VARCHAR(255) NULL,
+    pollution_certificate_file VARCHAR(255) NULL,
+    bank_fin_undertaking_form_file VARCHAR(255) NULL,
+    bank_fin_dpr_file VARCHAR(255) NULL,
+    bank_fin_quotation_machinery_file VARCHAR(255) NULL,
+    bank_fin_quotation_boundary_wall_file VARCHAR(255) NULL,
+    bank_fin_tie_up_agreement_file VARCHAR(255) NULL,
+    bank_fin_loan_sanction_letter_file VARCHAR(255) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (business_category_id) REFERENCES business_categories(id) ON DELETE SET NULL,
+    FOREIGN KEY (business_sub_category_id) REFERENCES business_sub_categories(id) ON DELETE SET NULL,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL,
+    FOREIGN KEY (business_type_id) REFERENCES business_types(id) ON DELETE SET NULL,
+    FOREIGN KEY (unit_type_id) REFERENCES types_of_units(id) ON DELETE SET NULL
   )`,
   `CREATE TABLE IF NOT EXISTS management_registrations (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -468,9 +537,9 @@ const CREATE_TABLE_STATEMENTS = [
 
 async function initDatabase() {
   const connectionConfig = {
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
+    host: env.DB_HOST,
+    user: env.DB_USER,
+    password: env.DB_PASSWORD,
   };
 
   let connection;
@@ -663,6 +732,7 @@ async function initDatabase() {
       `ALTER TABLE customer_registrations ADD CONSTRAINT fk_customer_unit FOREIGN KEY (unit_id) REFERENCES units(id) ON DELETE SET NULL`,
       `ALTER TABLE customer_registrations ADD COLUMN business_position_id INT NULL`,
       `ALTER TABLE customer_registrations ADD CONSTRAINT fk_customer_business_position FOREIGN KEY (business_position_id) REFERENCES designations(id) ON DELETE SET NULL`,
+      // NOTE: Business Unit Allotment is stored in business_unit_allotments (not in customer_registrations).
       `ALTER TABLE lakhpati_didi_registrations ADD COLUMN first_name VARCHAR(100) NULL`,
       `ALTER TABLE lakhpati_didi_registrations ADD COLUMN middle_name VARCHAR(100) NULL`,
       `ALTER TABLE lakhpati_didi_registrations ADD COLUMN last_name VARCHAR(100) NULL`,
@@ -783,7 +853,7 @@ async function initDatabase() {
       'continents', 'countries', 'country_divisions', 'states', 'state_circles', 'state_divisions', 'state_sub_divisions',
       'regions', 'zones', 'vidhan_sabhas', 'talukas', 'blocks', 'circles', 'gram_panchayats', 'villages',
       'products', 'business_types', 'units', 'types_of_units', 'business_categories', 'business_sub_categories',
-      'designations', 'business_positions', 'business_sectors', 'position_allotments',
+      'designations', 'business_positions', 'business_sectors', 'position_allotments', 'business_unit_allotments',
     ];
     for (const t of masterTables) {
       alterStatements.push(`ALTER TABLE \`${t}\` ADD COLUMN client_id VARCHAR(36) UNIQUE NULL`);
@@ -877,6 +947,64 @@ async function initDatabase() {
           await addFkIfMissing(table, `${prefix}_${fkSuffix}`, column, refTable);
         }
       }
+
+      // Business Unit Allotments: add required columns/FKs for admin form (idempotent)
+      await addColumnIfMissing('business_unit_allotments', 'business_sub_category_id', 'INT NULL');
+      await addFkIfMissing('business_unit_allotments', 'fk_bua_business_sub_category', 'business_sub_category_id', 'business_sub_categories');
+      await addColumnIfMissing('business_unit_allotments', 'business_cluster_name', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'unit_company_name', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'beneficiary_name', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'aadhar_card_number', 'VARCHAR(20) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'pan_card_number', 'VARCHAR(20) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'shg_membership_certificate', 'VARCHAR(10) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'shg_membership_certificate_file', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'small_landholder_certificate', 'VARCHAR(10) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'small_landholder_certificate_file', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'caste_certificate_scst', 'VARCHAR(10) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'caste_certificate_scst_file', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'special_category_certificate', 'VARCHAR(10) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'special_category_certificate_file', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'udid_disability_certificate', 'VARCHAR(10) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'udid_disability_certificate_file', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'training_certificate_file', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'educational_marks_sheet_file', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'school_leaving_certificate_file', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'birth_certificate_file', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'domicile_nationality_certificate_file', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'cibil_report_score', 'VARCHAR(50) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'bank_name', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'bank_branch_city', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'bank_branch_taluka', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'bank_branch_district', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'bank_branch_state', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'bank_branch_manager_name', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'bank_branch_manager_mobile', 'VARCHAR(20) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'bank_branch_ifsc_code', 'VARCHAR(20) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'bank_current_account_cancelled_cheque_file', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'bank_saving_account_passbook_first_page_file', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'land_plot_finalized_30_years', 'VARCHAR(10) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'land_plot_finalized_30_years_file', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'land_owner_name', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'land_owner_mobile', 'VARCHAR(20) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'land_address_gis', 'TEXT NULL');
+      await addColumnIfMissing('business_unit_allotments', 'land_current_location', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'land_gis_map_file', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'land_7_12_8a_papers_file', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'land_other_rights_j_certificate_file', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'udyami_certificate', 'VARCHAR(10) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'udyami_certificate_file', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'shop_act_gumasta_license_file', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'fssai_certificate_file', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'gst_certificate_file', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'pf_esic_tan_certificate_file', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'factory_license_file', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'pollution_certificate_file', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'bank_fin_undertaking_form_file', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'bank_fin_dpr_file', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'bank_fin_quotation_machinery_file', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'bank_fin_quotation_boundary_wall_file', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'bank_fin_tie_up_agreement_file', 'VARCHAR(255) NULL');
+      await addColumnIfMissing('business_unit_allotments', 'bank_fin_loan_sanction_letter_file', 'VARCHAR(255) NULL');
     } catch (e) {
       console.warn('Safe registration migration:', e.message);
     }

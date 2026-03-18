@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { masterApi, registrationsApi } from '../services/api';
+import { masterApi, registrationsApi, filesApi } from '../services/api';
 
 const BUSINESS_LABELS_MR = {
   'business-categories': {
@@ -17,6 +17,67 @@ const BUSINESS_LABELS_MR = {
   'business-types': {
     name: 'व्यवसाय प्रकार',
     product_id: 'उत्पादन निवडा',
+  },
+  'business-unit-allotments': {
+    business_category_id: 'व्यवसाय श्रेणी',
+    business_sub_category_id: 'उप-व्यवसाय श्रेणी',
+    product_id: 'उत्पादन',
+    business_type_id: 'व्यवसायाचा प्रकार',
+    unit_type_id: 'युनिट / कंपनीचा प्रकार',
+    business_cluster_name: 'व्यवसाय क्लस्टर नाव',
+    unit_company_name: 'युनिट / कंपनीचे नाव',
+    beneficiary_name: 'लाभार्थ्याचे नाव',
+    aadhar_card_number: 'आधार क्रमांक',
+    pan_card_number: 'पॅन कार्ड क्रमांक',
+    shg_membership_certificate: 'एसएचजी सदस्यत्व प्रमाणपत्र (होय/नाही)',
+    shg_membership_certificate_file: 'एसएचजी सदस्यत्व प्रमाणपत्र फाइल',
+    small_landholder_certificate: 'लघु/कमी जमीनधारक / वनहक्क धारक प्रमाणपत्र (होय/नाही)',
+    small_landholder_certificate_file: 'जमीनधारक / वनहक्क प्रमाणपत्र फाइल',
+    caste_certificate_scst: 'अनुसूचित जाती/जमातीचा जात प्रमाणपत्र (होय/नाही)',
+    caste_certificate_scst_file: 'जाती प्रमाणपत्र फाइल',
+    special_category_certificate: 'विशेष श्रेणी प्रमाणपत्र (होय/नाही)',
+    special_category_certificate_file: 'विशेष श्रेणी प्रमाणपत्र फाइल',
+    udid_disability_certificate: 'अपंग लाभार्थ्यांसाठी यूडीआयडी प्रमाणपत्र (होय/नाही)',
+    udid_disability_certificate_file: 'यूडीआयडी प्रमाणपत्र फाइल',
+    training_certificate_file: 'शासकीय/अर्धशासकीय प्रशिक्षण प्रमाणपत्र',
+    educational_marks_sheet_file: 'शैक्षणिक गुणपत्रक',
+    school_leaving_certificate_file: 'शाळा सोडल्याचा दाखला (टी.सी.)',
+    birth_certificate_file: 'जन्म प्रमाणपत्र',
+    domicile_nationality_certificate_file: 'अधिवास / राष्ट्रीयत्व प्रमाणपत्र',
+    cibil_report_score: 'सिबिल रिपोर्ट स्कोअर',
+    bank_name: 'बँकेचे नाव',
+    bank_branch_city: 'बँक शाखा: गाव / शहर',
+    bank_branch_taluka: 'बँक शाखा: तालुका',
+    bank_branch_district: 'बँक शाखा: जिल्हा',
+    bank_branch_state: 'बँक शाखा: राज्य',
+    bank_branch_manager_name: 'बँक शाखा व्यवस्थापकाचे नाव',
+    bank_branch_manager_mobile: 'बँक शाखा व्यवस्थापकाचा मोबाईल क्रमांक',
+    bank_branch_ifsc_code: 'आयएफएससी कोड',
+    bank_current_account_cancelled_cheque_file: 'चालू खाते (रद्द केलेला चेक अपलोड करा)',
+    bank_saving_account_passbook_first_page_file: 'बचत खाते (पासबुक पहिले पान अपलोड करा)',
+    land_plot_finalized_30_years: 'जमीन / प्लॉट ३० वर्षांसाठी अंतिम व नोंदणीकृत (होय/नाही)',
+    land_plot_finalized_30_years_file: 'जमीन / प्लॉट नोंदणी (फाइल अपलोड करा)',
+    land_owner_name: 'जमीन मालकाचे नाव',
+    land_owner_mobile: 'जमीन मालकाचा मोबाईल क्रमांक',
+    land_address_gis: 'पत्ता (नकाशासह / जीआयएस)',
+    land_current_location: 'सध्याचे स्थान',
+    land_gis_map_file: 'जीआयएस नकाशा फाइल',
+    land_7_12_8a_papers_file: 'जमिनीचे ७/१२ व ८अ कागदपत्रे',
+    land_other_rights_j_certificate_file: '“इतर हक्क” नोंद / “जे” प्रमाणपत्र',
+    udyami_certificate: 'उद्यमी प्रमाणपत्र (होय/नाही)',
+    udyami_certificate_file: 'उद्यमी प्रमाणपत्र फाइल',
+    shop_act_gumasta_license_file: 'शॉप अ‍ॅक्ट / गुमास्ता परवाना',
+    fssai_certificate_file: 'FSSAI प्रमाणपत्र',
+    gst_certificate_file: 'GST प्रमाणपत्र',
+    pf_esic_tan_certificate_file: 'PF / ESIC / TAN प्रमाणपत्र',
+    factory_license_file: 'फॅक्टरी परवाना',
+    pollution_certificate_file: 'प्रदूषण प्रमाणपत्र',
+    bank_fin_undertaking_form_file: 'अंडरटेकिंग फॉर्म (CMEGP) (१ MB)',
+    bank_fin_dpr_file: 'डीपीआर (सविस्तर प्रकल्प अहवाल) (१ MB)',
+    bank_fin_quotation_machinery_file: 'कोटेशन (मशिनरी/उपकरणे/इलेक्ट्रिकल/मेकॅनिकल)',
+    bank_fin_quotation_boundary_wall_file: 'कोटेशन (बाउंडरी वॉल/कंस्ट्रक्शन/शेड)',
+    bank_fin_tie_up_agreement_file: 'टाय-अप करार (गाव माझा उद्योग फाउंडेशन व लाभार्थी) ३० वर्षे',
+    bank_fin_loan_sanction_letter_file: 'बँक कर्ज मंजुरी पत्र',
   },
 };
 
@@ -36,6 +97,67 @@ const BUSINESS_HEADERS_MR = {
   'business-types': {
     name: 'व्यवसाय प्रकार',
     product_id: 'उत्पादन',
+  },
+  'business-unit-allotments': {
+    business_category_id: 'व्यवसाय श्रेणी',
+    business_sub_category_id: 'उप-व्यवसाय श्रेणी',
+    product_id: 'उत्पादन',
+    business_type_id: 'व्यवसायाचा प्रकार',
+    unit_type_id: 'युनिट / कंपनीचा प्रकार',
+    business_cluster_name: 'व्यवसाय क्लस्टर नाव',
+    unit_company_name: 'युनिट / कंपनीचे नाव',
+    beneficiary_name: 'लाभार्थ्याचे नाव',
+    aadhar_card_number: 'आधार क्रमांक',
+    pan_card_number: 'पॅन कार्ड क्रमांक',
+    shg_membership_certificate: 'एसएचजी सदस्यत्व प्रमाणपत्र',
+    shg_membership_certificate_file: 'एसएचजी सदस्यत्व प्रमाणपत्र फाइल',
+    small_landholder_certificate: 'जमीनधारक / वनहक्क प्रमाणपत्र',
+    small_landholder_certificate_file: 'जमीनधारक / वनहक्क प्रमाणपत्र फाइल',
+    caste_certificate_scst: 'जाती प्रमाणपत्र (एससी/एसटी)',
+    caste_certificate_scst_file: 'जाती प्रमाणपत्र फाइल',
+    special_category_certificate: 'विशेष श्रेणी प्रमाणपत्र',
+    special_category_certificate_file: 'विशेष श्रेणी प्रमाणपत्र फाइल',
+    udid_disability_certificate: 'यूडीआयडी प्रमाणपत्र',
+    udid_disability_certificate_file: 'यूडीआयडी प्रमाणपत्र फाइल',
+    training_certificate_file: 'प्रशिक्षण प्रमाणपत्र',
+    educational_marks_sheet_file: 'गुणपत्रक',
+    school_leaving_certificate_file: 'शाळा सोडल्याचा दाखला',
+    birth_certificate_file: 'जन्म प्रमाणपत्र',
+    domicile_nationality_certificate_file: 'अधिवास/राष्ट्रीयत्व प्रमाणपत्र',
+    cibil_report_score: 'सिबिल स्कोअर',
+    bank_name: 'बँकेचे नाव',
+    bank_branch_city: 'बँक शाखा (गाव/शहर)',
+    bank_branch_taluka: 'बँक शाखा (तालुका)',
+    bank_branch_district: 'बँक शाखा (जिल्हा)',
+    bank_branch_state: 'बँक शाखा (राज्य)',
+    bank_branch_manager_name: 'शाखा व्यवस्थापकाचे नाव',
+    bank_branch_manager_mobile: 'शाखा व्यवस्थापकाचा मोबाईल',
+    bank_branch_ifsc_code: 'आयएफएससी कोड',
+    bank_current_account_cancelled_cheque_file: 'चालू खाते (कॅन्सल्ड चेक)',
+    bank_saving_account_passbook_first_page_file: 'बचत खाते (पासबुक पहिले पान)',
+    land_plot_finalized_30_years: 'जमीन / प्लॉट (३० वर्षे) होय/नाही',
+    land_plot_finalized_30_years_file: 'जमीन / प्लॉट फाइल',
+    land_owner_name: 'जमीन मालकाचे नाव',
+    land_owner_mobile: 'जमीन मालकाचा मोबाईल',
+    land_address_gis: 'पत्ता (जीआयएस)',
+    land_current_location: 'सध्याचे स्थान',
+    land_gis_map_file: 'जीआयएस नकाशा',
+    land_7_12_8a_papers_file: '७/१२ व ८अ कागदपत्रे',
+    land_other_rights_j_certificate_file: 'इतर हक्क / जे प्रमाणपत्र',
+    udyami_certificate: 'उद्यमी (होय/नाही)',
+    udyami_certificate_file: 'उद्यमी फाइल',
+    shop_act_gumasta_license_file: 'शॉप/गुमास्ता परवाना',
+    fssai_certificate_file: 'FSSAI प्रमाणपत्र',
+    gst_certificate_file: 'GST प्रमाणपत्र',
+    pf_esic_tan_certificate_file: 'PF/ESIC/TAN प्रमाणपत्र',
+    factory_license_file: 'फॅक्टरी परवाना',
+    pollution_certificate_file: 'प्रदूषण प्रमाणपत्र',
+    bank_fin_undertaking_form_file: 'अंडरटेकिंग फॉर्म (CMEGP)',
+    bank_fin_dpr_file: 'डीपीआर',
+    bank_fin_quotation_machinery_file: 'कोटेशन (मशिनरी/उपकरणे)',
+    bank_fin_quotation_boundary_wall_file: 'कोटेशन (बाउंडरी/शेड)',
+    bank_fin_tie_up_agreement_file: 'टाय-अप करार (३० वर्षे)',
+    bank_fin_loan_sanction_letter_file: 'कर्ज मंजुरी पत्र',
   },
 };
 
@@ -68,6 +190,7 @@ const TITLES_MR = {
   // Allotment menu
   designations: 'पदनाम',
   'position-allotments': 'पद वाटप',
+  'business-unit-allotments': 'व्यवसाय युनिट वाटप',
 };
 
 const DESIGNATION_LABELS_MR = {
@@ -293,11 +416,74 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [dropdownAlert, setDropdownAlert] = useState(null);
+  const [successAlert, setSuccessAlert] = useState(null);
+  const [formResetKey, setFormResetKey] = useState(0);
   const [options, setOptions] = useState({});
   const [form, setForm] = useState({});
   const [editingId, setEditingId] = useState(null);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [filters, setFilters] = useState({});
+  const [buaLookupStatus, setBuaLookupStatus] = useState(null);
+
+  const buaBankFieldNames = new Set([
+    'bank_name',
+    'bank_branch_city',
+    'bank_branch_taluka',
+    'bank_branch_district',
+    'bank_branch_state',
+    'bank_branch_manager_name',
+    'bank_branch_manager_mobile',
+    'bank_branch_ifsc_code',
+    'bank_current_account_cancelled_cheque_file',
+    'bank_saving_account_passbook_first_page_file',
+  ]);
+
+  const buaLandFieldNames = new Set([
+    'land_plot_finalized_30_years',
+    'land_plot_finalized_30_years_file',
+    'land_owner_name',
+    'land_owner_mobile',
+    'land_address_gis',
+    'land_current_location',
+    'land_gis_map_file',
+    'land_7_12_8a_papers_file',
+    'land_other_rights_j_certificate_file',
+  ]);
+
+  const buaComplianceFieldNames = new Set([
+    'udyami_certificate',
+    'udyami_certificate_file',
+    'shop_act_gumasta_license_file',
+    'fssai_certificate_file',
+    'gst_certificate_file',
+    'pf_esic_tan_certificate_file',
+    'factory_license_file',
+    'pollution_certificate_file',
+  ]);
+
+  const buaBankFinancialFieldNames = new Set([
+    'bank_fin_undertaking_form_file',
+    'bank_fin_dpr_file',
+    'bank_fin_quotation_machinery_file',
+    'bank_fin_quotation_boundary_wall_file',
+    'bank_fin_tie_up_agreement_file',
+    'bank_fin_loan_sanction_letter_file',
+  ]);
+
+  const handleMasterFileChange = (fieldName) => async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) {
+      setForm((prev) => ({ ...prev, [fieldName]: '' }));
+      return;
+    }
+    try {
+      const res = await filesApi.upload(file);
+      const path = res && res.success && res.path ? res.path : file.name;
+      setForm((prev) => ({ ...prev, [fieldName]: path }));
+    } catch {
+      setForm((prev) => ({ ...prev, [fieldName]: file.name }));
+    }
+  };
 
   const loadData = useCallback(() => {
     if (!table) return Promise.resolve();
@@ -384,6 +570,95 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
   useEffect(() => {
     loadOptions();
   }, [table, loadOptions]);
+
+  const buaLookup = async (kind) => {
+    if (table !== 'business-unit-allotments') return;
+    const aadhar = (form.aadhar_card_number || '').toString().trim();
+    const pan = (form.pan_card_number || '').toString().trim();
+    const aadharOk = aadhar && aadhar.replace(/\D/g, '').length >= 8; // avoid noisy calls while typing
+    const panOk = pan && pan.length >= 5;
+    if ((kind === 'aadhar' && !aadharOk) || (kind === 'pan' && !panOk)) return;
+    if (!aadharOk && !panOk) return;
+    try {
+      setBuaLookupStatus('Looking up…');
+      const res = await masterApi.lookup('business-unit-allotments', { aadhar, pan });
+      if (res && res.success && res.data) {
+        const row = res.data;
+        // Only fill fields if user hasn't started editing an existing row explicitly
+        if (!editingId) {
+          setForm((prev) => ({
+            ...prev,
+            business_category_id: row.business_category_id ?? prev.business_category_id ?? null,
+            business_sub_category_id: row.business_sub_category_id ?? prev.business_sub_category_id ?? null,
+            product_id: row.product_id ?? prev.product_id ?? null,
+            business_type_id: row.business_type_id ?? prev.business_type_id ?? null,
+            unit_type_id: row.unit_type_id ?? prev.unit_type_id ?? null,
+            business_cluster_name: row.business_cluster_name ?? prev.business_cluster_name ?? '',
+            unit_company_name: row.unit_company_name ?? prev.unit_company_name ?? '',
+            beneficiary_name: row.beneficiary_name ?? prev.beneficiary_name ?? '',
+            aadhar_card_number: row.aadhar_card_number ?? prev.aadhar_card_number ?? '',
+            pan_card_number: row.pan_card_number ?? prev.pan_card_number ?? '',
+            shg_membership_certificate: row.shg_membership_certificate ?? prev.shg_membership_certificate ?? '',
+            shg_membership_certificate_file: row.shg_membership_certificate_file ?? prev.shg_membership_certificate_file ?? '',
+            small_landholder_certificate: row.small_landholder_certificate ?? prev.small_landholder_certificate ?? '',
+            small_landholder_certificate_file: row.small_landholder_certificate_file ?? prev.small_landholder_certificate_file ?? '',
+            caste_certificate_scst: row.caste_certificate_scst ?? prev.caste_certificate_scst ?? '',
+            caste_certificate_scst_file: row.caste_certificate_scst_file ?? prev.caste_certificate_scst_file ?? '',
+            special_category_certificate: row.special_category_certificate ?? prev.special_category_certificate ?? '',
+            special_category_certificate_file: row.special_category_certificate_file ?? prev.special_category_certificate_file ?? '',
+            udid_disability_certificate: row.udid_disability_certificate ?? prev.udid_disability_certificate ?? '',
+            udid_disability_certificate_file: row.udid_disability_certificate_file ?? prev.udid_disability_certificate_file ?? '',
+            training_certificate_file: row.training_certificate_file ?? prev.training_certificate_file ?? '',
+            educational_marks_sheet_file: row.educational_marks_sheet_file ?? prev.educational_marks_sheet_file ?? '',
+            school_leaving_certificate_file: row.school_leaving_certificate_file ?? prev.school_leaving_certificate_file ?? '',
+            birth_certificate_file: row.birth_certificate_file ?? prev.birth_certificate_file ?? '',
+            domicile_nationality_certificate_file: row.domicile_nationality_certificate_file ?? prev.domicile_nationality_certificate_file ?? '',
+            cibil_report_score: row.cibil_report_score ?? prev.cibil_report_score ?? '',
+            bank_name: row.bank_name ?? prev.bank_name ?? '',
+            bank_branch_city: row.bank_branch_city ?? prev.bank_branch_city ?? '',
+            bank_branch_taluka: row.bank_branch_taluka ?? prev.bank_branch_taluka ?? '',
+            bank_branch_district: row.bank_branch_district ?? prev.bank_branch_district ?? '',
+            bank_branch_state: row.bank_branch_state ?? prev.bank_branch_state ?? '',
+            bank_branch_manager_name: row.bank_branch_manager_name ?? prev.bank_branch_manager_name ?? '',
+            bank_branch_manager_mobile: row.bank_branch_manager_mobile ?? prev.bank_branch_manager_mobile ?? '',
+            bank_branch_ifsc_code: row.bank_branch_ifsc_code ?? prev.bank_branch_ifsc_code ?? '',
+            bank_current_account_cancelled_cheque_file: row.bank_current_account_cancelled_cheque_file ?? prev.bank_current_account_cancelled_cheque_file ?? '',
+            bank_saving_account_passbook_first_page_file: row.bank_saving_account_passbook_first_page_file ?? prev.bank_saving_account_passbook_first_page_file ?? '',
+            land_plot_finalized_30_years: row.land_plot_finalized_30_years ?? prev.land_plot_finalized_30_years ?? '',
+            land_plot_finalized_30_years_file: row.land_plot_finalized_30_years_file ?? prev.land_plot_finalized_30_years_file ?? '',
+            land_owner_name: row.land_owner_name ?? prev.land_owner_name ?? '',
+            land_owner_mobile: row.land_owner_mobile ?? prev.land_owner_mobile ?? '',
+            land_address_gis: row.land_address_gis ?? prev.land_address_gis ?? '',
+            land_current_location: row.land_current_location ?? prev.land_current_location ?? '',
+            land_gis_map_file: row.land_gis_map_file ?? prev.land_gis_map_file ?? '',
+            land_7_12_8a_papers_file: row.land_7_12_8a_papers_file ?? prev.land_7_12_8a_papers_file ?? '',
+            land_other_rights_j_certificate_file: row.land_other_rights_j_certificate_file ?? prev.land_other_rights_j_certificate_file ?? '',
+            udyami_certificate: row.udyami_certificate ?? prev.udyami_certificate ?? '',
+            udyami_certificate_file: row.udyami_certificate_file ?? prev.udyami_certificate_file ?? '',
+            shop_act_gumasta_license_file: row.shop_act_gumasta_license_file ?? prev.shop_act_gumasta_license_file ?? '',
+            fssai_certificate_file: row.fssai_certificate_file ?? prev.fssai_certificate_file ?? '',
+            gst_certificate_file: row.gst_certificate_file ?? prev.gst_certificate_file ?? '',
+            pf_esic_tan_certificate_file: row.pf_esic_tan_certificate_file ?? prev.pf_esic_tan_certificate_file ?? '',
+            factory_license_file: row.factory_license_file ?? prev.factory_license_file ?? '',
+            pollution_certificate_file: row.pollution_certificate_file ?? prev.pollution_certificate_file ?? '',
+            bank_fin_undertaking_form_file: row.bank_fin_undertaking_form_file ?? prev.bank_fin_undertaking_form_file ?? '',
+            bank_fin_dpr_file: row.bank_fin_dpr_file ?? prev.bank_fin_dpr_file ?? '',
+            bank_fin_quotation_machinery_file: row.bank_fin_quotation_machinery_file ?? prev.bank_fin_quotation_machinery_file ?? '',
+            bank_fin_quotation_boundary_wall_file: row.bank_fin_quotation_boundary_wall_file ?? prev.bank_fin_quotation_boundary_wall_file ?? '',
+            bank_fin_tie_up_agreement_file: row.bank_fin_tie_up_agreement_file ?? prev.bank_fin_tie_up_agreement_file ?? '',
+            bank_fin_loan_sanction_letter_file: row.bank_fin_loan_sanction_letter_file ?? prev.bank_fin_loan_sanction_letter_file ?? '',
+          }));
+        }
+        setBuaLookupStatus('Existing record found and filled.');
+      } else {
+        setBuaLookupStatus('No existing record found.');
+      }
+    } catch {
+      setBuaLookupStatus(null);
+    } finally {
+      setTimeout(() => setBuaLookupStatus(null), 2500);
+    }
+  };
 
   const getDisplayValue = (row, field) => {
     // Special display logic for Position Allotments: show location chain clearly
@@ -658,6 +933,7 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setSuccessAlert(null);
     // Build payload from fields so every field is always sent (avoids undefined being omitted by JSON.stringify)
     const payload = {};
     fields.forEach((f) => {
@@ -725,6 +1001,49 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
       }
     }
 
+    // Business Unit Allotment: require ALL fields (text/select/file), except conditional file fields when controller is NO.
+    if (table === 'business-unit-allotments') {
+      const isEmpty = (v) => v == null || String(v).trim() === '';
+      const yesNoControllers = {
+        shg_membership_certificate_file: 'shg_membership_certificate',
+        small_landholder_certificate_file: 'small_landholder_certificate',
+        caste_certificate_scst_file: 'caste_certificate_scst',
+        special_category_certificate_file: 'special_category_certificate',
+        udid_disability_certificate_file: 'udid_disability_certificate',
+        land_plot_finalized_30_years_file: 'land_plot_finalized_30_years',
+        udyami_certificate_file: 'udyami_certificate',
+      };
+
+      const missingLabels = [];
+      for (const f of fields) {
+        const controller = yesNoControllers[f.name];
+        if (controller) {
+          const ctlVal = String(form[controller] || '').toUpperCase();
+          if (ctlVal !== 'YES') continue; // file not required
+        }
+
+        // For YES/NO controllers themselves: required
+        const val = form[f.name];
+        if (f.type === 'file') {
+          if (isEmpty(val)) missingLabels.push(getFieldLabel(table, f, lang));
+          continue;
+        }
+        if (f.type === 'select') {
+          if (isEmpty(val)) missingLabels.push(getFieldLabel(table, f, lang));
+          continue;
+        }
+        // text/number/etc.
+        if (isEmpty(val)) missingLabels.push(getFieldLabel(table, f, lang));
+      }
+
+      if (missingLabels.length > 0) {
+        setDropdownAlert(
+          `${lang === 'mr' ? 'कृपया ही फील्ड भराः' : 'Please fill these fields:'} ${missingLabels.join(', ')}`
+        );
+        return;
+      }
+    }
+
     // Units: require Unit Name, Types of Units, and Status — show alert listing missing fields
     if (table === 'units') {
       const missing = [];
@@ -765,6 +1084,10 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
       setError('Please select a Business Category');
       return;
     }
+    if (table === 'business-unit-allotments' && (payload.business_category_id == null || payload.business_category_id === '')) {
+      setDropdownAlert('Please select Business Category');
+      return;
+    }
     derivePayload(payload, options);
     setSubmitLoading(true);
     setError(null);
@@ -779,6 +1102,9 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
           loadOptions();
           setForm({});
           setEditingId(null);
+          if (table === 'business-unit-allotments') setFormResetKey((k) => k + 1);
+          setSuccessAlert(lang === 'mr' ? 'डेटा यशस्वीरित्या जतन झाला.' : 'Submitted successfully.');
+          setTimeout(() => setSuccessAlert(null), 3500);
         } else setError(res.message || 'Failed to save');
       })
       .catch((e) => setError(e.message))
@@ -808,6 +1134,7 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
   const cancelEdit = () => {
     setForm({});
     setEditingId(null);
+    if (table === 'business-unit-allotments') setFormResetKey((k) => k + 1);
   };
 
   const handleDelete = (idOrClientId) => {
@@ -842,8 +1169,476 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
       <div style={styles.card}>
         <h1 style={styles.title}>{heading}</h1>
 
-        <form onSubmit={handleSubmit} style={styles.form}>
-        <div style={styles.formRow}>
+        <form
+          key={table === 'business-unit-allotments' ? `bua-form-${formResetKey}` : `form-${table}`}
+          onSubmit={handleSubmit}
+          style={styles.form}
+        >
+        {table === 'business-unit-allotments' ? (
+          <>
+            <fieldset style={styles.fieldset}>
+              <legend style={styles.legend}>
+                {lang === 'mr'
+                  ? 'व्यवसाय युनिट व लाभार्थ्यांचे सत्यापित केवायसी व इतर  तपशील'
+                  : "BUSINESS UNIT DETAILS & BENEFICIARI'S VERIFIED KYC & OTHER DETAILS"}
+              </legend>
+              <div style={styles.grid4}>
+              {fields
+                .filter((f) => {
+                  if (table !== 'business-unit-allotments') return true;
+                  // first section: hide bank fields
+                  if (buaBankFieldNames.has(f.name)) return false;
+                  // first section: hide land fields
+                  if (buaLandFieldNames.has(f.name)) return false;
+                  // first section: hide compliance fields
+                  if (buaComplianceFieldNames.has(f.name)) return false;
+                  // first section: hide bank-financial fields
+                  if (buaBankFinancialFieldNames.has(f.name)) return false;
+                  // show file field only when corresponding YES/NO is YES
+                  const yesNoMap = {
+                    shg_membership_certificate_file: 'shg_membership_certificate',
+                    small_landholder_certificate_file: 'small_landholder_certificate',
+                    caste_certificate_scst_file: 'caste_certificate_scst',
+                    special_category_certificate_file: 'special_category_certificate',
+                    udid_disability_certificate_file: 'udid_disability_certificate',
+                  };
+                  const controller = yesNoMap[f.name];
+                  if (!controller) return true;
+                  return String(form[controller] || '').toUpperCase() === 'YES';
+                })
+                .map((f) => (
+                <div key={`${table}-${f.name}`} style={styles.fieldWrap}>
+                  <label style={styles.label}>{getFieldLabel(table, f, lang)}</label>
+                  {f.type === 'combobox' ? (
+                    (() => {
+                      const dbOpts = options[f.optionsTable] || [];
+                      const staticList = f.optionStatic || [];
+                      const staticOpts = staticList.filter((s) => !dbOpts.some((o) => (f.optionValue ? o[f.optionValue] : o.id) === s));
+                      const datalistValues = [...dbOpts.map((o) => (f.optionLabel ? o[f.optionLabel] : o.name) ?? (f.optionValue ? o[f.optionValue] : o.id)), ...staticOpts];
+                      const listId = `datalist-${table}-${f.name}`;
+                      return (
+                        <>
+                          <input
+                            type="text"
+                            name={f.name}
+                            list={listId}
+                            value={form[f.name] != null ? form[f.name] : ''}
+                            onChange={(e) => setForm((prev) => ({ ...prev, [f.name]: e.target.value }))}
+                            placeholder={`Select or type ${getFieldLabel(table, f, lang).toLowerCase()}`}
+                            style={styles.input}
+                          />
+                          <datalist id={listId}>
+                            {datalistValues.map((val, i) => (
+                              <option key={val || i} value={val} />
+                            ))}
+                          </datalist>
+                        </>
+                      );
+                    })()
+                  ) : f.type === 'selectWithOther' ? (
+                    (() => {
+                      const dbOpts = options[f.optionsTable] || [];
+                      const staticList = f.optionStatic || [];
+                      const dbValues = (dbOpts || [])
+                        .map((o) => (f.optionLabel ? (o[f.optionLabel] ?? o[f.optionValue]) : (o[f.optionValue] ?? o.name)))
+                        .filter((v) => v != null && v !== '');
+                      const fromDbNotStatic = [...new Set(dbValues)].filter((v) => !staticList.includes(v));
+                      const otherKey = f.name + '_other';
+                      const isOther = form[f.name] === '__OTHER__';
+                      return (
+                        <>
+                          <select
+                            name={f.name}
+                            value={form[f.name] != null ? form[f.name] : ''}
+                            onChange={(e) => setForm((prev) => ({ ...prev, [f.name]: e.target.value }))}
+                            style={styles.input}
+                          >
+                            <option value="">Select...</option>
+                            {staticList.map((s) => (
+                              <option key={s} value={s}>{s}</option>
+                            ))}
+                            {fromDbNotStatic.map((v) => (
+                              <option key={v} value={v}>{v}</option>
+                            ))}
+                            <option value="__OTHER__">Other...</option>
+                          </select>
+                          {isOther && (
+                            <input
+                              type="text"
+                              name={otherKey}
+                              value={form[otherKey] != null ? form[otherKey] : ''}
+                              onChange={(e) => setForm((prev) => ({ ...prev, [otherKey]: e.target.value }))}
+                              placeholder={`Enter ${getFieldLabel(table, f, lang).toLowerCase()}`}
+                              style={{ ...styles.input, marginTop: 6 }}
+                            />
+                          )}
+                        </>
+                      );
+                    })()
+                  ) : f.type === 'select' ? (
+                    (() => {
+                      let dbOpts = options[f.optionsTable] || [];
+                      // Business Unit Allotment cascade: Category -> Sub Category -> Product -> Business Type
+                      if (table === 'business-unit-allotments') {
+                        if (f.name === 'business_sub_category_id') {
+                          const catId = form.business_category_id != null ? Number(form.business_category_id) : null;
+                          if (catId !=null && !Number.isNaN(catId)) {
+                            dbOpts = dbOpts.filter((o) => Number(o.business_category_id) === catId);
+                          } else {
+                            dbOpts = [];
+                          }
+                        } else if (f.name === 'product_id') {
+                          const subId = form.business_sub_category_id != null ? Number(form.business_sub_category_id) : null;
+                          if (subId != null && !Number.isNaN(subId)) {
+                            dbOpts = dbOpts.filter((o) => Number(o.business_sub_category_id) === subId);
+                          } else {
+                            dbOpts = [];
+                          }
+                        } else if (f.name === 'business_type_id') {
+                          const prodId = form.product_id != null ? Number(form.product_id) : null;
+                          if (prodId != null && !Number.isNaN(prodId)) {
+                            dbOpts = dbOpts.filter((o) => Number(o.product_id) === prodId);
+                          } else {
+                            dbOpts = [];
+                          }
+                        }
+                      }
+
+                      const staticList = f.optionStatic || [];
+                      const staticOpts = staticList
+                        .map((s) =>
+                          typeof s === 'object' && s !== null && ('id' in s || 'name' in s)
+                            ? s
+                            : { id: s, name: s }
+                        )
+                        .filter(
+                          (s) =>
+                            !dbOpts.some(
+                              (o) => (o.id != null && o.id === s.id) || o.id === s.id
+                            )
+                        );
+                      const selectOptions = [...dbOpts, ...staticOpts];
+                      return (
+                        <select
+                          name={f.name}
+                          value={form[f.name] != null ? form[f.name] : ''}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            const useNumber =
+                              raw !== '' &&
+                              ((!f.optionValue && f.name.endsWith('_id')) ||
+                                f.optionValue === 'id');
+                            setForm((prev) => {
+                              const next = {
+                                ...prev,
+                                [f.name]: raw === '' ? null : useNumber ? Number(raw) : raw,
+                              };
+                              // Clear BU-allotment dependent fields when parent changes
+                              if (table === 'business-unit-allotments') {
+                                if (f.name === 'business_category_id') {
+                                  next.business_sub_category_id = null;
+                                  next.product_id = null;
+                                  next.business_type_id = null;
+                                } else if (f.name === 'business_sub_category_id') {
+                                  next.product_id = null;
+                                  next.business_type_id = null;
+                                } else if (f.name === 'product_id') {
+                                  next.business_type_id = null;
+                                }
+                              }
+                              return next;
+                            });
+                          }}
+                          style={styles.input}
+                        >
+                          <option value="">{f.optionPlaceholder || 'Select...'}</option>
+                          {selectOptions.map((opt) => {
+                            const optValue =
+                              f.optionValue != null ? opt[f.optionValue] ?? '' : opt.id;
+                            const optLabel =
+                              f.optionLabel != null ? opt[f.optionLabel] ?? opt.name : opt.name;
+                            return (
+                              <option
+                                key={optValue !== '' ? optValue : opt.id}
+                                value={optValue}
+                              >
+                                {optLabel}
+                              </option>
+                            );
+                          })}
+                        </select>
+                      );
+                    })()
+                  ) : f.type === 'file' ? (
+                    <div>
+                      <input
+                        type="file"
+                        name={f.name}
+                        accept="image/*,.pdf"
+                        key={`file-${f.name}-${form[f.name] || 'none'}`}
+                        onChange={handleMasterFileChange(f.name)}
+                        style={styles.input}
+                      />
+                      {form[f.name] && <span style={styles.fileName}>{String(form[f.name]).split('/').pop() || form[f.name]}</span>}
+                    </div>
+                  ) : (
+                    <input
+                      type="text"
+                      inputMode={f.type === 'number' || f.numericOnly ? 'numeric' : undefined}
+                      name={f.name}
+                      value={form[f.name] != null ? form[f.name] : ''}
+                      onChange={(e) => {
+                        let v = e.target.value;
+                        if (f.type === 'number') {
+                          v = v.replace(/[^\d.]/g, '').replace(/(\..*)\./g, '$1');
+                        } else if (f.numericOnly) {
+                          v = v.replace(/\D/g, '');
+                        } else {
+                          v = e.target.value;
+                        }
+                        setForm((prev) => ({ ...prev, [f.name]: v }));
+                      }}
+                      onBlur={() => {
+                        if (table === 'business-unit-allotments' && f.name === 'aadhar_card_number') buaLookup('aadhar');
+                        if (table === 'business-unit-allotments' && f.name === 'pan_card_number') buaLookup('pan');
+                      }}
+                      placeholder={getFieldLabel(table, f, lang)}
+                      style={styles.input}
+                    />
+                  )}
+                </div>
+              ))}
+              </div>
+            </fieldset>
+
+            <fieldset style={styles.fieldset}>
+              <legend style={styles.legend}>
+                {lang === 'mr' ? 'प्रस्तावित शासकीय बँक तपशील' : 'PROPOSED GOVERNMENT BANK DETAILS'}
+              </legend>
+              <div style={styles.grid4}>
+                {fields
+                  .filter((f) => buaBankFieldNames.has(f.name))
+                  .map((f) => (
+                    <div key={`${table}-bank-${f.name}`} style={styles.fieldWrap}>
+                      <label style={styles.label}>{getFieldLabel(table, f, lang)}</label>
+                      {f.type === 'file' ? (
+                        <div>
+                          <input
+                            type="file"
+                            name={f.name}
+                            accept="image/*,.pdf"
+                            key={`file-${f.name}-${form[f.name] || 'none'}`}
+                            onChange={handleMasterFileChange(f.name)}
+                            style={styles.input}
+                          />
+                          {form[f.name] && (
+                            <span style={styles.fileName}>
+                              {String(form[f.name]).split('/').pop() || form[f.name]}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <input
+                          type="text"
+                          inputMode={f.numericOnly ? 'numeric' : undefined}
+                          name={f.name}
+                          value={form[f.name] != null ? form[f.name] : ''}
+                          onChange={(e) => {
+                            let v = e.target.value;
+                            if (f.numericOnly) v = v.replace(/\D/g, '');
+                            if (f.name === 'bank_branch_ifsc_code') v = String(v).toUpperCase().replace(/\s+/g, '');
+                            setForm((prev) => ({ ...prev, [f.name]: v }));
+                          }}
+                          placeholder={getFieldLabel(table, f, lang)}
+                          style={styles.input}
+                        />
+                      )}
+                    </div>
+                  ))}
+              </div>
+            </fieldset>
+
+            <fieldset style={styles.fieldset}>
+              <legend style={styles.legend}>
+                {lang === 'mr'
+                  ? 'जमीन / प्लॉट (युनिट, शॉपपी, केंद्र/फार्म/मॅन्युफॅक्चरिंग/गोदाम) तपशील'
+                  : 'LAND / PLOT (FOR UNITS, SHOPPEE, CENTRE/ FARM/ MANUFACTURING / GODOWN) DETAILS'}
+              </legend>
+              <div style={styles.grid4}>
+                {fields
+                  .filter((f) => buaLandFieldNames.has(f.name))
+                  .filter((f) => {
+                    if (f.name !== 'land_plot_finalized_30_years_file') return true;
+                    return String(form.land_plot_finalized_30_years || '').toUpperCase() === 'YES';
+                  })
+                  .map((f) => (
+                    <div key={`${table}-land-${f.name}`} style={styles.fieldWrap}>
+                      <label style={styles.label}>{getFieldLabel(table, f, lang)}</label>
+                      {f.type === 'select' ? (
+                        <select
+                          name={f.name}
+                          value={form[f.name] != null ? form[f.name] : ''}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            setForm((prev) => {
+                              const next = { ...prev, [f.name]: raw };
+                              if (f.name === 'land_plot_finalized_30_years' && String(raw).toUpperCase() !== 'YES') {
+                                next.land_plot_finalized_30_years_file = '';
+                              }
+                              return next;
+                            });
+                          }}
+                          style={styles.input}
+                        >
+                          <option value="">Select...</option>
+                          {(f.optionStatic || []).map((opt) => (
+                            <option key={opt} value={opt}>
+                              {opt}
+                            </option>
+                          ))}
+                        </select>
+                      ) : f.type === 'file' ? (
+                        <div>
+                          <input
+                            type="file"
+                            name={f.name}
+                            accept="image/*,.pdf"
+                            key={`file-${f.name}-${form[f.name] || 'none'}`}
+                            onChange={handleMasterFileChange(f.name)}
+                            style={styles.input}
+                          />
+                          {form[f.name] && (
+                            <span style={styles.fileName}>
+                              {String(form[f.name]).split('/').pop() || form[f.name]}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <input
+                          type="text"
+                          inputMode={f.numericOnly ? 'numeric' : undefined}
+                          name={f.name}
+                          value={form[f.name] != null ? form[f.name] : ''}
+                          onChange={(e) => {
+                            let v = e.target.value;
+                            if (f.numericOnly) v = v.replace(/\D/g, '');
+                            setForm((prev) => ({ ...prev, [f.name]: v }));
+                          }}
+                          placeholder={getFieldLabel(table, f, lang)}
+                          style={styles.input}
+                        />
+                      )}
+                    </div>
+                  ))}
+              </div>
+            </fieldset>
+
+            <fieldset style={styles.fieldset}>
+              <legend style={styles.legend}>
+                {lang === 'mr' ? 'युनिट कायदेशीर अनुपालन तपशील' : 'UNIT LEGAL COMPLIANCE DETAILS'}
+              </legend>
+              <div style={styles.grid4}>
+                {fields
+                  .filter((f) => buaComplianceFieldNames.has(f.name))
+                  .filter((f) => {
+                    if (f.name !== 'udyami_certificate_file') return true;
+                    return String(form.udyami_certificate || '').toUpperCase() === 'YES';
+                  })
+                  .map((f) => (
+                    <div key={`${table}-compliance-${f.name}`} style={styles.fieldWrap}>
+                      <label style={styles.label}>{getFieldLabel(table, f, lang)}</label>
+                      {f.type === 'select' ? (
+                        <select
+                          name={f.name}
+                          value={form[f.name] != null ? form[f.name] : ''}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            setForm((prev) => {
+                              const next = { ...prev, [f.name]: raw };
+                              if (f.name === 'udyami_certificate' && String(raw).toUpperCase() !== 'YES') {
+                                next.udyami_certificate_file = '';
+                              }
+                              return next;
+                            });
+                          }}
+                          style={styles.input}
+                        >
+                          <option value="">Select...</option>
+                          {(f.optionStatic || []).map((opt) => (
+                            <option key={opt} value={opt}>
+                              {opt}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div>
+                          <input
+                            type="file"
+                            name={f.name}
+                            accept="image/*,.pdf"
+                            key={`file-${f.name}-${form[f.name] || 'none'}`}
+                            onChange={handleMasterFileChange(f.name)}
+                            style={styles.input}
+                          />
+                          {form[f.name] && (
+                            <span style={styles.fileName}>
+                              {String(form[f.name]).split('/').pop() || form[f.name]}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+              </div>
+            </fieldset>
+
+            <fieldset style={styles.fieldset}>
+              <legend style={styles.legend}>
+                {lang === 'mr' ? 'बँक आर्थिक दस्तऐवज' : 'BANK FINANCIAL DOCUMENTS'}
+              </legend>
+              <div style={styles.grid4}>
+                {fields
+                  .filter((f) => buaBankFinancialFieldNames.has(f.name))
+                  .map((f) => (
+                    <div key={`${table}-bankfin-${f.name}`} style={styles.fieldWrap}>
+                      <label style={styles.label}>{getFieldLabel(table, f, lang)}</label>
+                      <div>
+                        <input
+                          type="file"
+                          name={f.name}
+                          accept="image/*,.pdf"
+                          key={`file-${f.name}-${form[f.name] || 'none'}`}
+                          onChange={handleMasterFileChange(f.name)}
+                          style={styles.input}
+                        />
+                        {form[f.name] && (
+                          <span style={styles.fileName}>
+                            {String(form[f.name]).split('/').pop() || form[f.name]}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </fieldset>
+
+            <div style={styles.submitRow}>
+              <button
+                type="submit"
+                disabled={submitLoading}
+                style={editingId ? { ...styles.btnPrimary, ...styles.btnPrimaryEdit } : styles.btnPrimary}
+              >
+                {submitLoading ? 'Saving…' : editingId ? 'Update' : addLabel}
+              </button>
+              {editingId && (
+                <button type="button" onClick={cancelEdit} style={styles.btnSecondary}>
+                  Cancel
+                </button>
+              )}
+            </div>
+          </>
+        ) : (
+          <div style={styles.formRow}>
           {fields.map((f) => (
             <div key={`${table}-${f.name}`} style={styles.fieldWrap}>
               <label style={styles.label}>{getFieldLabel(table, f, lang)}</label>
@@ -916,6 +1711,31 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
               ) : f.type === 'select' ? (
                 (() => {
                   let dbOpts = options[f.optionsTable] || [];
+                  // Business Unit Allotment cascade: Category -> Sub Category -> Product -> Business Type
+                  if (table === 'business-unit-allotments') {
+                    if (f.name === 'business_sub_category_id') {
+                      const catId = form.business_category_id != null ? Number(form.business_category_id) : null;
+                      if (catId !=null && !Number.isNaN(catId)) {
+                        dbOpts = dbOpts.filter((o) => Number(o.business_category_id) === catId);
+                      } else {
+                        dbOpts = [];
+                      }
+                    } else if (f.name === 'product_id') {
+                      const subId = form.business_sub_category_id != null ? Number(form.business_sub_category_id) : null;
+                      if (subId != null && !Number.isNaN(subId)) {
+                        dbOpts = dbOpts.filter((o) => Number(o.business_sub_category_id) === subId);
+                      } else {
+                        dbOpts = [];
+                      }
+                    } else if (f.name === 'business_type_id') {
+                      const prodId = form.product_id != null ? Number(form.product_id) : null;
+                      if (prodId != null && !Number.isNaN(prodId)) {
+                        dbOpts = dbOpts.filter((o) => Number(o.product_id) === prodId);
+                      } else {
+                        dbOpts = [];
+                      }
+                    }
+                  }
                   // When editing a self-referential field (e.g. designations parent_id), exclude current row from options
                   if (editingId && f.optionsTable === table && f.name === 'parent_id') {
                     dbOpts = dbOpts.filter(
@@ -1026,6 +1846,19 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
                             ...prev,
                             [f.name]: raw === '' ? null : useNumber ? Number(raw) : raw,
                           };
+                          // Clear BU-allotment dependent fields when parent changes
+                          if (table === 'business-unit-allotments') {
+                            if (f.name === 'business_category_id') {
+                              next.business_sub_category_id = null;
+                              next.product_id = null;
+                              next.business_type_id = null;
+                            } else if (f.name === 'business_sub_category_id') {
+                              next.product_id = null;
+                              next.business_type_id = null;
+                            } else if (f.name === 'product_id') {
+                              next.business_type_id = null;
+                            }
+                          }
                           // Clear deeper cascade fields for position-allotments
                           if (table === 'position-allotments') {
                             const order = [
@@ -1174,6 +2007,10 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
                         }
                         setForm((prev) => ({ ...prev, [f.name]: v }));
                       }}
+                      onBlur={() => {
+                        if (table === 'business-unit-allotments' && f.name === 'aadhar_card_number') buaLookup('aadhar');
+                        if (table === 'business-unit-allotments' && f.name === 'pan_card_number') buaLookup('pan');
+                      }}
                       placeholder={getFieldLabel(table, f, lang)}
                       style={styles.input}
                     />
@@ -1197,339 +2034,387 @@ export default function MasterCrudPage({ table, title, fields = [], addButtonLab
             )}
           </div>
         </div>
+        )}
         </form>
 
         {dropdownAlert && (
-        <div style={styles.alertOverlay} onClick={() => setDropdownAlert(null)} role="dialog" aria-modal="true" aria-labelledby="dropdown-alert-title">
-          <div style={styles.alertBox} onClick={(e) => e.stopPropagation()}>
-            <p id="dropdown-alert-title" style={styles.alertMessage}>{dropdownAlert}</p>
-            <button type="button" onClick={() => setDropdownAlert(null)} style={styles.alertBtn}>
-              OK
-            </button>
+          <div
+            style={styles.alertOverlay}
+            onClick={() => setDropdownAlert(null)}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="dropdown-alert-title"
+          >
+            <div style={styles.alertBox} onClick={(e) => e.stopPropagation()}>
+              <p id="dropdown-alert-title" style={styles.alertMessage}>
+                {dropdownAlert}
+              </p>
+              <button type="button" onClick={() => setDropdownAlert(null)} style={styles.alertBtn}>
+                OK
+              </button>
+            </div>
           </div>
-        </div>
+        )}
+
+        {successAlert && (
+          <div
+            role="status"
+            style={{
+              ...styles.error,
+              background: '#f0fff4',
+              border: '1px solid #2f855a',
+              color: '#276749',
+              fontWeight: 600,
+            }}
+          >
+            {successAlert}
+          </div>
         )}
 
         {error && <div style={styles.error}>{error}</div>}
 
-        <div style={table === 'position-allotments' ? styles.tableWrapPositionAllotment : (isDesignationTable ? styles.tableWrapCompact : styles.tableWrap)}>
-        <table style={table === 'position-allotments' ? styles.tablePositionAllotment : (isDesignationTable ? styles.tableCompact : styles.table)}>
-          <thead>
-            <tr>
-              <th style={styles.th}>ID</th>
-              {fields.map((f) => (
-                <th key={f.name} style={styles.th}>
-                  {getHeaderLabel(table, f, lang)}
-                </th>
-              ))}
-              <th style={styles.th}>Actions</th>
-            </tr>
-            {table === 'position-allotments' && (
-              <tr>
-                <th style={styles.thFilter}>
-                  <button
-                    type="button"
-                    style={styles.filterResetBtn}
-                    onClick={() =>
-                      setFilters({
-                        zone_id: null,
-                        vidhan_sabha_id: null,
-                        taluka_id: null,
-                        block_id: null,
-                        circle_id: null,
-                        gram_panchayat_id: null,
-                        village_id: null,
-                        business_position_id: null,
-                        business_category_id: null,
-                        user_name: '',
-                      })
+        {table === 'business-unit-allotments' && buaLookupStatus && (
+          <div style={{ ...styles.error, background: '#eef2ff', border: '1px solid #c7d2fe', color: '#1e3a8a' }}>
+            {buaLookupStatus}
+          </div>
+        )}
+
+        {table !== 'business-unit-allotments' && (
+          <div
+            style={
+              table === 'position-allotments'
+                ? styles.tableWrapPositionAllotment
+                : isDesignationTable
+                  ? styles.tableWrapCompact
+                  : styles.tableWrap
+            }
+          >
+            <table
+              style={
+                table === 'position-allotments'
+                  ? styles.tablePositionAllotment
+                  : isDesignationTable
+                    ? styles.tableCompact
+                    : styles.table
+              }
+            >
+              <thead>
+                <tr>
+                <th style={styles.th}>ID</th>
+                {fields.map((f) => (
+                  <th key={f.name} style={styles.th}>
+                    {getHeaderLabel(table, f, lang)}
+                  </th>
+                ))}
+                <th style={styles.th}>Actions</th>
+              </tr>
+              {table === 'position-allotments' && (
+                <tr>
+                  <th style={styles.thFilter}>
+                    <button
+                      type="button"
+                      style={styles.filterResetBtn}
+                      onClick={() =>
+                        setFilters({
+                          zone_id: null,
+                          vidhan_sabha_id: null,
+                          taluka_id: null,
+                          block_id: null,
+                          circle_id: null,
+                          gram_panchayat_id: null,
+                          village_id: null,
+                          business_position_id: null,
+                          business_category_id: null,
+                          user_name: '',
+                        })
+                      }
+                    >
+                      Reset
+                    </button>
+                  </th>
+                  {fields.map((f) => {
+                    if (f.name === 'zone_id') {
+                      return (
+                        <th key={`${f.name}-filter`} style={styles.thFilter}>
+                          <select
+                            value={filters.zone_id || ''}
+                            onChange={(e) =>
+                              setFilters((prev) => ({
+                                ...prev,
+                                zone_id: e.target.value || null,
+                              }))
+                            }
+                            style={styles.filterInput}
+                          >
+                            <option value="">All</option>
+                            {(options.zones || []).map((z) => (
+                              <option key={z.id} value={z.id}>
+                                {z.name}
+                              </option>
+                            ))}
+                          </select>
+                        </th>
+                      );
                     }
-                  >
-                    Reset
-                  </button>
-                </th>
-                {fields.map((f) => {
-                  if (f.name === 'zone_id') {
-                    return (
-                      <th key={`${f.name}-filter`} style={styles.thFilter}>
-                        <select
-                          value={filters.zone_id || ''}
-                          onChange={(e) =>
-                            setFilters((prev) => ({
-                              ...prev,
-                              zone_id: e.target.value || null,
-                            }))
-                          }
-                          style={styles.filterInput}
-                        >
-                          <option value="">All</option>
-                          {(options.zones || []).map((z) => (
-                            <option key={z.id} value={z.id}>
-                              {z.name}
-                            </option>
-                          ))}
-                        </select>
-                      </th>
-                    );
-                  }
-                  if (f.name === 'vidhan_sabha_id') {
-                    return (
-                      <th key={`${f.name}-filter`} style={styles.thFilter}>
-                        <select
-                          value={filters.vidhan_sabha_id || ''}
-                          onChange={(e) =>
-                            setFilters((prev) => ({
-                              ...prev,
-                              vidhan_sabha_id: e.target.value || null,
-                            }))
-                          }
-                          style={styles.filterInput}
-                        >
-                          <option value="">All</option>
-                          {(options['vidhan-sabhas'] || []).map((v) => (
-                            <option key={v.id} value={v.id}>
-                              {v.name}
-                            </option>
-                          ))}
-                        </select>
-                      </th>
-                    );
-                  }
-                  if (f.name === 'taluka_id') {
-                    return (
-                      <th key={`${f.name}-filter`} style={styles.thFilter}>
-                        <select
-                          value={filters.taluka_id || ''}
-                          onChange={(e) =>
-                            setFilters((prev) => ({
-                              ...prev,
-                              taluka_id: e.target.value || null,
-                            }))
-                          }
-                          style={styles.filterInput}
-                        >
-                          <option value="">All</option>
-                          {(options.talukas || []).map((t) => (
-                            <option key={t.id} value={t.id}>
-                              {t.name}
-                            </option>
-                          ))}
-                        </select>
-                      </th>
-                    );
-                  }
-                  if (f.name === 'block_id') {
-                    return (
-                      <th key={`${f.name}-filter`} style={styles.thFilter}>
-                        <select
-                          value={filters.block_id || ''}
-                          onChange={(e) =>
-                            setFilters((prev) => ({
-                              ...prev,
-                              block_id: e.target.value || null,
-                            }))
-                          }
-                          style={styles.filterInput}
-                        >
-                          <option value="">All</option>
-                          {(options.blocks || []).map((b) => (
-                            <option key={b.id} value={b.id}>
-                              {b.name}
-                            </option>
-                          ))}
-                        </select>
-                      </th>
-                    );
-                  }
-                  if (f.name === 'circle_id') {
-                    return (
-                      <th key={`${f.name}-filter`} style={styles.thFilter}>
-                        <select
-                          value={filters.circle_id || ''}
-                          onChange={(e) =>
-                            setFilters((prev) => ({
-                              ...prev,
-                              circle_id: e.target.value || null,
-                            }))
-                          }
-                          style={styles.filterInput}
-                        >
-                          <option value="">All</option>
-                          {(options.circles || []).map((c) => (
-                            <option key={c.id} value={c.id}>
-                              {c.name}
-                            </option>
-                          ))}
-                        </select>
-                      </th>
-                    );
-                  }
-                  if (f.name === 'gram_panchayat_id') {
-                    return (
-                      <th key={`${f.name}-filter`} style={styles.thFilter}>
-                        <select
-                          value={filters.gram_panchayat_id || ''}
-                          onChange={(e) =>
-                            setFilters((prev) => ({
-                              ...prev,
-                              gram_panchayat_id: e.target.value || null,
-                            }))
-                          }
-                          style={styles.filterInput}
-                        >
-                          <option value="">All</option>
-                          {(options['gram-panchayats'] || []).map((g) => (
-                            <option key={g.id} value={g.id}>
-                              {g.name}
-                            </option>
-                          ))}
-                        </select>
-                      </th>
-                    );
-                  }
-                  if (f.name === 'village_id') {
-                    return (
-                      <th key={`${f.name}-filter`} style={styles.thFilter}>
-                        <select
-                          value={filters.village_id || ''}
-                          onChange={(e) =>
-                            setFilters((prev) => ({
-                              ...prev,
-                              village_id: e.target.value || null,
-                            }))
-                          }
-                          style={styles.filterInput}
-                        >
-                          <option value="">All</option>
-                          {(options.villages || []).map((v) => (
-                            <option key={v.id} value={v.id}>
-                              {v.name}
-                            </option>
-                          ))}
-                        </select>
-                      </th>
-                    );
-                  }
-                  if (f.name === 'business_position_id') {
-                    return (
-                      <th key={`${f.name}-filter`} style={styles.thFilter}>
-                        <select
-                          value={filters.business_position_id || ''}
-                          onChange={(e) =>
-                            setFilters((prev) => ({
-                              ...prev,
-                              business_position_id: e.target.value || null,
-                            }))
-                          }
-                          style={styles.filterInput}
-                        >
-                          <option value="">All</option>
-                          {(options.designations || []).map((d) => (
-                            <option key={d.id} value={d.id}>
-                              {d.name}
-                            </option>
-                          ))}
-                        </select>
-                      </th>
-                    );
-                  }
-                  if (f.name === 'business_category_id') {
-                    return (
-                      <th key={`${f.name}-filter`} style={styles.thFilter}>
-                        <select
-                          value={filters.business_category_id || ''}
-                          onChange={(e) =>
-                            setFilters((prev) => ({
-                              ...prev,
-                              business_category_id: e.target.value || null,
-                            }))
-                          }
-                          style={styles.filterInput}
-                        >
-                          <option value="">All</option>
-                          {(options['business-categories'] || []).map((bc) => (
-                            <option key={bc.id} value={bc.id}>
-                              {bc.name}
-                            </option>
-                          ))}
-                        </select>
-                      </th>
-                    );
-                  }
-                  if (f.name === 'user_name') {
-                    return (
-                      <th key={`${f.name}-filter`} style={styles.thFilter}>
-                        <input
-                          type="text"
-                          value={filters.user_name || ''}
-                          onChange={(e) =>
-                            setFilters((prev) => ({
-                              ...prev,
-                              user_name: e.target.value || '',
-                            }))
-                          }
-                          placeholder="Search user"
-                          style={styles.filterInput}
-                        />
-                      </th>
-                    );
-                  }
-                  return <th key={`${f.name}-filter`} />;
-                })}
-                <th />
-              </tr>
-            )}
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={fields.length + 2} style={styles.td}>
-                  Loading…
-                </td>
-              </tr>
-            ) : filteredData.length === 0 ? (
-              <tr>
-                <td colSpan={fields.length + 2} style={styles.td}>
-                  No data.
-                </td>
-              </tr>
-            ) : (
-              filteredData.map((row) => {
-                const rowId = row.client_id != null ? String(row.client_id) : row.id;
-                const displayId = row.client_id != null ? String(row.client_id) : row.id;
-                return (
-                <tr key={rowId}>
-                  <td style={styles.td}>{displayId}</td>
-                  {fields.map((f) => (
-                    <td key={f.name} style={styles.td}>
-                      {getDisplayValue(row, f)}
-                    </td>
-                  ))}
-                  <td style={styles.td}>
-                    <div style={styles.tableActions}>
-                      <button
-                        type="button"
-                        onClick={() => startEdit(row)}
-                        style={styles.btnEdit}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(rowId)}
-                        style={styles.btnDelete}
-                      >
-                        Delete
-                      </button>
-                    </div>
+                    if (f.name === 'vidhan_sabha_id') {
+                      return (
+                        <th key={`${f.name}-filter`} style={styles.thFilter}>
+                          <select
+                            value={filters.vidhan_sabha_id || ''}
+                            onChange={(e) =>
+                              setFilters((prev) => ({
+                                ...prev,
+                                vidhan_sabha_id: e.target.value || null,
+                              }))
+                            }
+                            style={styles.filterInput}
+                          >
+                            <option value="">All</option>
+                            {(options['vidhan-sabhas'] || []).map((v) => (
+                              <option key={v.id} value={v.id}>
+                                {v.name}
+                              </option>
+                            ))}
+                          </select>
+                        </th>
+                      );
+                    }
+                    if (f.name === 'taluka_id') {
+                      return (
+                        <th key={`${f.name}-filter`} style={styles.thFilter}>
+                          <select
+                            value={filters.taluka_id || ''}
+                            onChange={(e) =>
+                              setFilters((prev) => ({
+                                ...prev,
+                                taluka_id: e.target.value || null,
+                              }))
+                            }
+                            style={styles.filterInput}
+                          >
+                            <option value="">All</option>
+                            {(options.talukas || []).map((t) => (
+                              <option key={t.id} value={t.id}>
+                                {t.name}
+                              </option>
+                            ))}
+                          </select>
+                        </th>
+                      );
+                    }
+                    if (f.name === 'block_id') {
+                      return (
+                        <th key={`${f.name}-filter`} style={styles.thFilter}>
+                          <select
+                            value={filters.block_id || ''}
+                            onChange={(e) =>
+                              setFilters((prev) => ({
+                                ...prev,
+                                block_id: e.target.value || null,
+                              }))
+                            }
+                            style={styles.filterInput}
+                          >
+                            <option value="">All</option>
+                            {(options.blocks || []).map((b) => (
+                              <option key={b.id} value={b.id}>
+                                {b.name}
+                              </option>
+                            ))}
+                          </select>
+                        </th>
+                      );
+                    }
+                    if (f.name === 'circle_id') {
+                      return (
+                        <th key={`${f.name}-filter`} style={styles.thFilter}>
+                          <select
+                            value={filters.circle_id || ''}
+                            onChange={(e) =>
+                              setFilters((prev) => ({
+                                ...prev,
+                                circle_id: e.target.value || null,
+                              }))
+                            }
+                            style={styles.filterInput}
+                          >
+                            <option value="">All</option>
+                            {(options.circles || []).map((c) => (
+                              <option key={c.id} value={c.id}>
+                                {c.name}
+                              </option>
+                            ))}
+                          </select>
+                        </th>
+                      );
+                    }
+                    if (f.name === 'gram_panchayat_id') {
+                      return (
+                        <th key={`${f.name}-filter`} style={styles.thFilter}>
+                          <select
+                            value={filters.gram_panchayat_id || ''}
+                            onChange={(e) =>
+                              setFilters((prev) => ({
+                                ...prev,
+                                gram_panchayat_id: e.target.value || null,
+                              }))
+                            }
+                            style={styles.filterInput}
+                          >
+                            <option value="">All</option>
+                            {(options['gram-panchayats'] || []).map((g) => (
+                              <option key={g.id} value={g.id}>
+                                {g.name}
+                              </option>
+                            ))}
+                          </select>
+                        </th>
+                      );
+                    }
+                    if (f.name === 'village_id') {
+                      return (
+                        <th key={`${f.name}-filter`} style={styles.thFilter}>
+                          <select
+                            value={filters.village_id || ''}
+                            onChange={(e) =>
+                              setFilters((prev) => ({
+                                ...prev,
+                                village_id: e.target.value || null,
+                              }))
+                            }
+                            style={styles.filterInput}
+                          >
+                            <option value="">All</option>
+                            {(options.villages || []).map((v) => (
+                              <option key={v.id} value={v.id}>
+                                {v.name}
+                              </option>
+                            ))}
+                          </select>
+                        </th>
+                      );
+                    }
+                    if (f.name === 'business_position_id') {
+                      return (
+                        <th key={`${f.name}-filter`} style={styles.thFilter}>
+                          <select
+                            value={filters.business_position_id || ''}
+                            onChange={(e) =>
+                              setFilters((prev) => ({
+                                ...prev,
+                                business_position_id: e.target.value || null,
+                              }))
+                            }
+                            style={styles.filterInput}
+                          >
+                            <option value="">All</option>
+                            {(options.designations || []).map((d) => (
+                              <option key={d.id} value={d.id}>
+                                {d.name}
+                              </option>
+                            ))}
+                          </select>
+                        </th>
+                      );
+                    }
+                    if (f.name === 'business_category_id') {
+                      return (
+                        <th key={`${f.name}-filter`} style={styles.thFilter}>
+                          <select
+                            value={filters.business_category_id || ''}
+                            onChange={(e) =>
+                              setFilters((prev) => ({
+                                ...prev,
+                                business_category_id: e.target.value || null,
+                              }))
+                            }
+                            style={styles.filterInput}
+                          >
+                            <option value="">All</option>
+                            {(options['business-categories'] || []).map((bc) => (
+                              <option key={bc.id} value={bc.id}>
+                                {bc.name}
+                              </option>
+                            ))}
+                          </select>
+                        </th>
+                      );
+                    }
+                    if (f.name === 'user_name') {
+                      return (
+                        <th key={`${f.name}-filter`} style={styles.thFilter}>
+                          <input
+                            type="text"
+                            value={filters.user_name || ''}
+                            onChange={(e) =>
+                              setFilters((prev) => ({
+                                ...prev,
+                                user_name: e.target.value || '',
+                              }))
+                            }
+                            placeholder="Search user"
+                            style={styles.filterInput}
+                          />
+                        </th>
+                      );
+                    }
+                    return <th key={`${f.name}-filter`} />;
+                  })}
+                  <th />
+                </tr>
+              )}
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={fields.length + 2} style={styles.td}>
+                    Loading…
                   </td>
                 </tr>
-              );
-              })
-            )}
-          </tbody>
-        </table>
-        </div>
+              ) : filteredData.length === 0 ? (
+                <tr>
+                  <td colSpan={fields.length + 2} style={styles.td}>
+                    No data.
+                  </td>
+                </tr>
+              ) : (
+                filteredData.map((row) => {
+                  const rowId = row.client_id != null ? String(row.client_id) : row.id;
+                  const displayId = row.client_id != null ? String(row.client_id) : row.id;
+                  return (
+                  <tr key={rowId}>
+                    <td style={styles.td}>{displayId}</td>
+                    {fields.map((f) => (
+                      <td key={f.name} style={styles.td}>
+                        {getDisplayValue(row, f)}
+                      </td>
+                    ))}
+                    <td style={styles.td}>
+                      <div style={styles.tableActions}>
+                        <button
+                          type="button"
+                          onClick={() => startEdit(row)}
+                          style={styles.btnEdit}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(rowId)}
+                          style={styles.btnDelete}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+                })
+              )}
+            </tbody>
+          </table>
+          </div>
+        )}
         {table === 'designations' && data.length > 0 && (
           <div style={styles.hierarchyWrap}>
             <h2 style={styles.hierarchyTitle}>Designation Hierarchy</h2>
@@ -1855,6 +2740,49 @@ const styles = {
     textAlign: 'center',
     color: '#8B1538',
   },
+  // Management-registration-like section styling
+  fieldset: {
+    borderRadius: 6,
+    border: '1px solid #e0a0a0',
+    padding: '1rem 1.25rem',
+    margin: 0,
+  },
+  legend: { padding: '0 0.5rem', fontWeight: 600, fontSize: '1rem' },
+  grid4: {
+    display: 'grid',
+    // Responsive like ManagementRegistrationPage sections
+    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+    gap: '0.75rem 1rem',
+    marginTop: '0.75rem',
+  },
+  buaSection: {
+    border: '1px solid #e0a0a0',
+    borderRadius: 6,
+    background: '#fff',
+    overflow: 'hidden',
+    marginTop: '0.75rem',
+    marginBottom: '0.75rem',
+  },
+  buaSectionTitle: {
+    fontSize: '1.05rem',
+    fontWeight: 600,
+    color: '#333',
+    padding: '0.6rem 1rem',
+    borderBottom: '1px solid #e4a0a8',
+    background: 'rgba(228, 160, 168, 0.08)',
+  },
+  buaLabelsWrap: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 0,
+  },
+  buaLabel: {
+    fontSize: '0.95rem',
+    fontWeight: 500,
+    color: '#333',
+    padding: '0.65rem 1rem',
+    borderBottom: '1px solid #eee',
+  },
   filterRow: {
     marginTop: '0.5rem',
     marginBottom: '0.75rem',
@@ -1877,7 +2805,7 @@ const styles = {
   },
   form: { marginBottom: '0.5rem' },
   formRow: { display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: '1rem' },
-  fieldWrap: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
+  fieldWrap: { display: 'flex', flexDirection: 'column', gap: '0.25rem', minWidth: 0 },
   label: { fontSize: '0.9rem', fontWeight: 600, color: '#333' },
   radioGroup: { display: 'flex', flexWrap: 'wrap', gap: '0.5rem 1rem', alignItems: 'center' },
   radioLabel: { display: 'flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer', fontSize: '0.9rem', color: '#333' },
@@ -1888,9 +2816,18 @@ const styles = {
     border: '1px solid #aaa',
     background: '#fff',
     color: '#333',
-    minWidth: 180,
+    width: '100%',
+    minWidth: 0,
+    boxSizing: 'border-box',
   },
-  actions: { display: 'flex', gap: '0.5rem', alignItems: 'center' },
+  actions: { display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap', gridColumn: '1 / -1' },
+  submitRow: {
+    marginTop: '0.75rem',
+    display: 'flex',
+    justifyContent: 'center',
+    gap: '0.5rem',
+    flexWrap: 'wrap',
+  },
   btnPrimary: {
     padding: '0.5rem 1rem',
     borderRadius: 4,

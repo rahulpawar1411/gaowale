@@ -1,20 +1,21 @@
-require('dotenv').config();
+const { env } = require('./config/env');
 const app = require('./app');
 const { testConnection } = require('./config/database');
 const { initDatabase } = require('./config/initDatabase');
+const { logger } = require('./utils/logger');
 
-const PORT = process.env.PORT || 5001;
+const PORT = env.PORT;
 
 const start = async () => {
   await initDatabase();
   await testConnection();
 
   app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    logger.info(`Server running on http://localhost:${PORT}`);
   });
 };
 
 start().catch((err) => {
-  console.error('Failed to start server:', err);
+  logger.error({ err }, 'Failed to start server');
   process.exit(1);
 });

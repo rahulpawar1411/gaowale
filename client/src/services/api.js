@@ -48,6 +48,32 @@ export const masterApi = {
   listTables: () => fetch(`${API_BASE}/master`, { headers: getAuthHeaders() }).then((r) => r.json()),
   getTable: (table) => fetch(`${API_BASE}/master/${table}`, { headers: getAuthHeaders() }).then((r) => r.json()),
   getById: (table, id) => fetch(`${API_BASE}/master/${table}/${id}`, { headers: getAuthHeaders() }).then((r) => r.json()),
+  search: (table, params = {}) => {
+    const qs = new URLSearchParams();
+    Object.entries(params || {}).forEach(([k, v]) => {
+      if (v == null) return;
+      const s = String(v).trim();
+      if (!s) return;
+      qs.set(k, s);
+    });
+    const suffix = qs.toString() ? `?${qs.toString()}` : '';
+    return fetch(`${API_BASE}/master/${table}/search${suffix}`, { headers: getAuthHeaders() }).then((r) =>
+      r.json()
+    );
+  },
+  lookup: (table, params = {}) => {
+    const qs = new URLSearchParams();
+    Object.entries(params || {}).forEach(([k, v]) => {
+      if (v == null) return;
+      const s = String(v).trim();
+      if (!s) return;
+      qs.set(k, s);
+    });
+    const suffix = qs.toString() ? `?${qs.toString()}` : '';
+    return fetch(`${API_BASE}/master/${table}/lookup${suffix}`, { headers: getAuthHeaders() }).then((r) =>
+      r.json()
+    );
+  },
   create: (table, data) =>
     fetch(`${API_BASE}/master/${table}`, {
       method: 'POST',

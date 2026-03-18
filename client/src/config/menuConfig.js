@@ -23,6 +23,8 @@ export const MAIN_MENU = [
 export const ALLOTMENT_MENU = [
   { path: '/designation', label: 'Designation', table: 'designations', addButtonLabel: 'Add Designation' },
   { path: '/position-allotment', label: 'Position Allotment', table: 'position-allotments' },
+  { path: '/business-unit-allotment', label: 'Business Unit Allotment', table: 'business-unit-allotments' },
+  { path: '/business-unit-allotment-list', label: 'Business Unit Allotment List', table: 'business-unit-allotments' },
 ];
 
 export const BUSINESS_MENU = [

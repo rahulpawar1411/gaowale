@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
+const { env } = require('../config/env');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'gao-admin-secret-change-in-production';
+const JWT_SECRET = env.JWT_SECRET;
 
 const authenticate = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -29,7 +30,7 @@ const authenticate = (req, res, next) => {
 
 const requireSuperAdmin = (req, res, next) => {
   const u = req.user;
-  if (!u || u.type !== 'admin' || (u.phone !== '1234567890' && u.role !== 'SUPER_ADMIN')) {
+  if (!u || u.type !== 'admin' || (u.phone !== env.SUPER_ADMIN_PHONE && u.role !== 'SUPER_ADMIN')) {
     return res.status(403).json({ success: false, message: 'Not authorized' });
   }
   return next();

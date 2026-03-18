@@ -11,7 +11,6 @@ import {
   getVidhanSabhaTypeOptionsForZone,
 } from '../config/locationCascade';
 const businessFieldConfig = [
-  { name: 'business_position_id', label: 'Business Position', table: 'designations' },
   { name: 'business_category_id', label: 'Business Category', table: 'business-categories' },
   { name: 'business_sub_category_id', label: 'Business Sub Category', table: 'business-sub-categories' },
   { name: 'product_id', label: 'Product', table: 'products' },
@@ -346,7 +345,7 @@ export default function CustomerRegistrationPage({ title, lang = 'en' }) {
     <div style={styles.page}>
       <div style={styles.card}>
         <h1 style={styles.title}>
-          {lang === 'mr' ? 'ग्राहक नोंदणी' : 'Customer Registration'}
+          {title || (lang === 'mr' ? 'ग्राहक नोंदणी' : 'Customer Registration')}
         </h1>
         <form onSubmit={handleSubmit} style={styles.form}>
           <fieldset style={styles.fieldset}>
@@ -394,6 +393,7 @@ export default function CustomerRegistrationPage({ title, lang = 'en' }) {
             </div>
           </fieldset>
 
+          {title !== 'Business Unit Allotment' && (
           <fieldset style={styles.fieldset}>
             <legend style={styles.legend}>
               {lang === 'mr' ? 'भौगोलिक माहिती' : 'Geographic Information'}
@@ -473,7 +473,9 @@ export default function CustomerRegistrationPage({ title, lang = 'en' }) {
               })}
             </div>
           </fieldset>
+          )}
 
+          {title !== 'Business Unit Allotment' && (
           <fieldset style={styles.fieldset}>
             <legend style={styles.legend}>
               {lang === 'mr' ? 'वापरकर्त्याची माहिती' : 'User Details'}
@@ -685,7 +687,9 @@ export default function CustomerRegistrationPage({ title, lang = 'en' }) {
               </FieldWithError>
             </div>
           </fieldset>
+          )}
 
+          {title !== 'Business Unit Allotment' && (
           <fieldset style={styles.fieldset}>
             <legend style={styles.legend}>
               {lang === 'mr' ? 'नामनिर्देशित व्यक्तीची माहिती' : 'Nominee Details'}
@@ -768,6 +772,7 @@ export default function CustomerRegistrationPage({ title, lang = 'en' }) {
               </div>
             </div>
           </fieldset>
+          )}
 
           {error && (
             <div role="alert" style={styles.alertError}>

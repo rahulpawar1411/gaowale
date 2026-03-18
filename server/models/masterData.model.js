@@ -44,6 +44,7 @@ const ALLOWED_TABLES = [
   'business_positions',
   'business_sectors',
   'position_allotments',
+  'business_unit_allotments',
   'lakhpati_didi_users',
 ];
 
@@ -74,8 +75,121 @@ const TABLE_COLUMNS = {
   business_positions: ['client_id', 'name', 'code'],
   business_sectors: ['client_id', 'name', 'code'],
   position_allotments: ['client_id', 'level_type', 'area_id', 'business_position_id', 'business_category_id', 'user_name', 'lakhpati_didi_user_id'],
+  business_unit_allotments: [
+    'client_id',
+    'business_category_id',
+    'business_sub_category_id',
+    'product_id',
+    'business_type_id',
+    'unit_type_id',
+    'business_cluster_name',
+    'unit_company_name',
+    'beneficiary_name',
+    'aadhar_card_number',
+    'pan_card_number',
+    'shg_membership_certificate',
+    'shg_membership_certificate_file',
+    'small_landholder_certificate',
+    'small_landholder_certificate_file',
+    'caste_certificate_scst',
+    'caste_certificate_scst_file',
+    'special_category_certificate',
+    'special_category_certificate_file',
+    'udid_disability_certificate',
+    'udid_disability_certificate_file',
+    'training_certificate_file',
+    'educational_marks_sheet_file',
+    'school_leaving_certificate_file',
+    'birth_certificate_file',
+    'domicile_nationality_certificate_file',
+    'cibil_report_score',
+    'bank_name',
+    'bank_branch_city',
+    'bank_branch_taluka',
+    'bank_branch_district',
+    'bank_branch_state',
+    'bank_branch_manager_name',
+    'bank_branch_manager_mobile',
+    'bank_branch_ifsc_code',
+    'bank_current_account_cancelled_cheque_file',
+    'bank_saving_account_passbook_first_page_file',
+    'land_plot_finalized_30_years',
+    'land_plot_finalized_30_years_file',
+    'land_owner_name',
+    'land_owner_mobile',
+    'land_address_gis',
+    'land_current_location',
+    'land_gis_map_file',
+    'land_7_12_8a_papers_file',
+    'land_other_rights_j_certificate_file',
+    'udyami_certificate',
+    'udyami_certificate_file',
+    'shop_act_gumasta_license_file',
+    'fssai_certificate_file',
+    'gst_certificate_file',
+    'pf_esic_tan_certificate_file',
+    'factory_license_file',
+    'pollution_certificate_file',
+    'bank_fin_undertaking_form_file',
+    'bank_fin_dpr_file',
+    'bank_fin_quotation_machinery_file',
+    'bank_fin_quotation_boundary_wall_file',
+    'bank_fin_tie_up_agreement_file',
+    'bank_fin_loan_sanction_letter_file',
+  ],
   lakhpati_didi_users: ['registration_id', 'first_name', 'middle_name', 'last_name', 'date_of_birth', 'blood_group', 'caste', 'education', 'occupation', 'business', 'mobile_number', 'phone_number', 'whatsapp_number', 'pan_card', 'aadhar_card', 'pincode', 'photo_path', 'password_hash'],
 };
+
+async function findBusinessUnitAllotmentByKyc({ aadhar, pan }) {
+  if (!isAllowed('business_unit_allotments')) return null;
+  const a = aadhar != null ? String(aadhar).trim() : '';
+  const p = pan != null ? String(pan).trim().toUpperCase() : '';
+  if (!a && !p) return null;
+
+  const where = [];
+  const params = [];
+  if (a) {
+    where.push('aadhar_card_number = ?');
+    params.push(a);
+  }
+  if (p) {
+    where.push('pan_card_number = ?');
+    params.push(p);
+  }
+  const sql = `SELECT * FROM \`business_unit_allotments\` WHERE ${where.join(' OR ')} ORDER BY id DESC LIMIT 1`;
+  const [rows] = await pool.execute(sql, params);
+  return rows[0] || null;
+}
+
+async function findBusinessUnitAllotmentsByAadhar(aadhar) {
+  if (!isAllowed('business_unit_allotments')) return [];
+  const a = aadhar != null ? String(aadhar).trim() : '';
+  if (!a) return [];
+  const sql = 'SELECT * FROM `business_unit_allotments` WHERE aadhar_card_number = ? ORDER BY id DESC';
+  const [rows] = await pool.execute(sql, [a]);
+  return rows || [];
+}
+
+async function findBusinessUnitAllotmentsByKyc({ aadhar, pan }) {
+  if (!isAllowed('business_unit_allotments')) return [];
+  const a = aadhar != null ? String(aadhar).trim() : '';
+  const p = pan != null ? String(pan).trim().toUpperCase() : '';
+  if (!a && !p) return [];
+
+  const where = [];
+  const params = [];
+  if (a) {
+    where.push('aadhar_card_number = ?');
+    params.push(a);
+  }
+  if (p) {
+    where.push('pan_card_number = ?');
+    params.push(p);
+  }
+  const sql = `SELECT * FROM \`business_unit_allotments\` WHERE ${where.join(' OR ')} ORDER BY id DESC`;
+  const [rows] = await pool.execute(sql, params);
+  return rows || [];
+}
 
 function isAllowed(table) {
   return ALLOWED_TABLES.includes(table);
@@ -221,6 +335,9 @@ module.exports = {
   getAllowedColumns,
   findAll,
   findById,
+  findBusinessUnitAllotmentByKyc,
+  findBusinessUnitAllotmentsByAadhar,
+  findBusinessUnitAllotmentsByKyc,
   create,
   update,
   remove,

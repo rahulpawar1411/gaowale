@@ -1,11 +1,11 @@
 const mysql = require('mysql2/promise');
-require('dotenv').config();
+const { env } = require('./env');
 
 const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'gao0.2',
+  host: env.DB_HOST,
+  user: env.DB_USER,
+  password: env.DB_PASSWORD,
+  database: env.DB_NAME,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,

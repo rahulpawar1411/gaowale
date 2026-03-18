@@ -1,9 +1,10 @@
 const { pool } = require('../config/database');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { env } = require('../config/env');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'gao-admin-secret-change-in-production';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+const JWT_SECRET = env.JWT_SECRET;
+const JWT_EXPIRES_IN = env.JWT_EXPIRES_IN;
 
 const login = async (req, res) => {
   try {
@@ -55,7 +56,7 @@ const login = async (req, res) => {
             id: userRow.id,
             phone: userRow.phone,
             type: 'admin',
-            role: userRow.phone === '1234567890' ? 'SUPER_ADMIN' : 'ADMIN',
+            role: userRow.phone === env.SUPER_ADMIN_PHONE ? 'SUPER_ADMIN' : 'ADMIN',
           }
         : {
             id: userRow.id,

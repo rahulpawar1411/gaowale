@@ -88,7 +88,7 @@ async function create(data) {
       first_name, middle_name, last_name, date_of_birth, blood_group, caste, education, occupation, business,
       mobile_number, phone_number, whatsapp_number, pan_card, aadhar_card, pincode, photo_path, password_hash,
       nominee_name, nominee_relation, nominee_dob, nominee_phone, nominee_address
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       name,
       contact,
@@ -200,7 +200,8 @@ async function update(id, data) {
 
   const setPassword = password_hash !== undefined ? ', password_hash = ?' : '';
   if (password_hash !== undefined) {
-    updates.splice(39, 0, password_hash); // after photo_path, before nominee_name
+    // insert password_hash right after photo_path
+    updates.splice(40, 0, password_hash);
   }
 
   await pool.execute(

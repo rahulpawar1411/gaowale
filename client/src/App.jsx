@@ -8,6 +8,7 @@ import ManagementRegistrationPage from './views/ManagementRegistrationPage';
 import FarmerRegistrationPage from './views/FarmerRegistrationPage';
 import CustomerRegistrationPage from './views/CustomerRegistrationPage';
 import LakhpatiDidiRegistrationPage from './views/LakhpatiDidiRegistrationPage';
+import BusinessUnitAllotmentListPage from './views/BusinessUnitAllotmentListPage';
 import UsersPage from './views/UsersPage';
 import UserDetailPage from './views/UserDetailPage';
 import LoginPage from './views/LoginPage';
@@ -97,13 +98,17 @@ function ProtectedApp() {
             key={path}
             path={path}
             element={
-              <MasterCrudPage
-                table={table}
-                title={label}
-                fields={entityFields[table] || []}
-                addButtonLabel={addButtonLabel}
-                lang={language}
-              />
+              path === '/business-unit-allotment-list' ? (
+                <BusinessUnitAllotmentListPage title={label} />
+              ) : (
+                <MasterCrudPage
+                  table={table}
+                  title={label}
+                  fields={entityFields[table] || []}
+                  addButtonLabel={addButtonLabel}
+                  lang={language}
+                />
+              )
             }
           />
         ))}
