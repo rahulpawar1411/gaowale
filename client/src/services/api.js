@@ -1,6 +1,8 @@
 import { getAuthHeaders } from '../utils/auth';
 
-const API_BASE = '/api';
+const API_ORIGIN = (import.meta.env.VITE_API_BASE_URL || '').trim();
+// If VITE_API_BASE_URL is not set, fall back to same-origin (works in local dev with proxy / same host deployments).
+const API_BASE = `${API_ORIGIN}/api`.replace(/\/+api$/, '/api');
 
 const authHeaders = () => ({ ...getAuthHeaders(), 'Content-Type': 'application/json' });
 
