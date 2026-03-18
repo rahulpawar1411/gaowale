@@ -47,15 +47,29 @@ app.use(compression());
 app.use(express.json({ limit: env.BODY_LIMIT }));
 app.use(express.urlencoded({ extended: true, limit: env.BODY_LIMIT }));
 
-app.use(
-  '/api',
-  rateLimit({
+// In development we keep rate limiting very permissive to avoid blocking normal UI usage.
+const effectiveRateLimitMax =
+  env.NODE_ENV === 'development' ? Math.max(env.RATE_LIMIT_MAX, 5000) : env.RATE_LIMIT_MAX;
+
+app.use('/api', (req, res, next) => {
+  // Never rate-limit health checks (useful for monitoring/dev tools).
+  if (req.path === '/health') return next();
+  return rateLimit({
     windowMs: env.RATE_LIMIT_WINDOW_MS,
-    max: env.RATE_LIMIT_MAX,
+    max: effectiveRateLimitMax,
     standardHeaders: true,
     legacyHeaders: false,
-  })
-);
+    message: { success: false, message: 'Too many requests, please try again later.' },
+    handler: (req2, res2, next2, options) => {
+      res2.status(options.statusCode || 429).json({
+        success: false,
+        message:
+          (options && options.message && options.message.message) ||
+          'Too many requests, please try again later.',
+      });
+    },
+  })(req, res, next);
+});
 
 // Public access to uploaded files (lightweight static serving)
 app.use(

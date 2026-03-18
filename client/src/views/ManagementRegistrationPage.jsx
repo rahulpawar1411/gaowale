@@ -879,12 +879,18 @@ export default function ManagementRegistrationPage({ title, lang = 'en' }) {
                   inputStyle={styles.input}
                 />
               </FieldWithError>
-              <FileField
-                label={lang === 'mr' ? PERSONAL_LABELS_MR.aadhar_card : 'Aadhaar Card'}
-                name="aadhar_card"
-                value={form.aadhar_card}
-                onChange={handleFileChange}
-              />
+              <FieldWithError fieldName="aadhar_card" fieldErrors={fieldErrors} styles={styles}>
+                <TextField
+                  label={lang === 'mr' ? PERSONAL_LABELS_MR.aadhar_card : 'Aadhaar Card'}
+                  name="aadhar_card"
+                  numericOnly
+                  format="groups4"
+                  value={form.aadhar_card || ''}
+                  onChange={handleTextChange}
+                  style={styles.fieldWrap}
+                  inputStyle={styles.input}
+                />
+              </FieldWithError>
               <FileField
                 label={lang === 'mr' ? PERSONAL_LABELS_MR.voter_id_path : 'Voter ID Card'}
                 name="voter_id_path"

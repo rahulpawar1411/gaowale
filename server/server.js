@@ -10,8 +10,19 @@ const start = async () => {
   await initDatabase();
   await testConnection();
 
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     logger.info(`Server running on http://localhost:${PORT}`);
+  });
+
+  server.on('error', (err) => {
+    if (err && err.code === 'EADDRINUSE') {
+      logger.error(
+        `Port ${PORT} is already in use. Stop the other process or change PORT in server/.env`
+      );
+      process.exit(1);
+    }
+    logger.error({ err }, 'Server listen error');
+    process.exit(1);
   });
 };
 

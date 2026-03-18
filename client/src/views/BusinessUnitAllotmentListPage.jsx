@@ -109,6 +109,7 @@ export default function BusinessUnitAllotmentListPage({ title = 'Business Unit A
   const [showAllDetails, setShowAllDetails] = useState(false);
   const [isNarrow, setIsNarrow] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [actionStatus, setActionStatus] = useState(null);
 
   const fileBaseUrl =
     typeof import.meta.env?.VITE_API_ORIGIN === 'string' && import.meta.env.VITE_API_ORIGIN
@@ -170,6 +171,7 @@ export default function BusinessUnitAllotmentListPage({ title = 'Business Unit A
 
     setLoading(true);
     setError(null);
+    setActionStatus(null);
     setRows([]);
     setSelected(null);
     try {
@@ -187,12 +189,42 @@ export default function BusinessUnitAllotmentListPage({ title = 'Business Unit A
     }
   }
 
+  async function handleDelete(row) {
+    const clientId = row?.client_id;
+    if (clientId == null || clientId === '') {
+      setActionStatus({ type: 'error', text: 'Cannot delete: missing client_id.' });
+      return;
+    }
+    // eslint-disable-next-line no-alert
+    const ok = window.confirm(`Delete Business Unit Allotment record (Client ID: ${clientId})?`);
+    if (!ok) return;
+
+    setActionStatus(null);
+    try {
+      const res = await masterApi.delete(TABLE, clientId);
+      if (!res || !res.success) {
+        setActionStatus({ type: 'error', text: res?.message || 'Delete failed.' });
+        return;
+      }
+      setActionStatus({ type: 'success', text: 'Record deleted successfully.' });
+      if (selected?.client_id === clientId) {
+        setSelected(null);
+        setDetailsOpen(false);
+      }
+      // Refresh current search results
+      await runSearch();
+    } catch (err) {
+      setActionStatus({ type: 'error', text: err?.message || 'Delete failed.' });
+    }
+  }
+
   function clearAll() {
     setAadhar('');
     setPan('');
     setRows([]);
     setSelected(null);
     setError(null);
+    setActionStatus(null);
     setLoading(false);
   }
 
@@ -278,6 +310,11 @@ export default function BusinessUnitAllotmentListPage({ title = 'Business Unit A
         </form>
 
         {error && <div style={styles.error}>{error}</div>}
+        {actionStatus && (
+          <div style={actionStatus.type === 'success' ? styles.alertSuccess : styles.alertError}>
+            {actionStatus.text}
+          </div>
+        )}
 
         {!loading && rows.length === 0 && (String(aadhar || '').trim() || String(pan || '').trim()) && !error && (
           <p style={styles.muted}>No Business Unit Allotment records found for this Aadhaar / PAN.</p>
@@ -305,7 +342,7 @@ export default function BusinessUnitAllotmentListPage({ title = 'Business Unit A
                       <th style={styles.th}>Unit / Company</th>
                       <th style={styles.th}>PAN</th>
                       <th style={styles.th}>Created</th>
-                      {isNarrow && <th style={styles.th}>View</th>}
+                      <th style={styles.th}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -325,8 +362,8 @@ export default function BusinessUnitAllotmentListPage({ title = 'Business Unit A
                           <td style={styles.td}>{r.unit_company_name ?? '-'}</td>
                           <td style={styles.td}>{r.pan_card_number ?? '-'}</td>
                           <td style={styles.td}>{r.created_at ? String(r.created_at).slice(0, 10) : '-'}</td>
-                          {isNarrow && (
-                            <td style={styles.td}>
+                          <td style={styles.td}>
+                            <div style={styles.rowActions}>
                               <button
                                 type="button"
                                 style={styles.viewBtn}
@@ -338,8 +375,18 @@ export default function BusinessUnitAllotmentListPage({ title = 'Business Unit A
                               >
                                 View
                               </button>
-                            </td>
-                          )}
+                              <button
+                                type="button"
+                                style={styles.deleteBtn}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDelete(r);
+                                }}
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </td>
                         </tr>
                       );
                     })}
@@ -706,6 +753,23 @@ const styles = {
     border: '1px solid #fecaca',
     fontSize: '0.9rem',
   },
+  alertError: {
+    padding: '0.5rem 0.75rem',
+    borderRadius: 6,
+    background: '#fef2f2',
+    color: '#b91c1c',
+    border: '1px solid #fecaca',
+    fontSize: '0.9rem',
+  },
+  alertSuccess: {
+    padding: '0.5rem 0.75rem',
+    borderRadius: 6,
+    background: '#ecfdf3',
+    color: '#166534',
+    border: '1px solid #bbf7d0',
+    fontSize: '0.9rem',
+    fontWeight: 600,
+  },
   muted: { margin: 0, color: '#6b7280' },
   grid: {
     display: 'grid',
@@ -749,6 +813,7 @@ const styles = {
   tr: { borderBottom: '1px solid #e5e7eb', cursor: 'pointer' },
   trActive: { borderBottom: '1px solid #e5e7eb', background: '#fff7ed' },
   td: { padding: '0.55rem 0.75rem', verticalAlign: 'top', whiteSpace: 'nowrap' },
+  rowActions: { display: 'flex', gap: '0.45rem', alignItems: 'center' },
   viewBtn: {
     padding: '0.3rem 0.7rem',
     borderRadius: 4,
@@ -756,6 +821,16 @@ const styles = {
     background: '#15803d',
     color: '#fff',
     fontSize: '0.8rem',
+    cursor: 'pointer',
+  },
+  deleteBtn: {
+    padding: '0.3rem 0.7rem',
+    borderRadius: 4,
+    border: '1px solid #dc2626',
+    background: '#fef2f2',
+    color: '#b91c1c',
+    fontSize: '0.8rem',
+    fontWeight: 700,
     cursor: 'pointer',
   },
   detailPane: {

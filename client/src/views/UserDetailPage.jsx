@@ -262,6 +262,25 @@ export default function UserDetailPage() {
     });
     if (needed.size === 0) return;
     needed.forEach((table) => {
+      if (table === 'management-registrations') {
+        // "incharge_user_id" comes from management registrations, which is not a master table.
+        registrationsApi.management
+          .getAll()
+          .then((res) => {
+            const list = res && res.success && Array.isArray(res.data) ? res.data : [];
+            const mapped = list.map((row) => ({
+              id: row.id,
+              name:
+                row.name ||
+                [row.first_name, row.middle_name, row.last_name].filter(Boolean).join(' ').trim() ||
+                row.phone ||
+                '—',
+            }));
+            setMasters((prev) => ({ ...prev, [table]: mapped }));
+          })
+          .catch(() => setMasters((prev) => ({ ...prev, [table]: [] })));
+        return;
+      }
       masterApi
         .getTable(table)
         .then((res) => {
