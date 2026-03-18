@@ -538,6 +538,7 @@ const CREATE_TABLE_STATEMENTS = [
 async function initDatabase() {
   const connectionConfig = {
     host: env.DB_HOST,
+    port: env.DB_PORT,
     user: env.DB_USER,
     password: env.DB_PASSWORD,
   };

@@ -7,7 +7,11 @@ const { logger } = require('./utils/logger');
 const PORT = env.PORT;
 
 const start = async () => {
-  await initDatabase();
+  if (env.AUTO_INIT_DB) {
+    await initDatabase();
+  } else {
+    logger.warn('AUTO_INIT_DB is disabled. Skipping initDatabase().');
+  }
   await testConnection();
 
   const server = app.listen(PORT, () => {
