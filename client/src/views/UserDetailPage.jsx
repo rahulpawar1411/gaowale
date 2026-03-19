@@ -205,6 +205,7 @@ export default function UserDetailPage() {
   const [passwordError, setPasswordError] = useState(null);
   const [passwordSuccess, setPasswordSuccess] = useState(null);
   const [hasPassword, setHasPassword] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   const fileBaseUrl =
     typeof import.meta.env?.VITE_API_ORIGIN === 'string' && import.meta.env.VITE_API_ORIGIN
@@ -215,6 +216,13 @@ export default function UserDetailPage() {
       ? preview.url
       : `${fileBaseUrl}${preview.url}`
     : '';
+
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 768);
+    onResize();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -471,17 +479,17 @@ export default function UserDetailPage() {
   }
 
   return (
-    <div style={styles.page}>
-      <div style={styles.card}>
-        <div style={styles.headerRow}>
-          <button type="button" style={styles.backBtn} onClick={() => navigate('/user-details')}>
+    <div style={{ ...styles.page, ...(isMobile ? styles.pageMobile : {}) }}>
+      <div style={{ ...styles.card, ...(isMobile ? styles.cardMobile : {}) }}>
+        <div style={{ ...styles.headerRow, ...(isMobile ? styles.headerRowMobile : {}) }}>
+          <button type="button" style={{ ...styles.backBtn, ...(isMobile ? styles.topBtnMobile : {}) }} onClick={() => navigate('/user-details')}>
             ← Back to User List
           </button>
-          <h1 style={styles.title}>{typeLabel} User Details</h1>
+          <h1 style={{ ...styles.title, ...(isMobile ? styles.titleMobile : {}) }}>{typeLabel} User Details</h1>
           {data && !hasPassword && (
             <button
               type="button"
-              style={styles.editPasswordBtn}
+              style={{ ...styles.editPasswordBtn, ...(isMobile ? styles.topBtnMobile : {}) }}
               onClick={() => {
                 setShowPasswordEditor((prev) => !prev);
                 setPasswordError(null);
@@ -513,10 +521,10 @@ export default function UserDetailPage() {
             {data && (
               <div style={styles.section}>
                 <div style={styles.sectionHeader}>Account</div>
-                <ul style={styles.detailList}>
-                  <li style={styles.detailItem}>
+                <ul style={{ ...styles.detailList, ...(isMobile ? styles.detailListMobile : {}) }}>
+                  <li style={{ ...styles.detailItem, ...(isMobile ? styles.detailItemMobile : {}) }}>
                     <span style={styles.detailLabel}>Password</span>
-                    <span style={styles.detailValue}>
+                    <span style={{ ...styles.detailValue, ...(isMobile ? styles.detailValueMobile : {}) }}>
                       {hasPassword ? 'Set (locked – cannot change again)' : 'Not set'}
                     </span>
                   </li>
@@ -589,11 +597,13 @@ export default function UserDetailPage() {
                 .map((section) => (
                   <div key={section.key} style={styles.section}>
                     <div style={styles.sectionHeader}>{section.title}</div>
-                    <ul style={styles.detailList}>
+                    <ul style={{ ...styles.detailList, ...(isMobile ? styles.detailListMobile : {}) }}>
                       {sections[section.key].map(({ key, value, label }) => (
-                        <li key={key} style={styles.detailItem}>
+                        <li key={key} style={{ ...styles.detailItem, ...(isMobile ? styles.detailItemMobile : {}) }}>
                           <span style={styles.detailLabel}>{label}</span>
-                          <span style={styles.detailValue}>{formatValue(key, value, masters)}</span>
+                          <span style={{ ...styles.detailValue, ...(isMobile ? styles.detailValueMobile : {}) }}>
+                            {formatValue(key, value, masters)}
+                          </span>
                         </li>
                       ))}
                     </ul>
@@ -613,15 +623,15 @@ export default function UserDetailPage() {
                         ? url.split('/').slice(-1)[0]
                         : 'download';
                     return (
-                      <div key={key} style={styles.fileCard}>
+                      <div key={key} style={{ ...styles.fileCard, ...(isMobile ? styles.fileCardMobile : {}) }}>
                         <div style={styles.fileMetaRow}>
                           <div style={styles.fileLabel}>{label}</div>
                           <div style={styles.fileValue}>{fileName}</div>
                         </div>
-                        <div style={styles.fileActions}>
+                        <div style={{ ...styles.fileActions, ...(isMobile ? styles.fileActionsMobile : {}) }}>
                           <button
                             type="button"
-                            style={styles.viewBtn}
+                            style={{ ...styles.viewBtn, ...(isMobile ? styles.fileActionBtnMobile : {}) }}
                             onClick={() => { setPreviewLoadError(false); setPreview({ url: fullUrl || url, label }); }}
                           >
                             Preview
@@ -629,7 +639,7 @@ export default function UserDetailPage() {
                           <a
                             href={fullUrl || url}
                             download={fileName}
-                            style={styles.downloadBtn}
+                            style={{ ...styles.downloadBtn, ...(isMobile ? styles.fileActionBtnMobile : {}) }}
                           >
                             Download
                           </a>
@@ -644,7 +654,7 @@ export default function UserDetailPage() {
               <button
                 type="button"
                 onClick={handleDeleteUser}
-                style={styles.deleteBtn}
+                style={{ ...styles.deleteBtn, ...(isMobile ? styles.deleteBtnMobile : {}) }}
                 disabled={loading}
               >
                 Delete User
@@ -661,7 +671,7 @@ export default function UserDetailPage() {
           aria-modal="true"
         >
           <div
-            style={styles.previewModal}
+            style={{ ...styles.previewModal, ...(isMobile ? styles.previewModalMobile : {}) }}
             onClick={(e) => e.stopPropagation()}
           >
             <div style={styles.previewHeader}>
@@ -726,10 +736,13 @@ export default function UserDetailPage() {
 
 const styles = {
   page: {
-    padding: '1.5rem 2rem',
+    padding: '0.75rem',
     display: 'flex',
     justifyContent: 'center',
      background: '#fff4e0',
+  },
+  pageMobile: {
+    padding: '0.5rem',
   },
   headerRow: {
     display: 'flex',
@@ -737,6 +750,11 @@ const styles = {
     justifyContent: 'space-between',
     gap: '0.75rem',
     marginBottom: '0.75rem',
+  },
+  headerRowMobile: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    gap: '0.55rem',
   },
   backBtn: {
     padding: '0.35rem 0.85rem',
@@ -753,12 +771,23 @@ const styles = {
     gap: '0.35rem',
     boxShadow: '0 2px 6px rgba(0,0,0,0.18)',
   },
+  topBtnMobile: {
+    width: '100%',
+    justifyContent: 'center',
+    padding: '0.6rem 0.9rem',
+    fontSize: '0.9rem',
+    marginBottom: 0,
+  },
   title: {
     margin: 0,
     fontSize: '1.7rem',
     fontWeight: 700,
     textAlign: 'center',
     color: '#8B1538',
+  },
+  titleMobile: {
+    fontSize: '1.35rem',
+    textAlign: 'left',
   },
   editPasswordBtn: {
     padding: '0.35rem 0.85rem',
@@ -774,12 +803,16 @@ const styles = {
   },
   card: {
     width: '100%',
-    maxWidth: 1040,
+    maxWidth: '100%',
     borderRadius: 8,
     border: '1px solid #e5e7eb',
     background: '#fff',
     boxShadow: '0 6px 18px rgba(0,0,0,0.08)',
     padding: '1.25rem 1.5rem 1.5rem',
+  },
+  cardMobile: {
+    padding: '0.9rem',
+    borderRadius: 10,
   },
   profile: {
     marginBottom: '0.75rem',
@@ -883,10 +916,21 @@ const styles = {
     gap: '0.5rem 1.5rem',
     fontSize: '0.9rem',
   },
+  detailListMobile: {
+    gridTemplateColumns: '1fr',
+    gap: '0.55rem',
+  },
   detailItem: {
     display: 'flex',
     justifyContent: 'space-between',
     gap: '0.5rem',
+  },
+  detailItemMobile: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: '0.2rem',
+    paddingBottom: '0.35rem',
+    borderBottom: '1px dashed #e5e7eb',
   },
   detailLabel: {
     fontWeight: 600,
@@ -895,6 +939,10 @@ const styles = {
   detailValue: {
     color: '#111827',
     textAlign: 'right',
+  },
+  detailValueMobile: {
+    textAlign: 'left',
+    wordBreak: 'break-word',
   },
   filesSection: {
     marginTop: '1rem',
@@ -933,6 +981,9 @@ const styles = {
     gap: '0.35rem',
     background: '#f9fafb',
   },
+  fileCardMobile: {
+    width: '100%',
+  },
   fileMetaRow: {
     display: 'flex',
     flexDirection: 'column',
@@ -951,6 +1002,9 @@ const styles = {
     marginTop: 6,
     display: 'flex',
     gap: 6,
+  },
+  fileActionsMobile: {
+    width: '100%',
   },
   viewBtn: {
     padding: '0.25rem 0.6rem',
@@ -974,6 +1028,11 @@ const styles = {
     textAlign: 'center',
     cursor: 'pointer',
   },
+  fileActionBtnMobile: {
+    flex: 1,
+    padding: '0.5rem 0.65rem',
+    fontSize: '0.88rem',
+  },
   previewOverlay: {
     position: 'fixed',
     inset: 0,
@@ -993,6 +1052,10 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     overflow: 'hidden',
+  },
+  previewModalMobile: {
+    width: '96%',
+    height: '86vh',
   },
   previewHeader: {
     display: 'flex',
@@ -1097,6 +1160,11 @@ const styles = {
     fontSize: '0.85rem',
     fontWeight: 600,
     cursor: 'pointer',
+  },
+  deleteBtnMobile: {
+    width: '100%',
+    padding: '0.65rem 0.9rem',
+    fontSize: '0.95rem',
   },
 };
 

@@ -80,12 +80,20 @@ function buildRow(type, row) {
 }
 
 export default function UsersPage() {
+  const [isMobile, setIsMobile] = useState(false);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [typeFilter, setTypeFilter] = useState('all');
   const [search, setSearch] = useState('');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 768);
+    onResize();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -153,20 +161,20 @@ export default function UsersPage() {
   });
 
   return (
-    <div style={styles.page}>
-      <div style={styles.card}>
-        <h1 style={styles.title}>User Details</h1>
-        <p style={styles.subtitle}>
+    <div style={{ ...styles.page, ...(isMobile ? styles.pageMobile : {}) }}>
+      <div style={{ ...styles.card, ...(isMobile ? styles.cardMobile : {}) }}>
+        <h1 style={{ ...styles.title, ...(isMobile ? styles.titleMobile : {}) }}>User Details</h1>
+        <p style={{ ...styles.subtitle, ...(isMobile ? styles.subtitleMobile : {}) }}>
           All registered users across Management, Farmer, Customer and Lakhpati Didi.
         </p>
 
-        <div style={styles.filtersRow}>
-          <label style={styles.filterLabel}>
+        <div style={{ ...styles.filtersRow, ...(isMobile ? styles.filtersRowMobile : {}) }}>
+          <label style={{ ...styles.filterLabel, ...(isMobile ? styles.filterLabelMobile : {}) }}>
             User type:
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              style={styles.filterSelect}
+              style={{ ...styles.filterSelect, ...(isMobile ? styles.filterControlMobile : {}) }}
             >
               <option value="all">All</option>
               <option value="management">Management</option>
@@ -180,7 +188,7 @@ export default function UsersPage() {
             placeholder="Search by name, number or Aadhar"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={styles.searchInput}
+            style={{ ...styles.searchInput, ...(isMobile ? styles.filterControlMobile : {}) }}
           />
         </div>
 
@@ -189,6 +197,23 @@ export default function UsersPage() {
           <p style={styles.muted}>Loading users…</p>
         ) : filteredRows.length === 0 ? (
           <p style={styles.muted}>No users found.</p>
+        ) : isMobile ? (
+          <div style={styles.mobileList}>
+            {filteredRows.map((row) => (
+              <div key={row.id} style={styles.mobileCard}>
+                <div style={styles.mobileRow}><strong>Type:</strong> {TYPE_LABELS[row.type] || row.type}</div>
+                <div style={styles.mobileRow}><strong>Name:</strong> {row.name || '-'}</div>
+                <div style={styles.mobileRow}><strong>Contact:</strong> {row.contact || '-'}</div>
+                <div style={styles.mobileRow}><strong>State:</strong> {row.state || '-'}</div>
+                <div style={styles.mobileRow}>
+                  <strong>Created:</strong> {row.createdAt ? String(row.createdAt).slice(0, 10) : '-'}
+                </div>
+                <button type="button" style={{ ...styles.viewBtn, ...styles.mobileViewBtn }} onClick={() => handleView(row)}>
+                  View Details
+                </button>
+              </div>
+            ))}
+          </div>
         ) : (
           <div style={styles.tableWrapper}>
             <table style={styles.table}>
@@ -228,14 +253,17 @@ export default function UsersPage() {
 
 const styles = {
   page: {
-    padding: '1.5rem 2rem',
+    padding: '0.75rem',
     display: 'flex',
     justifyContent: 'center',
     background: '#fff4e0',
   },
+  pageMobile: {
+    padding: '0.5rem',
+  },
   card: {
     width: '100%',
-    maxWidth: 1040,
+    maxWidth: '100%',
     background: '#ffffff',
     borderRadius: 8,
     boxShadow: '0 6px 18px rgba(0,0,0,0.08)',
@@ -244,6 +272,10 @@ const styles = {
     flexDirection: 'column',
     gap: '0.75rem',
   },
+  cardMobile: {
+    padding: '0.9rem',
+    borderRadius: 10,
+  },
   title: {
     margin: 0,
     fontSize: '1.6rem',
@@ -251,12 +283,14 @@ const styles = {
     textAlign: 'center',
     color: '#8B1538',
   },
+  titleMobile: { fontSize: '1.35rem', textAlign: 'left' },
   subtitle: {
     margin: '0.15rem 0 0.75rem',
     fontSize: '0.95rem',
     textAlign: 'center',
     color: '#555',
   },
+  subtitleMobile: { textAlign: 'left', fontSize: '0.9rem' },
   filtersRow: {
     marginTop: '0.75rem',
     marginBottom: '0.25rem',
@@ -265,6 +299,11 @@ const styles = {
     alignItems: 'center',
     flexWrap: 'wrap',
   },
+  filtersRowMobile: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    gap: '0.55rem',
+  },
   filterLabel: {
     fontSize: '0.85rem',
     color: '#374151',
@@ -272,18 +311,48 @@ const styles = {
     alignItems: 'center',
     gap: '0.4rem',
   },
+  filterLabelMobile: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: '0.3rem',
+  },
   filterSelect: {
-    padding: '0.25rem 0.5rem',
+    padding: '0.5rem 0.65rem',
     borderRadius: 4,
     border: '1px solid #d1d5db',
-    fontSize: '0.85rem',
+    fontSize: '0.95rem',
   },
   searchInput: {
-    padding: '0.3rem 0.6rem',
+    padding: '0.5rem 0.65rem',
     borderRadius: 4,
     border: '1px solid #d1d5db',
-    fontSize: '0.85rem',
+    fontSize: '0.95rem',
     minWidth: 200,
+  },
+  filterControlMobile: {
+    width: '100%',
+    minWidth: 0,
+    minHeight: 42,
+  },
+  mobileList: {
+    marginTop: '0.5rem',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.6rem',
+  },
+  mobileCard: {
+    borderRadius: 10,
+    border: '1px solid #e5e7eb',
+    background: '#fff',
+    padding: '0.65rem',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.3rem',
+  },
+  mobileRow: {
+    fontSize: '0.88rem',
+    color: '#111827',
+    wordBreak: 'break-word',
   },
   tableWrapper: {
     marginTop: '1rem',
@@ -320,6 +389,12 @@ const styles = {
     color: '#fff',
     fontSize: '0.8rem',
     cursor: 'pointer',
+  },
+  mobileViewBtn: {
+    marginTop: '0.35rem',
+    width: '100%',
+    padding: '0.6rem 0.75rem',
+    fontSize: '0.9rem',
   },
   detailCell: {
     padding: '0.75rem',

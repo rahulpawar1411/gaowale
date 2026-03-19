@@ -45,6 +45,14 @@ export default function AuthorizationPage() {
   });
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [verifyError, setVerifyError] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 900);
+    onResize();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   useEffect(() => {
     if (!isSuperAdmin || !verified) return;
@@ -239,7 +247,7 @@ export default function AuthorizationPage() {
     : null;
 
   return (
-    <div style={styles.page}>
+    <div style={{ ...styles.page, ...(isMobile ? styles.pageMobile : {}) }}>
       {!verified ? (
         <div
           style={styles.verifyOverlay}
@@ -250,7 +258,7 @@ export default function AuthorizationPage() {
             }
           }}
         >
-          <form style={styles.verifyCard} onSubmit={handleVerifySubmit}>
+          <form style={{ ...styles.verifyCard, ...(isMobile ? styles.verifyCardMobile : {}) }} onSubmit={handleVerifySubmit}>
             <button
               type="button"
               style={styles.verifyCloseBtn}
@@ -299,8 +307,8 @@ export default function AuthorizationPage() {
 
       {error && <div style={styles.error}>{error}</div>}
 
-      <form style={styles.form} onSubmit={handleCreate}>
-        <div style={styles.formRow}>
+      <form style={{ ...styles.form, ...(isMobile ? styles.formMobile : {}) }} onSubmit={handleCreate}>
+        <div style={{ ...styles.formRow, ...(isMobile ? styles.formRowMobile : {}) }}>
           <div style={styles.field}>
             <label style={styles.label}>Sub Admin Name</label>
             <input
@@ -334,10 +342,10 @@ export default function AuthorizationPage() {
               placeholder="Initial password"
             />
           </div>
-          <div style={styles.actions}>
+          <div style={{ ...styles.actions, ...(isMobile ? styles.actionsMobile : {}) }}>
             <button
               type="submit"
-              style={styles.primaryBtn}
+              style={{ ...styles.primaryBtn, ...(isMobile ? styles.primaryBtnMobile : {}) }}
               disabled={creating || !form.name || !form.phone || !form.password}
             >
               {creating ? 'Creating…' : 'Add Sub Admin'}
@@ -346,8 +354,8 @@ export default function AuthorizationPage() {
         </div>
       </form>
 
-      <div style={styles.contentRow}>
-        <div style={styles.subAdminList}>
+      <div style={{ ...styles.contentRow, ...(isMobile ? styles.contentRowMobile : {}) }}>
+        <div style={{ ...styles.subAdminList, ...(isMobile ? styles.panelMobile : {}) }}>
           <h2 style={styles.sectionTitle}>Sub Admins</h2>
           {loading ? (
             <p style={styles.muted}>Loading…</p>
@@ -383,7 +391,7 @@ export default function AuthorizationPage() {
           )}
         </div>
 
-        <div style={styles.permissionsPane} ref={permissionsRef}>
+        <div style={{ ...styles.permissionsPane, ...(isMobile ? styles.panelMobile : {}) }} ref={permissionsRef}>
           <h2 style={styles.sectionTitle}>
             Allowed Menus
             {currentSubAdmin && (
@@ -397,10 +405,10 @@ export default function AuthorizationPage() {
             <p style={styles.muted}>Select a sub admin to configure access.</p>
           ) : (
             <>
-              <div style={styles.groupRow}>
+              <div style={{ ...styles.groupRow, ...(isMobile ? styles.groupRowMobile : {}) }}>
                 <span style={styles.groupLabel}>Allow full sections:</span>
                 {GROUPS.map((g) => (
-                  <label key={g.key} style={styles.groupOption}>
+                  <label key={g.key} style={{ ...styles.groupOption, ...(isMobile ? styles.groupOptionMobile : {}) }}>
                     <input
                       type="checkbox"
                       checked={isGroupChecked(g)}
@@ -413,12 +421,12 @@ export default function AuthorizationPage() {
               <p style={styles.muted}>
                 Toggle sections above and click Save to update this sub admin&apos;s access.
               </p>
-              <div style={styles.menuGrid}>
+              <div style={{ ...styles.menuGrid, ...(isMobile ? styles.menuGridMobile : {}) }}>
                 {GROUPS.map((g) => (
                   <div key={g.key} style={styles.menuGroupBox}>
                     <div style={styles.menuGroupTitle}>{g.label}</div>
                     {g.paths.map((p) => (
-                      <label key={p} style={styles.menuItem}>
+                      <label key={p} style={{ ...styles.menuItem, ...(isMobile ? styles.menuItemMobile : {}) }}>
                         <input
                           type="checkbox"
                           checked={permissions.includes(p)}
@@ -446,7 +454,7 @@ export default function AuthorizationPage() {
               </div>
               <button
                 type="button"
-                style={styles.primaryBtn}
+                style={{ ...styles.primaryBtn, ...(isMobile ? styles.primaryBtnMobile : {}) }}
                 disabled={savingPerms}
                 onClick={handleSavePermissions}
               >
@@ -465,6 +473,9 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     gap: '0.75rem',
+  },
+  pageMobile: {
+    gap: '0.6rem',
   },
   verifyOverlay: {
     position: 'fixed',
@@ -485,6 +496,11 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     gap: '0.75rem',
+  },
+  verifyCardMobile: {
+    maxWidth: '100%',
+    margin: '0 0.75rem',
+    padding: '1rem',
   },
   verifyCloseBtn: {
     position: 'absolute',
@@ -528,11 +544,19 @@ const styles = {
     background: '#fff',
     border: '1px solid #e5e7eb',
   },
+  formMobile: {
+    padding: '0.65rem 0.75rem',
+  },
   formRow: {
     display: 'flex',
     flexWrap: 'wrap',
     gap: '0.75rem',
     alignItems: 'flex-end',
+  },
+  formRowMobile: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    gap: '0.6rem',
   },
   field: {
     display: 'flex',
@@ -546,10 +570,11 @@ const styles = {
     marginBottom: 4,
   },
   input: {
-    padding: '0.4rem 0.6rem',
+    padding: '0.62rem 0.75rem',
     borderRadius: 4,
     border: '1px solid #d1d5db',
-    fontSize: '0.85rem',
+    fontSize: '0.95rem',
+    minHeight: 42,
   },
   actions: {
     display: 'flex',
@@ -557,20 +582,32 @@ const styles = {
     justifyContent: 'flex-start',
     minWidth: 150,
   },
+  actionsMobile: {
+    minWidth: 0,
+    width: '100%',
+  },
   primaryBtn: {
-    padding: '0.45rem 0.9rem',
+    padding: '0.65rem 1rem',
     borderRadius: 4,
     border: 'none',
     background: '#1a5fb4',
     color: '#fff',
-    fontSize: '0.9rem',
+    fontSize: '0.95rem',
     cursor: 'pointer',
+  },
+  primaryBtnMobile: {
+    width: '100%',
   },
   contentRow: {
     display: 'flex',
     gap: '1rem',
     marginTop: '1rem',
     alignItems: 'flex-start',
+  },
+  contentRowMobile: {
+    flexDirection: 'column',
+    gap: '0.65rem',
+    marginTop: '0.65rem',
   },
   subAdminList: {
     flex: '0 0 260px',
@@ -589,12 +626,21 @@ const styles = {
     flexDirection: 'column',
     gap: '0.75rem',
   },
+  panelMobile: {
+    width: '100%',
+    padding: '0.65rem',
+  },
   groupRow: {
     display: 'flex',
     flexWrap: 'wrap',
     alignItems: 'center',
     gap: '0.5rem',
     fontSize: '0.85rem',
+  },
+  groupRowMobile: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    gap: '0.35rem',
   },
   groupLabel: {
     fontWeight: 600,
@@ -605,6 +651,9 @@ const styles = {
     display: 'inline-flex',
     alignItems: 'center',
     gap: '0.25rem',
+  },
+  groupOptionMobile: {
+    padding: '0.3rem 0.1rem',
   },
   currentAccessBox: {
     marginTop: '0.25rem',
@@ -661,7 +710,7 @@ const styles = {
     gap: '0.25rem',
   },
   listItem: {
-    padding: '0.45rem 0.5rem',
+    padding: '0.6rem 0.55rem',
     borderRadius: 4,
     cursor: 'default',
     display: 'flex',
@@ -691,7 +740,7 @@ const styles = {
     border: 'none',
     background: '#dc2626',
     color: '#fff',
-    fontSize: '0.75rem',
+    fontSize: '0.8rem',
     cursor: 'pointer',
   },
   menuGrid: {
@@ -699,6 +748,10 @@ const styles = {
     gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
     gap: '0.75rem',
     marginTop: '0.5rem',
+  },
+  menuGridMobile: {
+    gridTemplateColumns: '1fr',
+    gap: '0.55rem',
   },
   menuGroupBox: {
     borderRadius: 6,
@@ -717,6 +770,10 @@ const styles = {
     alignItems: 'center',
     gap: '0.25rem',
     fontSize: '0.8rem',
+  },
+  menuItemMobile: {
+    padding: '0.2rem 0',
+    fontSize: '0.88rem',
   },
 };
 

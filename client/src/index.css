@@ -18,6 +18,13 @@ body {
   overflow: hidden;
 }
 
+@media (max-width: 900px) {
+  body,
+  #root {
+    overflow: auto;
+  }
+}
+
 button {
   cursor: pointer;
   font: inherit;
