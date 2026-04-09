@@ -754,7 +754,7 @@ export default function CustomerRegistrationPage({ title, lang = 'en' }) {
                   inputStyle={styles.input}
                 />
               </FieldWithError>
-              <div style={{ gridColumn: '1 / span 4' }}>
+              <div style={{ gridColumn: '1 / -1' }}>
                 <FieldWithError fieldName="nominee_address" fieldErrors={fieldErrors} styles={styles}>
                   <TextField
                     label={
@@ -802,18 +802,19 @@ export default function CustomerRegistrationPage({ title, lang = 'en' }) {
 
 const styles = {
   page: {
-    padding: '1.5rem 2rem',
+    padding: '0.75rem',
     display: 'flex',
     justifyContent: 'center',
     background: '#fff4e0',
+    width: '100%',
   },
   card: {
     width: '100%',
-    maxWidth: 1040,
+    maxWidth: '100%',
     background: '#ffffff',
     borderRadius: 8,
     boxShadow: '0 6px 18px rgba(0,0,0,0.08)',
-    padding: '1.5rem 2rem 2rem',
+    padding: '1rem',
     display: 'flex',
     flexDirection: 'column',
     gap: '1rem',
@@ -839,12 +840,12 @@ const styles = {
   },
   grid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
     gap: '0.75rem 1rem',
   },
   userGrid4: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
     gap: '0.75rem 1rem',
   },
   fieldWrap: { display: 'flex', flexDirection: 'column', gap: 4 },
@@ -857,18 +858,20 @@ const styles = {
   // Make all field labels bold for better emphasis
   label: { fontSize: '0.85rem', fontWeight: 700, color: '#333' },
   select: {
-    padding: '0.4rem 0.55rem',
+    padding: '0.65rem 0.75rem',
     borderRadius: 4,
     border: '1px solid #aaa',
     background: '#fff',
-    fontSize: '0.85rem',
+    fontSize: '0.95rem',
+    minHeight: 42,
   },
   input: {
-    padding: '0.4rem 0.55rem',
+    padding: '0.65rem 0.75rem',
     borderRadius: 4,
     border: '1px solid #aaa',
     background: '#fff',
-    fontSize: '0.85rem',
+    fontSize: '0.95rem',
+    minHeight: 42,
   },
   fileName: { fontSize: '0.8rem', color: '#666', marginTop: 2 },
   alertError: {
@@ -892,10 +895,11 @@ const styles = {
     fontSize: '0.95rem',
     fontWeight: 600,
   },
-  buttonRow: { marginTop: '0.75rem', display: 'flex', justifyContent: 'center' },
+  buttonRow: { marginTop: '0.75rem', display: 'flex', justifyContent: 'center', width: '100%' },
   submit: {
-    minWidth: 220,
-    padding: '0.55rem 1.5rem',
+    width: '100%',
+    maxWidth: 360,
+    padding: '0.75rem 1rem',
     borderRadius: 4,
     border: 'none',
     background: '#15803d',

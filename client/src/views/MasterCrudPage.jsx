@@ -2717,18 +2717,19 @@ function HierarchyItem({ node }) {
 
 const styles = {
   page: {
-    padding: '1.5rem 2rem',
+    padding: '0.75rem',
     display: 'flex',
     justifyContent: 'center',
     background: '#fff4e0',
+    width: '100%',
   },
   card: {
     width: '100%',
-    maxWidth: 1040,
+    maxWidth: '100%',
     background: '#ffffff',
     borderRadius: 8,
     boxShadow: '0 6px 18px rgba(0,0,0,0.08)',
-    padding: '1.5rem 2rem 2rem',
+    padding: '1rem',
     display: 'flex',
     flexDirection: 'column',
     gap: '1rem',
@@ -2811,7 +2812,7 @@ const styles = {
   radioLabel: { display: 'flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer', fontSize: '0.9rem', color: '#333' },
   radioInput: { margin: 0, cursor: 'pointer' },
   input: {
-    padding: '0.5rem 0.75rem',
+    padding: '0.65rem 0.75rem',
     borderRadius: 4,
     border: '1px solid #aaa',
     background: '#fff',
@@ -2819,6 +2820,8 @@ const styles = {
     width: '100%',
     minWidth: 0,
     boxSizing: 'border-box',
+    fontSize: '0.95rem',
+    minHeight: 42,
   },
   actions: { display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap', gridColumn: '1 / -1' },
   submitRow: {
@@ -2829,7 +2832,7 @@ const styles = {
     flexWrap: 'wrap',
   },
   btnPrimary: {
-    padding: '0.5rem 1rem',
+    padding: '0.7rem 1rem',
     borderRadius: 4,
     border: 'none',
     background: '#1a5fb4',
@@ -2840,7 +2843,7 @@ const styles = {
     background: '#f97316',
   },
   btnSecondary: {
-    padding: '0.5rem 1rem',
+    padding: '0.7rem 1rem',
     borderRadius: 4,
     border: '1px solid #666',
     background: '#fff',

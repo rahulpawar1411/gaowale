@@ -108,6 +108,7 @@ export default function BusinessUnitAllotmentListPage({ title = 'Business Unit A
   const [openSections, setOpenSections] = useState({ core: true, business: false, bank: false, land: false, documents: true, other: false });
   const [showAllDetails, setShowAllDetails] = useState(false);
   const [isNarrow, setIsNarrow] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [actionStatus, setActionStatus] = useState(null);
 
@@ -157,6 +158,7 @@ export default function BusinessUnitAllotmentListPage({ title = 'Business Unit A
   useEffect(() => {
     function onResize() {
       setIsNarrow(window.innerWidth < 1024);
+      setIsMobile(window.innerWidth < 768);
     }
     onResize();
     window.addEventListener('resize', onResize);
@@ -256,8 +258,8 @@ export default function BusinessUnitAllotmentListPage({ title = 'Business Unit A
   }
 
   return (
-    <div style={styles.page}>
-      <div style={styles.card}>
+    <div style={{ ...styles.page, ...(isMobile ? styles.pageMobile : {}) }}>
+      <div style={{ ...styles.card, ...(isMobile ? styles.cardMobile : {}) }}>
         <div style={styles.topHeader}>
           <div style={styles.topHeaderInner}>
             <h1 style={styles.title}>{title}</h1>
@@ -268,7 +270,7 @@ export default function BusinessUnitAllotmentListPage({ title = 'Business Unit A
         </div>
 
         <form onSubmit={runSearch} style={styles.searchCard}>
-          <div style={styles.searchGrid}>
+          <div style={{ ...styles.searchGrid, ...(isMobile ? styles.searchGridMobile : {}) }}>
             <div style={styles.fieldWrap}>
               <label style={styles.label}>Aadhaar Card Number</label>
               <input
@@ -290,11 +292,20 @@ export default function BusinessUnitAllotmentListPage({ title = 'Business Unit A
                 style={styles.input}
               />
             </div>
-            <div style={styles.actionsWrap}>
-              <button type="submit" disabled={!canSearch || loading} style={styles.primaryBtn}>
+            <div style={{ ...styles.actionsWrap, ...(isMobile ? styles.actionsWrapMobile : {}) }}>
+              <button
+                type="submit"
+                disabled={!canSearch || loading}
+                style={{ ...styles.primaryBtn, ...(isMobile ? styles.actionBtnMobile : {}) }}
+              >
                 {loading ? 'Searching…' : 'Search'}
               </button>
-              <button type="button" onClick={clearAll} disabled={loading} style={styles.secondaryBtn}>
+              <button
+                type="button"
+                onClick={clearAll}
+                disabled={loading}
+                style={{ ...styles.secondaryBtn, ...(isMobile ? styles.actionBtnMobile : {}) }}
+              >
                 Clear
               </button>
             </div>
@@ -333,66 +344,113 @@ export default function BusinessUnitAllotmentListPage({ title = 'Business Unit A
                   )}
                 </div>
               </div>
-              <div style={styles.tableScroll}>
-                <table style={styles.table}>
-                  <thead>
-                    <tr>
-                      <th style={styles.th}>Client ID</th>
-                      <th style={styles.th}>Beneficiary</th>
-                      <th style={styles.th}>Unit / Company</th>
-                      <th style={styles.th}>PAN</th>
-                      <th style={styles.th}>Created</th>
-                      <th style={styles.th}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((r) => {
-                      const isActive = selected && r && selected.id === r.id;
-                      return (
-                        <tr
-                          key={r.id || `${r.client_id}-${r.created_at || ''}`}
-                          style={isActive ? styles.trActive : styles.tr}
-                          onClick={() => {
-                            setSelected(r);
-                            if (isNarrow) setDetailsOpen(true);
-                          }}
-                        >
-                          <td style={styles.td}>{r.client_id ?? '-'}</td>
-                          <td style={styles.td}>{r.beneficiary_name ?? '-'}</td>
-                          <td style={styles.td}>{r.unit_company_name ?? '-'}</td>
-                          <td style={styles.td}>{r.pan_card_number ?? '-'}</td>
-                          <td style={styles.td}>{r.created_at ? String(r.created_at).slice(0, 10) : '-'}</td>
-                          <td style={styles.td}>
-                            <div style={styles.rowActions}>
-                              <button
-                                type="button"
-                                style={styles.viewBtn}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelected(r);
-                                  setDetailsOpen(true);
-                                }}
-                              >
-                                View
-                              </button>
-                              <button
-                                type="button"
-                                style={styles.deleteBtn}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDelete(r);
-                                }}
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+              {isMobile ? (
+                <div style={styles.mobileList}>
+                  {rows.map((r) => {
+                    const isActive = selected && r && selected.id === r.id;
+                    return (
+                      <div
+                        key={r.id || `${r.client_id}-${r.created_at || ''}`}
+                        style={{ ...styles.mobileCard, ...(isActive ? styles.mobileCardActive : {}) }}
+                        onClick={() => {
+                          setSelected(r);
+                          setDetailsOpen(true);
+                        }}
+                      >
+                        <div style={styles.mobileRow}><strong>Client ID:</strong> {r.client_id ?? '-'}</div>
+                        <div style={styles.mobileRow}><strong>Beneficiary:</strong> {r.beneficiary_name ?? '-'}</div>
+                        <div style={styles.mobileRow}><strong>Unit:</strong> {r.unit_company_name ?? '-'}</div>
+                        <div style={styles.mobileRow}><strong>PAN:</strong> {r.pan_card_number ?? '-'}</div>
+                        <div style={styles.mobileRow}><strong>Created:</strong> {r.created_at ? String(r.created_at).slice(0, 10) : '-'}</div>
+                        <div style={styles.mobileActions}>
+                          <button
+                            type="button"
+                            style={{ ...styles.viewBtn, ...styles.mobileActionBtn }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelected(r);
+                              setDetailsOpen(true);
+                            }}
+                          >
+                            View
+                          </button>
+                          <button
+                            type="button"
+                            style={{ ...styles.deleteBtn, ...styles.mobileActionBtn }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(r);
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div style={styles.tableScroll}>
+                  <table style={styles.table}>
+                    <thead>
+                      <tr>
+                        <th style={styles.th}>Client ID</th>
+                        <th style={styles.th}>Beneficiary</th>
+                        <th style={styles.th}>Unit / Company</th>
+                        <th style={styles.th}>PAN</th>
+                        <th style={styles.th}>Created</th>
+                        <th style={styles.th}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((r) => {
+                        const isActive = selected && r && selected.id === r.id;
+                        return (
+                          <tr
+                            key={r.id || `${r.client_id}-${r.created_at || ''}`}
+                            style={isActive ? styles.trActive : styles.tr}
+                            onClick={() => {
+                              setSelected(r);
+                              if (isNarrow) setDetailsOpen(true);
+                            }}
+                          >
+                            <td style={styles.td}>{r.client_id ?? '-'}</td>
+                            <td style={styles.td}>{r.beneficiary_name ?? '-'}</td>
+                            <td style={styles.td}>{r.unit_company_name ?? '-'}</td>
+                            <td style={styles.td}>{r.pan_card_number ?? '-'}</td>
+                            <td style={styles.td}>{r.created_at ? String(r.created_at).slice(0, 10) : '-'}</td>
+                            <td style={styles.td}>
+                              <div style={styles.rowActions}>
+                                <button
+                                  type="button"
+                                  style={styles.viewBtn}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelected(r);
+                                    setDetailsOpen(true);
+                                  }}
+                                >
+                                  View
+                                </button>
+                                <button
+                                  type="button"
+                                  style={styles.deleteBtn}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDelete(r);
+                                  }}
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
 
             {!isNarrow && (
@@ -487,7 +545,7 @@ function DetailsPanel({
         </button>
       </div>
 
-      <div style={styles.summaryGrid}>
+    <div style={{ ...styles.summaryGrid, ...(isModal ? styles.summaryGridModal : {}) }}>
         <div style={styles.summaryCard}>
           <div style={styles.summaryLabel}>KYC</div>
           <div style={styles.summaryValue}>
@@ -637,14 +695,17 @@ function DetailsPanel({
 
 const styles = {
   page: {
-    padding: '1.5rem 2rem',
+    padding: '0.75rem',
     display: 'flex',
     justifyContent: 'center',
     background: '#fff4e0',
   },
+  pageMobile: {
+    padding: '0.5rem',
+  },
   card: {
     width: '100%',
-    maxWidth: 1200,
+    maxWidth: '100%',
     background: '#ffffff',
     borderRadius: 8,
     boxShadow: '0 6px 18px rgba(0,0,0,0.08)',
@@ -652,6 +713,10 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     gap: '0.75rem',
+  },
+  cardMobile: {
+    padding: '0.9rem',
+    borderRadius: 10,
   },
   topHeader: {
     display: 'flex',
@@ -688,6 +753,10 @@ const styles = {
     gap: '0.75rem',
     alignItems: 'end',
   },
+  searchGridMobile: {
+    gridTemplateColumns: '1fr',
+    gap: '0.6rem',
+  },
   fieldWrap: { display: 'flex', flexDirection: 'column', gap: 6 },
   label: { fontSize: '0.85rem', fontWeight: 700, color: '#374151' },
   input: {
@@ -703,6 +772,15 @@ const styles = {
     gap: '0.5rem',
     justifyContent: 'flex-end',
     flexWrap: 'wrap',
+  },
+  actionsWrapMobile: {
+    justifyContent: 'stretch',
+    width: '100%',
+  },
+  actionBtnMobile: {
+    width: '100%',
+    minWidth: 0,
+    padding: '0.7rem 0.9rem',
   },
   primaryBtn: {
     padding: '0.5rem 1rem',
@@ -814,6 +892,39 @@ const styles = {
   trActive: { borderBottom: '1px solid #e5e7eb', background: '#fff7ed' },
   td: { padding: '0.55rem 0.75rem', verticalAlign: 'top', whiteSpace: 'nowrap' },
   rowActions: { display: 'flex', gap: '0.45rem', alignItems: 'center' },
+  mobileList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.55rem',
+    padding: '0.55rem',
+  },
+  mobileCard: {
+    border: '1px solid #e5e7eb',
+    borderRadius: 10,
+    background: '#ffffff',
+    padding: '0.65rem',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.35rem',
+  },
+  mobileCardActive: {
+    borderColor: '#fdba74',
+    background: '#fff7ed',
+  },
+  mobileRow: {
+    fontSize: '0.86rem',
+    color: '#111827',
+    wordBreak: 'break-word',
+  },
+  mobileActions: {
+    marginTop: '0.35rem',
+    display: 'flex',
+    gap: '0.5rem',
+  },
+  mobileActionBtn: {
+    flex: 1,
+    padding: '0.45rem 0.6rem',
+  },
   viewBtn: {
     padding: '0.3rem 0.7rem',
     borderRadius: 4,
@@ -889,6 +1000,9 @@ const styles = {
     gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
     gap: '0.6rem',
     marginBottom: '0.6rem',
+  },
+  summaryGridModal: {
+    gridTemplateColumns: '1fr',
   },
   summaryCard: {
     borderRadius: 10,

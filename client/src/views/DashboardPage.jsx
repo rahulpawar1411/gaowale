@@ -10,9 +10,17 @@ const CARD_CONFIG = [
 ];
 
 export default function DashboardPage() {
+  const [isMobile, setIsMobile] = useState(false);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 768);
+    onResize();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -35,9 +43,9 @@ export default function DashboardPage() {
   }, []);
 
   return (
-    <div style={styles.wrapper}>
-      <h1 style={styles.title}>Welcome to the Admin Panel</h1>
-      <p style={styles.subtitle}>
+    <div style={{ ...styles.wrapper, ...(isMobile ? styles.wrapperMobile : {}) }}>
+      <h1 style={{ ...styles.title, ...(isMobile ? styles.titleMobile : {}) }}>Welcome to the Admin Panel</h1>
+      <p style={{ ...styles.subtitle, ...(isMobile ? styles.subtitleMobile : {}) }}>
         Select a table from the sidebar to view or manage data.
       </p>
 
@@ -48,11 +56,13 @@ export default function DashboardPage() {
       {loading ? (
         <p style={styles.muted}>Loading dashboard…</p>
       ) : stats ? (
-        <div style={styles.cards}>
+        <div style={{ ...styles.cards, ...(isMobile ? styles.cardsMobile : {}) }}>
           {CARD_CONFIG.map(({ key, label, color }) => (
-            <div key={key} style={{ ...styles.card, borderTopColor: color }}>
+            <div key={key} style={{ ...styles.card, ...(isMobile ? styles.cardMobile : {}), borderTopColor: color }}>
               <div style={styles.cardLabel}>{label}</div>
-              <div style={styles.cardValue}>{stats[key] ?? 0}</div>
+              <div style={{ ...styles.cardValue, ...(isMobile ? styles.cardValueMobile : {}) }}>
+                {stats[key] ?? 0}
+              </div>
             </div>
           ))}
         </div>
@@ -67,6 +77,11 @@ const styles = {
     flexDirection: 'column',
     alignItems: 'center',
     gap: '0.5rem',
+    width: '100%',
+  },
+  wrapperMobile: {
+    alignItems: 'stretch',
+    gap: '0.7rem',
   },
   title: {
     margin: 0,
@@ -74,10 +89,19 @@ const styles = {
     fontWeight: 700,
     color: '#1f2937',
   },
+  titleMobile: {
+    fontSize: '1.35rem',
+    textAlign: 'left',
+    lineHeight: 1.25,
+  },
   subtitle: {
     margin: 0,
     fontSize: '0.95rem',
     color: '#6b7280',
+  },
+  subtitleMobile: {
+    fontSize: '0.9rem',
+    textAlign: 'left',
   },
   error: {
     padding: '0.75rem 1rem',
@@ -96,6 +120,12 @@ const styles = {
     gap: '1.25rem',
     justifyContent: 'center',
     marginTop: '1.5rem',
+    width: '100%',
+  },
+  cardsMobile: {
+    marginTop: '0.7rem',
+    gap: '0.7rem',
+    justifyContent: 'stretch',
   },
   card: {
     minWidth: 160,
@@ -104,6 +134,11 @@ const styles = {
     background: '#fff',
     boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
     borderTop: '4px solid #2563eb',
+  },
+  cardMobile: {
+    width: '100%',
+    minWidth: 0,
+    padding: '0.9rem 1rem',
   },
   cardLabel: {
     fontSize: '0.9rem',
@@ -114,5 +149,8 @@ const styles = {
     fontSize: '1.75rem',
     fontWeight: 700,
     color: '#111827',
+  },
+  cardValueMobile: {
+    fontSize: '1.4rem',
   },
 };
